@@ -1,0 +1,114 @@
+import type { Project } from "@/types/portfolio";
+
+/**
+ * Selected projects.
+ *
+ * These are professional descriptions only. No project URLs, screenshots or
+ * client material are included because none have been authorized.
+ */
+export const projects: readonly Project[] = [
+  {
+    id: "green-button-go-scheduler",
+    name: "Green Button Go Scheduler",
+    client: "Biosero",
+    via: "Creative Software",
+    summary: "A laboratory scheduling platform for optimizing devices, instruments and workcells.",
+    contributions: [
+      "Enterprise application engineering",
+      "Technical leadership and architectural decisions",
+      "Mentoring engineers in an international development team",
+    ],
+    chapter: 6,
+  },
+  {
+    id: "cloud-portal-saas",
+    name: "Cloud Portal SaaS",
+    client: "Biosero",
+    via: "Creative Software",
+    summary: "A SaaS platform for managing subscriptions, licenses and software packages.",
+    contributions: ["Subscription management", "License management", "Software packages"],
+    chapter: 6,
+  },
+  {
+    id: "ifs-cloud-home",
+    name: "IFS Cloud Home and design system",
+    client: "IFS",
+    via: "Creative Software",
+    summary:
+      "IFS Cloud Home widgets, micro-frontend architecture, and the design system and component libraries.",
+    contributions: [
+      "IFS Cloud Home widgets in Angular and React",
+      "Granite Angular Component Library, IFS Design System and Shared Component Library",
+      "Accessibility and internationalization",
+      "Drag-and-drop dashboard layout proof of concept",
+      "Storybook and automated testing",
+    ],
+    chapter: 5,
+  },
+  {
+    id: "finago-flow-nest",
+    name: "Finago Flow and Nest",
+    client: "Finago",
+    via: "Creative Software",
+    summary: "Rebranding and UI improvements for Finago Flow/Nest.",
+    contributions: [
+      "Rebranding and UI improvements",
+      "Reusable nested stepper component",
+      "Customer-creation wizard",
+    ],
+    chapter: 5,
+  },
+  {
+    id: "atlas-2",
+    name: "Atlas 2.0",
+    client: "Geposit",
+    via: "Ascentic",
+    summary: "Complex data visualization and mapping capabilities, with large-scale dataset handling.",
+    contributions: [
+      "Import/export wizard for datasets of more than 500,000 records",
+      "Interactive 3D markers",
+      "Firebase authentication",
+    ],
+    chapter: 4,
+  },
+  {
+    id: "workheld-sense",
+    name: "Workheld Sense",
+    client: "Senseforce GmbH",
+    via: "Paze Industries",
+    summary: "Industrial software: dashboards, widgets, and Script and Dataset functionality.",
+    contributions: [
+      "Dashboard development and widgets",
+      "Script and Dataset functionality",
+      "Unit tests and code coverage",
+      "Resolution of a critical theme-customization issue",
+    ],
+    chapter: 3,
+  },
+  {
+    id: "qmatic",
+    name: "Qmatic solutions",
+    client: "Qmatic AB",
+    via: "Creative Software",
+    summary: "Services and reporting for Qmatic, delivered while moving into technical leadership.",
+    contributions: [
+      "URL-shortener microservice",
+      "Feedback survey and reporting solution",
+      "Orchestra and Pentaho BI",
+      "Performance optimization from 10 seconds to 4 seconds on slow 3G connections",
+    ],
+    chapter: 2,
+  },
+  {
+    id: "wso2-connectors",
+    name: "WSO2 ESB cloud connectors and MyDashboard",
+    client: "Pearson / WSO2",
+    via: null,
+    summary: "Enterprise software development at the start of my career.",
+    contributions: [
+      "Close to 200 WSO2 ESB cloud connectors",
+      "Advanced filtering functionality for MyDashboard",
+    ],
+    chapter: 1,
+  },
+];

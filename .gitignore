@@ -48,3 +48,6 @@ next-env.d.ts
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# browser automation output
+/.playwright-mcp/

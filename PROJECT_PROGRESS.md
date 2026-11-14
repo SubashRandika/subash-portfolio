@@ -23,8 +23,8 @@ Taken from the brief and treated as fixed unless Subash changes them:
 | Phase | Name | Status |
 | --- | --- | --- |
 | 01 | Project inspection and architecture planning | Complete |
-| 02 | Design system and responsive foundation | In progress |
-| 03 | Aircraft and flight prototype | Not started |
+| 02 | Design system and responsive foundation | Complete |
+| 03 | Aircraft and flight prototype | In progress |
 | 04 | Master scroll timeline | Not started |
 | 05 | Six realistic geographical environments | Not started |
 | 06 | Career storytelling and milestone integration | Not started |
@@ -33,7 +33,7 @@ Taken from the brief and treated as fixed unless Subash changes them:
 | 09 | SEO and deployment readiness | Not started |
 | 10 | Final QA and release | Not started |
 
-**Current phase:** 02 — Design system and responsive foundation.
+**Current phase:** 03 — Aircraft and flight prototype.
 
 ## Architecture and technical decisions
 
@@ -46,6 +46,9 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Headline decisions:
 5. The aircraft is generated in-repo as a Meshopt-compressed GLB because no modelling tool or licensed model is available.
 6. Sources live under `src/`.
 7. Playwright drives installed Chrome locally (see known issues).
+8. Visual identity: Michroma for titles, B612 and B612 Mono (the Airbus cockpit typefaces) for text and data; three themes that follow the sky through the day (night for the flight, day for the portfolio documents, dusk for contact).
+9. Work experience is a logbook table with separate Employer and Client / product columns, so the two can never be confused.
+10. Milestone summaries are optional: when the brief says nothing beyond a milestone's title, the card shows the title alone rather than padded copy.
 
 ## Phase summaries
 
@@ -74,15 +77,44 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Headline decisions:
 | `npm run build` | Pass; `/` statically prerendered |
 | `npm run test:e2e` | Pass, 3 of 3 (desktop, tablet, mobile) |
 
+### Phase 02 — Design system and responsive foundation (complete)
+
+**Implemented:**
+
+- Design tokens in `src/app/globals.css`: raw palette, semantic per-theme tokens (`night`, `day`, `dusk`), fluid type scale, spacing, focus, selection and reduced-motion rules.
+- Typography through `next/font` (self-hosted at build): Michroma, B612, B612 Mono.
+- Base components: `Button` / `ButtonLink` (primary, secondary, quiet), `Icon`, `DocSection`, tags, skip link.
+- Layout: fixed `SiteHeader` with inline navigation on wide screens and a disclosure menu on narrow ones (Escape closes and restores focus), `SiteFooter`.
+- Flight storytelling markup: `FlightSection`, `Opening`, `ChapterSection`, `MilestoneCard` (flight-strip style), `ChapterNavigation`, `FlightHUD` (progress rail with proportionally placed chapter links, readout strip).
+- Static mode of the flight, which is also the no-WebGL fallback; the CSS for live mode (sticky stage, chapter heights proportional to the timeline) is in place and activates with `data-flight="live"`.
+- Portfolio sections with real content: About, Technical expertise, Selected projects, Work experience (logbook), Education (renders only when data exists), Contact.
+- Typed content layer: `src/types/portfolio.ts`, `src/data/*`, `src/flight/timeline.ts`.
+- Internal design reference at `/styleguide` (noindex).
+
+**Files:** `src/app/{globals.css,layout.tsx,page.tsx,styleguide/page.tsx}`, `src/components/{ui,layout,storytelling,portfolio}/*`, `src/data/*`, `src/flight/timeline.ts`, `src/lib/{utils,navigation}.ts`, `src/types/portfolio.ts`, tests alongside.
+
+**Verification (2026-11-15):**
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Pass |
+| `npm run typecheck` | Pass |
+| `npm run test` | Pass, 40 of 40 in 5 files |
+| `npm run test:e2e` | Pass, 24 of 24 (8 tests × desktop, tablet, mobile) |
+| Visual review | Opening, chapters, HUD, portfolio sections and mobile menu checked at 1440 × 900 and 390 × 844; no horizontal overflow |
+
+**Limitations:** the painted CSS skies are stand-ins until poster frames can be rendered from the 3D scene (Phase 08). Milestone copy is deliberately terse because it restates the brief without embellishment.
+
 ## Known issues
 
 - **Playwright's bundled Chromium cannot run on this machine.** Windows reports "An Application Control policy has blocked this file" for the unsigned `chrome-headless-shell.exe`. The policy was left untouched. Tests use the installed, signed Google Chrome through `channel: "chrome"`; the blocked download was removed with `npx playwright uninstall`.
 - **`npm audit` reports 8 moderate advisories**, all inside the ESLint toolchain pulled in by `eslint-config-next`. They are development-only and are not shipped. To be re-checked in Phase 10.
 - **Blender is not installed**, so asset preparation is done in code.
+- **A `next dev` server for this project was already running on port 3000** (not started by this build process). It was left running and used for visual checks. Next.js allows only one dev server per project directory.
 
 ## Technical debt
 
-- None yet.
+- `motion` (Framer Motion) is installed but not yet used; Phase 02 transitions are plain CSS. It will be used for discrete UI transitions or removed in Phase 10.
 
 ## Outstanding questions for Subash
 
@@ -98,4 +130,4 @@ These block publishing the affected content, not the build. Until answered the f
 
 ## Next planned activities
 
-Phase 02: color system, typography, spacing, buttons, navigation, HUD design, chapter cards, accessible base components, responsive layout and the initial portfolio section structure.
+Phase 03: the aircraft model (generated GLB with separate gear, fan and light nodes), a first environment, the flight path, rear chase and side cameras, the takeoff animation and the initial 3D scene.

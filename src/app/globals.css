@@ -1,26 +1,947 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ==========================================================================
+   THE CAREER FLIGHT — design tokens
+
+   Palette comes from the flight itself: a pre-dawn sky, the amber band on the
+   horizon, pearl-white paint, graphite detailing and cool-blue navigation
+   lights. The page follows the sky through the day:
+
+     night  — opening and flight        (deep blue-black)
+     day    — the portfolio documents   (cool cloud-top white)
+     dusk   — contact and closing       (blue hour)
+
+   Components never use raw palette colours. They use the semantic tokens
+   (--surface, --ink, …) which each theme redefines.
+   ========================================================================== */
+
+@theme {
+  /* Raw palette */
+  --color-night-950: #05080f;
+  --color-night-900: #070b14;
+  --color-night-800: #0d1422;
+  --color-night-700: #131c2e;
+  --color-graphite-600: #232c3d;
+  --color-graphite-500: #364154;
+  --color-haze-400: #9ca9bd;
+  --color-haze-300: #b9c3d2;
+  --color-pearl-100: #f2f1ed;
+  --color-cloud-100: #eef2f6;
+  --color-cloud-200: #dfe6ee;
+  --color-cloud-300: #c9d2dd;
+  --color-ink-900: #0c1424;
+  --color-ink-600: #485568;
+  --color-dawn-400: #f4a261;
+  --color-dawn-700: #8f530f;
+  --color-nav-300: #86c5ff;
+  --color-nav-700: #1554b8;
+
+  /* Layout */
+  --breakpoint-xs: 26rem;
+  --container-shell: 76rem;
+
+  /* Motion */
+  --ease-flight: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-settle: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Typography: Michroma for titles, B612 (the Airbus cockpit typeface) for
+     reading, B612 Mono for instrument-style data. */
+  --font-display: var(--font-michroma), "Eurostile", "Arial", sans-serif;
+  --font-sans: var(--font-b612), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-b612-mono), ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  /* Semantic colours, resolved per theme */
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-link: var(--link);
+  --color-focus: var(--focus);
 }
 
-@media (prefers-color-scheme: dark) {
+:root,
+[data-theme="night"] {
+  --surface: var(--color-night-900);
+  --surface-raised: var(--color-night-700);
+  --ink: var(--color-pearl-100);
+  --ink-muted: var(--color-haze-400);
+  --line: rgb(156 169 189 / 0.2);
+  --line-strong: rgb(156 169 189 / 0.42);
+  --accent: var(--color-dawn-400);
+  --accent-ink: var(--color-dawn-400);
+  --link: var(--color-nav-300);
+  --focus: var(--color-nav-300);
+  color-scheme: dark;
+}
+
+[data-theme="day"] {
+  --surface: var(--color-cloud-100);
+  --surface-raised: #ffffff;
+  --ink: var(--color-ink-900);
+  --ink-muted: var(--color-ink-600);
+  --line: var(--color-cloud-300);
+  --line-strong: #9aa7b6;
+  --accent: var(--color-dawn-400);
+  --accent-ink: var(--color-dawn-700);
+  --link: var(--color-nav-700);
+  --focus: var(--color-nav-700);
+  color-scheme: light;
+}
+
+[data-theme="dusk"] {
+  --surface: var(--color-night-800);
+  --surface-raised: var(--color-night-700);
+  --ink: var(--color-pearl-100);
+  --ink-muted: var(--color-haze-400);
+  --line: rgb(156 169 189 / 0.2);
+  --line-strong: rgb(156 169 189 / 0.42);
+  --accent: var(--color-dawn-400);
+  --accent-ink: var(--color-dawn-400);
+  --link: var(--color-nav-300);
+  --focus: var(--color-nav-300);
+  color-scheme: dark;
+}
+
+/* ==========================================================================
+   Base
+   ========================================================================== */
+
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --gutter: clamp(1.25rem, 4vw, 3rem);
+    --header-height: 3.75rem;
+    --section-space: clamp(4rem, 7vw, 6.5rem);
+  }
+
+  html {
+    background: var(--color-night-900);
+    scroll-padding-top: var(--header-height);
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--surface);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    line-height: 1.65;
+    text-rendering: optimizeLegibility;
+  }
+
+  [data-theme] {
+    background-color: var(--surface);
+    color: var(--ink);
+  }
+
+  ::selection {
+    background: var(--color-dawn-400);
+    color: var(--color-night-900);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  a {
+    text-underline-offset: 0.22em;
+    text-decoration-thickness: 1px;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    text-wrap: balance;
+  }
+
+  p,
+  li {
+    text-wrap: pretty;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ==========================================================================
+   Type scale
+   ========================================================================== */
+
+@utility type-display-xl {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 0.86rem + 3.1vw, 3.75rem);
+  line-height: 1.14;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 400;
+}
+
+@utility type-display-lg {
+  font-family: var(--font-display);
+  font-size: clamp(1.375rem, 0.95rem + 2vw, 2.75rem);
+  line-height: 1.16;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+  font-weight: 400;
+}
+
+@utility type-display-md {
+  font-family: var(--font-display);
+  font-size: clamp(1.0625rem, 0.9rem + 0.8vw, 1.5rem);
+  line-height: 1.25;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 400;
+}
+
+@utility type-lead {
+  font-size: clamp(1.0625rem, 1rem + 0.45vw, 1.3125rem);
+  line-height: 1.6;
+}
+
+@utility type-body {
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+@utility type-small {
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+/* Instrument-style label: small mono capitals. */
+@utility type-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+/* Numeric readouts keep their width as values change. */
+@utility type-data {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+/* ==========================================================================
+   Layout primitives
+   ========================================================================== */
+
+@utility shell {
+  width: min(100% - 2 * var(--gutter), var(--container-shell));
+  margin-inline: auto;
+}
+
+@utility section-space {
+  padding-block: var(--section-space);
+}
+
+/* ==========================================================================
+   Components
+   ========================================================================== */
+
+@layer components {
+  /* ---- Skip link -------------------------------------------------------- */
+  .skip-link {
+    position: fixed;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: 100;
+    padding: 0.75rem 1rem;
+    background: var(--color-pearl-100);
+    color: var(--color-night-900);
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: 2px;
+    transform: translateY(-200%);
+  }
+
+  .skip-link:focus-visible {
+    transform: translateY(0);
+    outline-color: var(--color-dawn-400);
+  }
+
+  /* ---- Button ----------------------------------------------------------- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.625rem;
+    min-height: 2.75rem;
+    padding: 0.625rem 1.25rem;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    line-height: 1.2;
+    text-transform: uppercase;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+      background-color 160ms var(--ease-flight),
+      border-color 160ms var(--ease-flight),
+      color 160ms var(--ease-flight);
+  }
+
+  .btn-primary {
+    background: var(--ink);
+    color: var(--surface);
+  }
+
+  .btn-primary:hover {
+    background: var(--accent);
+    color: var(--color-night-900);
+  }
+
+  .btn-secondary {
+    border-color: var(--line-strong);
+    color: var(--ink);
+    background: transparent;
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--ink);
+  }
+
+  .btn-quiet {
+    min-height: 2.75rem;
+    padding-inline: 0.25rem;
+    color: var(--link);
+    text-decoration: underline;
+    text-decoration-color: transparent;
+  }
+
+  .btn-quiet:hover {
+    text-decoration-color: currentColor;
+  }
+
+  .btn[aria-disabled="true"],
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* ---- Tag -------------------------------------------------------------- */
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.625rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 2px;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    color: var(--ink);
+  }
+
+  /* ---- Milestone strip --------------------------------------------------
+     Modelled on an air-traffic flight progress strip: a narrow index field,
+     then the content field. */
+  .milestone {
+    display: grid;
+    grid-template-columns: 3.25rem minmax(0, 1fr);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--surface) 78%, transparent);
+    backdrop-filter: blur(10px);
+  }
+
+  .milestone-index {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 0 0.75rem;
+    border-right: 1px solid var(--line);
+    color: var(--ink-muted);
+  }
+
+  .milestone-index::after {
+    content: "";
+    width: 1px;
+    flex: 1;
+    min-height: 0.5rem;
+    background: linear-gradient(var(--accent), transparent);
+  }
+
+  .milestone-body {
+    padding: 0.875rem 1rem 1rem;
+  }
+
+  /* ---- Margin-label section layout (day theme documents) ---------------- */
+  .doc-section {
+    display: grid;
+    gap: 1.5rem 2.5rem;
+    padding-block: var(--section-space);
+    border-top: 1px solid var(--line);
+  }
+
+  .doc-section:first-child {
+    border-top: 0;
+  }
+
+  @media (min-width: 64rem) {
+    .doc-section:not([data-wide]) {
+      grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+    }
+
+    .doc-section:not([data-wide]) .doc-section-heading {
+      position: sticky;
+      top: calc(var(--header-height) + 1.5rem);
+      align-self: start;
+    }
+  }
+
+  /* ---- Logbook table ---------------------------------------------------- */
+  .logbook {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+  }
+
+  @media (min-width: 64rem) {
+    .logbook {
+      table-layout: fixed;
+    }
+
+    .logbook col[data-col="period"] {
+      width: 9.5rem;
+    }
+
+    .logbook col[data-col="role"] {
+      width: 11rem;
+    }
+
+    .logbook col[data-col="employer"] {
+      width: 10rem;
+    }
+
+    .logbook col[data-col="client"] {
+      width: 14rem;
+    }
+  }
+
+  .logbook thead th {
+    padding: 0 1rem 0.75rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    font-weight: 400;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    white-space: nowrap;
+    vertical-align: bottom;
+  }
+
+  .logbook tbody :is(td, th) {
+    padding: 1.25rem 1rem 1.25rem 0;
+    border-top: 1px solid var(--line);
+    vertical-align: top;
+  }
+
+  .logbook tbody th {
+    font-weight: 700;
+  }
+
+  .logbook tr > :last-child {
+    padding-right: 0;
+  }
+
+  /* Below the table breakpoint each row becomes a labelled block. */
+  @media (max-width: 63.999rem) {
+    .logbook,
+    .logbook tbody,
+    .logbook tr,
+    .logbook tbody :is(td, th) {
+      display: block;
+    }
+
+    .logbook thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    .logbook tr {
+      padding-block: 1.5rem;
+      border-top: 1px solid var(--line);
+    }
+
+    .logbook tbody :is(td, th) {
+      padding: 0.25rem 0;
+      border: 0;
+    }
+
+    .logbook tbody th {
+      font-size: 1.125rem;
+    }
+
+    .logbook td[data-label]::before {
+      content: attr(data-label);
+      display: block;
+      margin-top: 0.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.6875rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--ink-muted);
+    }
+  }
+}
+
+/* ==========================================================================
+   Flight section
+
+   Static mode (default): chapters are ordinary blocks with a painted sky.
+   Live mode (set before first paint when the device can run the 3D scene):
+   the stage sticks to the viewport and each chapter is as tall as its share
+   of the flight, so scroll position encodes flight progress.
+   ========================================================================== */
+
+@layer components {
+  .flight {
+    position: relative;
+    /* Scroll distance of the whole flight in live mode. */
+    --flight-length: 1300svh;
+  }
+
+  .flight-stage {
+    display: none;
+  }
+
+  /* Painted sky used in static mode and behind the canvas while it loads.
+     Chapter skies are sky only; the opening adds a horizon and ground. */
+  .sky {
+    --sky-zenith: #070b14;
+    --sky-mid: #16233b;
+    --sky-horizon: #3a4d6b;
+    background: linear-gradient(
+      to bottom,
+      var(--sky-zenith) 0%,
+      var(--sky-mid) 55%,
+      var(--sky-horizon) 100%
+    );
+  }
+
+  /* Opening: pre-dawn sky, a thin band of light on the horizon, dark ground. */
+  .sky[data-sky="0"] {
+    background:
+      radial-gradient(ellipse 62% 20% at 50% var(--horizon), rgb(244 162 97 / 0.5), transparent 72%),
+      linear-gradient(
+        to bottom,
+        #05080f 0%,
+        #0a1429 calc(var(--horizon) - 26%),
+        #17264a calc(var(--horizon) - 11%),
+        #4a3f58 calc(var(--horizon) - 4%),
+        #c98258 calc(var(--horizon) - 1%),
+        #f6b072 calc(var(--horizon) - 0.1%),
+        #070a11 calc(var(--horizon) + 0.1%),
+        #05070c 100%
+      );
+  }
+  .sky[data-sky="1"] {
+    --sky-zenith: #0f2444;
+    --sky-mid: #3f72a3;
+    --sky-horizon: #e3c49a;
+  }
+  .sky[data-sky="2"] {
+    --sky-zenith: #133559;
+    --sky-mid: #4f88b6;
+    --sky-horizon: #b9d3dd;
+  }
+  .sky[data-sky="3"] {
+    --sky-zenith: #1f3650;
+    --sky-mid: #6887a1;
+    --sky-horizon: #c9c8be;
+  }
+  .sky[data-sky="4"] {
+    --sky-zenith: #143a62;
+    --sky-mid: #548fbd;
+    --sky-horizon: #bfd6df;
+  }
+  .sky[data-sky="5"] {
+    --sky-zenith: #173c66;
+    --sky-mid: #5d97c4;
+    --sky-horizon: #c6d9e3;
+  }
+  .sky[data-sky="6"] {
+    --sky-zenith: #0d1b38;
+    --sky-mid: #415b89;
+    --sky-horizon: #f3b47a;
+  }
+
+  .chapter {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .chapter-backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+  }
+
+  /* Darkens the sky behind text so contrast holds on every chapter. */
+  .chapter-backdrop::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      rgb(5 8 15 / 0.72) 0%,
+      rgb(5 8 15 / 0.5) 45%,
+      rgb(5 8 15 / 0.82) 100%
+    );
+  }
+
+  .opening .chapter-backdrop::after {
+    background: linear-gradient(
+      to bottom,
+      rgb(5 8 15 / 0.3) 0%,
+      transparent 30%,
+      transparent 60%,
+      rgb(5 8 15 / 0.45) 100%
+    );
+  }
+
+  .chapter-panel {
+    padding-block: clamp(4rem, 9vw, 7rem);
+  }
+
+  /* ---- Live mode --------------------------------------------------------- */
+  [data-flight="live"] .flight-stage {
+    display: block;
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    overflow: hidden;
+  }
+
+  [data-flight="live"] .flight-narrative {
+    position: relative;
+    margin-top: -100svh;
+    pointer-events: none;
+  }
+
+  [data-flight="live"] .flight-narrative :is(a, button, summary, [tabindex]) {
+    pointer-events: auto;
+  }
+
+  [data-flight="live"] .chapter {
+    height: calc(var(--span) * var(--flight-length));
+  }
+
+  [data-flight="live"] .chapter:last-child {
+    /* The last chapter also holds the final viewport of the flight. */
+    height: calc(var(--span) * var(--flight-length) + 100svh);
+  }
+
+  [data-flight="live"] .chapter-backdrop {
+    display: none;
+  }
+
+  [data-flight="live"] .chapter-panel {
+    position: sticky;
+    top: 0;
+    height: 100svh;
+    padding-block: calc(var(--header-height) + 1.5rem) 5.5rem;
+    overflow: hidden;
+  }
+}
+
+/* ==========================================================================
+   Opening
+   ========================================================================== */
+
+@layer components {
+  .opening {
+    /* Height of the horizon line, measured from the top of the opening. */
+    --horizon: 42%;
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    min-height: 100svh;
+    align-items: end;
+  }
+
+  @media (min-width: 48rem) {
+    .opening {
+      --horizon: 52%;
+    }
+  }
+
+  [data-flight="live"] .opening {
+    height: calc(var(--span) * var(--flight-length));
+    align-items: start;
+  }
+
+  [data-flight="live"] .opening-panel {
+    position: sticky;
+    top: 0;
+    display: grid;
+    height: 100svh;
+    align-items: end;
+  }
+
+  [data-flight="live"] .opening .chapter-backdrop {
+    display: none;
+  }
+
+  /* Runway edge lights converging on the horizon: the static stand-in for
+     the 3D runway. Drawn to the right of the text column on wide screens. */
+  .runway {
+    position: absolute;
+    inset: var(--horizon) 0 0 0;
+    z-index: -1;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse 55% 70% at 50% 0%, rgb(244 162 97 / 0.16), transparent 70%),
+      linear-gradient(to bottom, #0a0e17, #05070c);
+  }
+
+  @media (min-width: 64rem) {
+    .runway::before,
+    .runway::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 74%;
+      width: 2px;
+      height: 46%;
+      transform-origin: top center;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgb(255 244 214 / 0.95) 0 2px,
+        transparent 2px 20px
+      );
+      mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 55%, transparent);
+    }
+
+    .runway::before {
+      transform: rotate(40deg);
+    }
+
+    .runway::after {
+      transform: rotate(-40deg);
+    }
+  }
+
+  [data-flight="live"] .runway {
+    display: none;
+  }
+}
+
+/* ==========================================================================
+   Flight HUD
+
+   One instrument bar along the bottom of the stage: a progress rail whose
+   ticks are the chapter links, placed at their true position on the
+   timeline, above a strip of labelled readouts.
+   ========================================================================== */
+
+@layer components {
+  .hud {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 20;
+    padding-top: 3rem;
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+    background: linear-gradient(to top, rgb(5 8 15 / 0.9) 38%, rgb(5 8 15 / 0.55) 68%, rgb(5 8 15 / 0));
+    pointer-events: none;
+  }
+
+  .hud a {
+    pointer-events: auto;
+  }
+
+  .hud-rail {
+    position: relative;
+    height: 2.75rem;
+    margin-inline: 0.875rem;
+  }
+
+  .hud-rail-track {
+    position: absolute;
+    inset-inline: 0;
+    top: 0.875rem;
+    height: 1px;
+    background: var(--line-strong);
+  }
+
+  .hud-rail-fill {
+    position: absolute;
+    inset: 0;
+    background: var(--accent);
+    transform-origin: left center;
+    transform: scaleX(var(--progress, 0));
+  }
+
+  .hud-rail ol {
+    position: absolute;
+    inset: 0;
+  }
+
+  .hud-rail li {
+    position: absolute;
+    top: 0;
+    left: calc(var(--at) * 100%);
+    height: 100%;
+    transform: translateX(-50%);
+  }
+
+  .hud-rail a {
+    position: relative;
+    display: flex;
+    min-width: 1.75rem;
+    height: 100%;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 0.25rem;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.08em;
+    color: var(--ink-muted);
+    text-decoration: none;
+    transition: color 160ms var(--ease-flight);
+  }
+
+  /* Tick on the rail. */
+  .hud-rail a::before {
+    content: "";
+    position: absolute;
+    top: 0.5rem;
+    left: 50%;
+    width: 1px;
+    height: 0.8125rem;
+    background: currentColor;
+  }
+
+  .hud-rail a:hover,
+  .hud-rail a[data-passed="true"] {
+    color: var(--ink);
+  }
+
+  .hud-rail a[aria-current="step"] {
+    color: var(--accent);
+  }
+
+  .hud-strip {
+    display: flex;
+    align-items: stretch;
+    border-top: 1px solid var(--line);
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .hud-field {
+    display: none;
+    align-items: baseline;
+    gap: 0.625rem;
+    padding: 0.625rem 1rem 0.375rem;
+    border-right: 1px solid var(--line);
+    white-space: nowrap;
+  }
+
+  .hud-field:first-child {
+    padding-left: 0;
+  }
+
+  .hud-field dt {
+    color: var(--ink-muted);
+  }
+
+  .hud-field dd {
+    color: var(--ink);
+  }
+
+  /* Narrow screens keep only the chapter and the progress readout. */
+  .hud-field[data-priority="1"] {
+    display: flex;
+    min-width: 0;
+  }
+
+  .hud-field[data-priority="1"] dd {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .hud-field[data-field="progress"] {
+    margin-left: auto;
+    border-right: 0;
+    border-left: 1px solid var(--line);
+    padding-right: 0;
+  }
+
+  @media (min-width: 48rem) {
+    .hud-field[data-priority="2"] {
+      display: flex;
+    }
+  }
+
+  @media (min-width: 72rem) {
+    .hud-field[data-priority="3"] {
+      display: flex;
+    }
+  }
+
+  /* ---- Static chapter index --------------------------------------------- */
+  .chapter-index a {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    align-items: baseline;
+    gap: 0.75rem;
+    min-height: 3rem;
+    padding-block: 0.75rem;
+    border-top: 1px solid var(--line);
+    text-decoration: none;
+    transition: border-color 160ms var(--ease-flight);
+  }
+
+  .chapter-index a:hover {
+    border-top-color: var(--accent);
+  }
+
+  [data-flight="live"] .chapter-index {
+    display: none;
+  }
+
+  /* In live mode the intro keeps its heading for assistive technology but
+     takes no space, so scroll distance maps exactly onto flight progress. */
+  [data-flight="live"] .flight-intro {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
 }
