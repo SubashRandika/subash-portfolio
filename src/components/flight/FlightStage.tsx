@@ -2,7 +2,6 @@
 
 import dynamic from "next/dynamic";
 import { Component, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
-import { setFlightTarget } from "@/flight/store";
 import { fallBackToStatic, markFlightReady, useFlightMode } from "@/hooks/useFlightMode";
 
 const FlightExperience = dynamic(() => import("@/components/flight/FlightExperience"), {
@@ -29,24 +28,27 @@ class SceneBoundary extends Component<
   }
 }
 
-/** Maps the scroll position of the flight section onto flight progress. */
-function useScrollProgress(enabled: boolean) {
+/**
+ * Starts the flight director (the GSAP master timeline) while the page is in
+ * live mode. GSAP is loaded on demand so static-mode visitors never download it.
+ */
+function useFlightDirector(enabled: boolean) {
   useEffect(() => {
     if (!enabled) return;
     const section = document.getElementById("flight");
     if (!section) return;
 
-    const update = () => {
-      const rect = section.getBoundingClientRect();
-      const distance = rect.height - window.innerHeight;
-      setFlightTarget(distance > 0 ? -rect.top / distance : 0);
-    };
-    update();
-    window.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
+    let cancelled = false;
+    let destroy: (() => void) | null = null;
+
+    void import("@/components/flight/director").then(({ createFlightDirector }) => {
+      if (cancelled) return;
+      destroy = createFlightDirector(section).destroy;
+    });
+
     return () => {
-      window.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
+      cancelled = true;
+      destroy?.();
     };
   }, [enabled]);
 }
@@ -62,7 +64,7 @@ export function FlightStage() {
   const hostRef = useRef<HTMLDivElement>(null);
   const [onScreen, setOnScreen] = useState(true);
 
-  useScrollProgress(live);
+  useFlightDirector(live);
 
   // Stop rendering frames while the stage is scrolled out of view.
   useEffect(() => {

@@ -25,15 +25,15 @@ Taken from the brief and treated as fixed unless Subash changes them:
 | 01 | Project inspection and architecture planning | Complete |
 | 02 | Design system and responsive foundation | Complete |
 | 03 | Aircraft and flight prototype | Complete |
-| 04 | Master scroll timeline | In progress |
-| 05 | Six realistic geographical environments | Not started |
+| 04 | Master scroll timeline | Complete |
+| 05 | Six realistic geographical environments | In progress |
 | 06 | Career storytelling and milestone integration | Not started |
 | 07 | Complete portfolio sections | Not started |
 | 08 | Performance and accessibility optimization | Not started |
 | 09 | SEO and deployment readiness | Not started |
 | 10 | Final QA and release | Not started |
 
-**Current phase:** 04 — Master scroll timeline.
+**Current phase:** 05 — Six realistic geographical environments.
 
 ## Architecture and technical decisions
 
@@ -53,6 +53,9 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Headline decisions:
 13. Per-frame values live in `src/flight/frame.ts` (a plain mutable object). The flight controller fills it first each frame; sky, lights, runway and aircraft read from it.
 14. Scene-graph objects that are mutated every frame are held in refs and changed inside module-level functions. This keeps the React Compiler lint rules (`react-hooks/immutability`) enabled without exceptions.
 15. Custom surface shaders share one lighting and fog model (`shaders/lighting.glsl.ts`) that mirrors Three.js standard materials, so the ground and the aircraft agree about the light.
+16. One GSAP timeline of duration 1, scrubbed by ScrollTrigger, is the only scroll clock (`src/components/flight/director.ts`). Its playhead is flight progress; the 3D scene, chapter text, milestones and HUD all read from it, and every tween is an explicit `fromTo`, so scrubbing backward replays the same states.
+17. Navigation within the flight glides when the target is close (Begin flight plays the takeoff) and cuts through a short veil when it is far, so a jump never streaks through several environments or forces them all to load.
+18. Where the full milestone list does not fit (narrow or short viewports) the milestones share one slot and only the current one shows; portrait frames put the aircraft in the top of the frame and the text beneath it.
 10. Milestone summaries are optional: when the brief says nothing beyond a milestone's title, the card shows the title alone rather than padded copy.
 
 ## Phase summaries
@@ -141,10 +144,41 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Headline decisions:
 
 **Limitations carried forward:**
 
-- Chapter text is not yet choreographed: panels overlap during transitions and the HUD shows its initial values. Both belong to Phase 04.
+- Chapter text is not yet choreographed: panels overlap during transitions and the HUD shows its initial values. Both belong to Phase 04. *(Resolved in Phase 04.)*
 - The ground is a flat placeholder. Terrain, coastline and airport buildings arrive in Phase 05.
 - Landing gear folds into the airframe without gear doors.
 - The aircraft is a procedural model: convincing at chase-camera distance, not a hero-shot asset.
+
+### Phase 04 — Master scroll timeline (complete)
+
+**Implemented:**
+
+- **Flight director** (`src/components/flight/director.ts`, loaded on demand in live mode only): a GSAP master timeline scrubbed by ScrollTrigger across the flight section (scrub 0.7 s, 0.35 s on touch). It drives flight progress for the scene, the opening's exit, each chapter's intro and exit, the closing message, and the current-milestone highlight.
+- **Chapter beats** (`src/flight/waypoints.ts`): pure functions placing each chapter's intro, milestones, exit and closing within its range; the same numbers place the HUD waypoint ticks, so cards and ticks always agree. Unit-tested.
+- **Camera choreography for all six chapters** (`src/flight/shots.ts`): rear chase, side tracking, high aerial, top-down (chapter 4, aligned to the route heading), cinematic close-up and wide establishing shots, blended by progress.
+- **Live HUD:** progress rail fill, percentage, chapter number, title and destination, passed-chapter state, and milestone waypoint ticks (wide screens with a fine pointer). Updated from the GSAP ticker by writing DOM text and CSS variables directly; React does not re-render while scrolling.
+- **Navigation:** HUD chapter links, milestone waypoints and Begin flight are intercepted only inside the flight. Close targets glide; far targets cut through a 260 ms veil and finish the scrub at once. Any wheel, touch or scroll key cancels a glide. The URL hash is updated with `replaceState`.
+- **Opening entrance:** the tagline paints first and is never hidden; the follow line, identity and "Scroll to fly at your own pace" hint rise in after it.
+- **Layout fixes found in review:** milestone point lists leaked into the compact live cards (a Tailwind utility outranked the component rule); chapter 5 overflowed short and narrow viewports; the text scrim dimmed the HUD; the jet sat behind the text in portrait. All fixed.
+- Milestone element ids now start with a letter (`milestone-1-career-start`) so they are valid CSS selectors; found by the existing link-target test.
+
+**Files:** `src/components/flight/{director.ts,FlightStage.tsx,FlightController.tsx}`, `src/flight/{waypoints.ts,shots.ts,flight.test.ts}`, `src/components/storytelling/{FlightHUD,FlightSection,ChapterSection,MilestoneCard,Opening}.tsx`, `src/app/globals.css`, `e2e/flight.spec.ts`.
+
+**Verification (2026-11-16):**
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Pass |
+| `npm run typecheck` | Pass |
+| `npm run test` | Pass, 72 of 72 in 7 files |
+| `npm run test:e2e` | Pass, 60 of 60 (desktop, tablet, mobile). New live tests: HUD and chapter text forward and backward with skipped chapters, one lit milestone that reverses cleanly, Begin flight glide, HUD chapter jump |
+| `npm run build` | Pass (run by the end-to-end suite); all routes static |
+| Visual review | Headless Chrome at 1440 × 900, 1366 × 768 and 390 × 844 across the whole flight |
+
+**Limitations carried forward:**
+
+- Milestone cards are titles only in the flight; their detail lives in the Experience section. Opening a card for its detail belongs to Phase 06.
+- The world is still the Phase 03 airport and flat ground beyond it; the six environments are Phase 05.
 
 ## Known issues
 
@@ -153,6 +187,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Headline decisions:
 - **Blender is not installed**, so asset preparation is done in code.
 - **The dev server's file watcher sometimes misses stylesheet writes** on this machine (seen with Turbopack on Windows). Re-saving `src/app/globals.css` triggers the rebuild. Production builds are unaffected.
 - **Browser automation only renders frames when a screenshot forces one**, because the automation window is occluded and `requestAnimationFrame` is throttled. Visual checks therefore take a priming screenshot first.
+- In the automation window GSAP's lag smoothing caps each throttled frame at 33 ms, so a 0.7 s scrub takes many seconds to settle there. Headless runs, which render at full rate, settle normally; the end-to-end tests run headless.
 - Three.js r187 logs two deprecation warnings that originate inside React Three Fiber (`THREE.Clock`, `PCFSoftShadowMap`). They are harmless.
 - **A `next dev` server for this project was already running on port 3000** (not started by this build process). It was left running and used for visual checks. Next.js allows only one dev server per project directory.
 
@@ -174,4 +209,4 @@ These block publishing the affected content, not the build. Until answered the f
 
 ## Next planned activities
 
-Phase 04: GSAP ScrollTrigger master timeline, choreographed chapter text (fade in and out with progress), live HUD readouts and rail, waypoint markers, the full six-chapter camera choreography, and precise chapter navigation.
+Phase 05: the six geographical environments (coastal airport and countryside, mountain valleys, industrial region, geographical terrain, modern city, clouds and sunrise) on one continuous procedural world, with progress-windowed loading so only the current and next environment are mounted.

@@ -70,6 +70,91 @@ test.describe("live flight", () => {
     expect(overflow).toBeLessThanOrEqual(0);
   });
 
+  test("drives the HUD and chapter text in both directions", async ({ page }) => {
+    const percent = page.locator("[data-hud='percent']");
+    const chapter = page.locator("[data-hud='chapter-count']");
+    const opening = page.locator("[data-flight-part='opening']");
+    const body = (n: number) => page.locator(`#chapter-0${n} [data-flight-part='body']`);
+
+    // The director is loaded on demand; wait until it owns the chapter text.
+    await expect(body(1)).toBeHidden({ timeout: 30_000 });
+    await expect(opening).toBeVisible();
+
+    const visit = async (progress: number, segment: string, visibleChapter: number | null) => {
+      await scrollToProgress(page, progress);
+      await expect(percent).toHaveText(String(Math.round(progress * 100)).padStart(3, "0"), {
+        timeout: 15_000,
+      });
+      await expect(chapter).toHaveText(segment);
+      if (visibleChapter === null) return;
+      await expect(body(visibleChapter)).toBeVisible();
+      for (const other of [1, 2, 3, 4, 5, 6].filter((n) => n !== visibleChapter)) {
+        await expect(body(other)).toBeHidden();
+      }
+    };
+
+    // Forward…
+    await visit(0.15, "01 / 06", 1);
+    await visit(0.45, "03 / 06", 3);
+    await visit(0.75, "05 / 06", 5);
+    await expect(opening).toBeHidden();
+    // …and back again, skipping chapters on the way.
+    await visit(0.3, "02 / 06", 2);
+    await visit(0.15, "01 / 06", 1);
+    await visit(0, "Takeoff", null);
+    await expect(opening).toBeVisible();
+    for (const n of [1, 2, 3, 4, 5, 6]) await expect(body(n)).toBeHidden();
+  });
+
+  test("lights one milestone at a time and reverses cleanly", async ({ page }) => {
+    const lit = () =>
+      page.evaluate(() =>
+        Array.from(document.querySelectorAll<HTMLElement>("#chapter-02 [data-milestone]"))
+          .filter((card) => Number(getComputedStyle(card).getPropertyValue("--lit")) > 0.5)
+          .map((card) => card.dataset.milestone),
+      );
+
+    await expect(page.locator("#chapter-01 [data-flight-part='body']")).toBeHidden({
+      timeout: 30_000,
+    });
+    // Chapter 02 runs 0.22–0.38; its milestones spread across the middle.
+    await scrollToProgress(page, 0.3);
+    await expect.poll(lit, { timeout: 15_000 }).toHaveLength(1);
+    const middle = (await lit())[0];
+    await scrollToProgress(page, 0.36);
+    await expect.poll(lit, { timeout: 15_000 }).not.toEqual([middle]);
+    await scrollToProgress(page, 0.3);
+    await expect.poll(lit, { timeout: 15_000 }).toEqual([middle]);
+  });
+
+  test("Begin flight glides through the takeoff into chapter 1", async ({ page }) => {
+    await expect(page.locator("#chapter-01 [data-flight-part='body']")).toBeHidden({
+      timeout: 30_000,
+    });
+    await page.getByRole("link", { name: "Begin flight" }).click();
+    // A glide, not a cut: the veil stays down and progress passes through the roll.
+    await expect(page.locator(".flight-veil")).not.toHaveAttribute("data-on", "true");
+    await expect(page.locator("[data-hud='chapter-count']")).toHaveText("01 / 06", {
+      timeout: 15_000,
+    });
+    await expect(page.locator("#chapter-01 [data-flight-part='body']")).toBeVisible();
+    await expect(page).toHaveURL(/#chapter-01$/);
+  });
+
+  test("flies to a chapter from the HUD", async ({ page }) => {
+    await expect(page.locator("#chapter-01 [data-flight-part='body']")).toBeHidden({
+      timeout: 30_000,
+    });
+    const link = page.locator("[data-hud-segment='4']");
+    test.skip(!(await link.isVisible()), "The chapter rail is not shown at this size");
+    await link.click();
+    await expect(page.locator("[data-hud='chapter-count']")).toHaveText("04 / 06", {
+      timeout: 15_000,
+    });
+    await expect(page.locator("#chapter-04 [data-flight-part='body']")).toBeVisible();
+    await expect(page).toHaveURL(/#chapter-04$/);
+  });
+
   test("still reaches the portfolio below the flight", async ({ page }) => {
     await page.getByRole("link", { name: "Skip to portfolio" }).click();
     await expect(page).toHaveURL(/#about$/);

@@ -31,6 +31,7 @@ export function FlightSection({ profile, chapters }: FlightSectionProps) {
         <div className="absolute inset-0" aria-hidden="true">
           <FlightStage />
         </div>
+        <div className="flight-veil" aria-hidden="true" />
         <FlightHUD chapters={chapters} profile={profile} />
       </div>
 

@@ -33,37 +33,42 @@ export function ChapterSection({ chapter, totalChapters, children }: ChapterSect
       <div className="chapter-backdrop sky" data-sky={chapter.number} aria-hidden="true" />
       <div className="chapter-panel">
         <div className="shell">
-          <header className="max-w-2xl">
-            <p className="type-label text-ink-muted">
-              <span className="text-accent-ink">
-                Chapter {pad2(chapter.number)}
-                <span aria-hidden="true"> / {pad2(totalChapters)}</span>
-              </span>
-              <span aria-hidden="true" className="mx-3 inline-block h-px w-6 bg-line-strong align-middle" />
-              {chapter.period}
-            </p>
-            <h3 id={headingId} className="type-display-lg mt-4">
-              {chapter.title}
-            </h3>
-            <p className="mt-4 text-[1.0625rem] font-bold">
-              {chapter.organisation}
-              {chapter.product ? (
-                <span className="font-normal text-ink-muted"> — {chapter.product}</span>
-              ) : null}
-            </p>
-            <p className="type-lead mt-3 text-ink-muted">{chapter.narrative}</p>
-          </header>
+          <div data-flight-part="body">
+            <header className="max-w-2xl">
+              <p className="type-label text-ink-muted">
+                <span className="text-accent-ink">
+                  Chapter {pad2(chapter.number)}
+                  <span aria-hidden="true"> / {pad2(totalChapters)}</span>
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="mx-3 inline-block h-px w-6 bg-line-strong align-middle"
+                />
+                {chapter.period}
+              </p>
+              <h3 id={headingId} className="type-display-lg mt-4">
+                {chapter.title}
+              </h3>
+              <p className="mt-4 text-[1.0625rem] font-bold">
+                {chapter.organisation}
+                {chapter.product ? (
+                  <span className="font-normal text-ink-muted"> — {chapter.product}</span>
+                ) : null}
+              </p>
+              <p className="type-lead mt-3 text-ink-muted">{chapter.narrative}</p>
+            </header>
 
-          <ol className="milestones">
-            {chapter.milestones.map((milestone, index) => (
-              <MilestoneCard
-                key={milestone.id}
-                milestone={milestone}
-                chapter={chapter.number}
-                position={index + 1}
-              />
-            ))}
-          </ol>
+            <ol className="milestones">
+              {chapter.milestones.map((milestone, index) => (
+                <MilestoneCard
+                  key={milestone.id}
+                  milestone={milestone}
+                  chapter={chapter.number}
+                  position={index + 1}
+                />
+              ))}
+            </ol>
+          </div>
 
           {children}
         </div>

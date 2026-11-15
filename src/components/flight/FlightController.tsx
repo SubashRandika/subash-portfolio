@@ -12,8 +12,12 @@ import { LIFTOFF, flightPose } from "@/flight/path";
 import { type CameraPose, cameraPose } from "@/flight/shots";
 import { commitFlightProgress, flightStore } from "@/flight/store";
 
-/** How quickly drawn progress follows scroll. Higher is tighter. */
-const RESPONSE = 5.5;
+/**
+ * How quickly drawn progress follows the director's timeline. The timeline is
+ * already smoothed by ScrollTrigger's scrub, so this only removes the last
+ * frame-to-frame unevenness.
+ */
+const RESPONSE = 14;
 
 /**
  * A change in target larger than this is a jump (a chapter link, a restored
@@ -67,8 +71,11 @@ function applyRig(rig: AircraftRig, frame: FlightFrame, state: AircraftState, st
 
 const _target = new THREE.Vector3();
 
-/** Portrait frames lift the aircraft into the upper half, above the text. */
-const PORTRAIT_LIFT = 0.17;
+/**
+ * Portrait frames lift the aircraft into the upper part of the frame; the
+ * text is bottom-aligned beneath it (see the portrait rules in globals.css).
+ */
+const PORTRAIT_LIFT = 0.27;
 
 /** Last view offset applied, so the projection is only rebuilt when it changes. */
 const appliedOffset = { x: Number.NaN, y: Number.NaN, width: 0, height: 0 };

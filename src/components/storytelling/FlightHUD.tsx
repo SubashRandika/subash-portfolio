@@ -1,7 +1,9 @@
 import type { CSSProperties } from "react";
 import { OPENING_RANGE, type TimelineSegment, clamp01 } from "@/flight/timeline";
+import { chapterBeats } from "@/flight/waypoints";
 import { pad2 } from "@/lib/utils";
 import type { Chapter, Profile } from "@/types/portfolio";
+import { milestoneId, waypointRef } from "./MilestoneCard";
 
 interface FlightHUDProps {
   chapters: readonly Chapter[];
@@ -17,30 +19,61 @@ export function formatProgress(progress: number): string {
   return String(Math.round(clamp01(progress) * 100)).padStart(3, "0");
 }
 
+/** Readout shown for the takeoff sequence, before chapter 1. */
+export const TAKEOFF_READOUT = { count: "Takeoff", title: "Runway" } as const;
+
 /**
  * The persistent flight HUD.
  *
  * Rendered with initial values on the server. Elements that change during the
- * flight carry `data-hud` hooks; the flight controller updates them directly
- * instead of re-rendering React on every scroll frame.
+ * flight carry `data-hud` hooks, and each chapter link carries the readout
+ * text for its chapter; the flight director updates them directly instead of
+ * re-rendering React on every scroll frame.
  */
 export function FlightHUD({ chapters, profile, segment = 0, progress = 0 }: FlightHUDProps) {
   const current = chapters.find((chapter) => chapter.number === segment);
   const total = chapters.length;
   const railStyle = { "--progress": clamp01(progress) } as CSSProperties;
+  const firstDestination = chapters[0]?.destination ?? "";
 
   return (
     <div className="hud" data-hud="root">
       <div className="shell">
-        <nav aria-label="Flight chapters" className="hud-rail" style={railStyle}>
+        <nav aria-label="Flight chapters" className="hud-rail" data-hud="rail" style={railStyle}>
           <span className="hud-rail-track" aria-hidden="true">
-            <span className="hud-rail-fill" data-hud="fill" />
+            <span className="hud-rail-fill" />
           </span>
+
+          {/* Milestone waypoints: a pointer shortcut. The milestone cards are
+              the accessible route to the same places. */}
+          <ul className="hud-waypoints" aria-hidden="true">
+            {chapters.flatMap((chapter) => {
+              const beats = chapterBeats(chapter.number, chapter.milestones.length);
+              return chapter.milestones.map((milestone, index) => (
+                <li
+                  key={`${chapter.id}-${milestone.id}`}
+                  style={{ "--at": beats.milestones[index] } as CSSProperties}
+                >
+                  <a
+                    href={`#${milestoneId(chapter.number, milestone)}`}
+                    tabIndex={-1}
+                    title={milestone.title}
+                    data-hud-waypoint={waypointRef(chapter.number, index + 1)}
+                    data-at={beats.milestones[index]}
+                  />
+                </li>
+              ));
+            })}
+          </ul>
+
           <ol>
             <li style={{ "--at": OPENING_RANGE[0] } as CSSProperties}>
               <a
                 href="#takeoff"
                 data-hud-segment={0}
+                data-count={TAKEOFF_READOUT.count}
+                data-title={TAKEOFF_READOUT.title}
+                data-destination={firstDestination}
                 aria-current={segment === 0 ? "step" : undefined}
               >
                 <span aria-hidden="true">T/O</span>
@@ -52,6 +85,9 @@ export function FlightHUD({ chapters, profile, segment = 0, progress = 0 }: Flig
                 <a
                   href={`#${chapter.id}`}
                   data-hud-segment={chapter.number}
+                  data-count={`${pad2(chapter.number)} / ${pad2(total)}`}
+                  data-title={chapter.title}
+                  data-destination={chapter.destination}
                   data-passed={chapter.number < segment ? "true" : undefined}
                   aria-current={chapter.number === segment ? "step" : undefined}
                 >
@@ -72,13 +108,13 @@ export function FlightHUD({ chapters, profile, segment = 0, progress = 0 }: Flig
           </div>
           <div className="hud-field" data-priority="1">
             <dt data-hud="chapter-count">
-              {current ? `${pad2(current.number)} / ${pad2(total)}` : "Takeoff"}
+              {current ? `${pad2(current.number)} / ${pad2(total)}` : TAKEOFF_READOUT.count}
             </dt>
-            <dd data-hud="chapter-title">{current ? current.title : "Runway"}</dd>
+            <dd data-hud="chapter-title">{current ? current.title : TAKEOFF_READOUT.title}</dd>
           </div>
           <div className="hud-field" data-priority="2">
             <dt>Dest</dt>
-            <dd data-hud="destination">{current ? current.destination : chapters[0]?.destination}</dd>
+            <dd data-hud="destination">{current ? current.destination : firstDestination}</dd>
           </div>
           <div className="hud-field" data-priority="3">
             <dt>Exp</dt>

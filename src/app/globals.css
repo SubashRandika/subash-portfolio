@@ -390,6 +390,12 @@
     padding: 0.875rem 1rem 1rem;
   }
 
+  /* A component class rather than a utility, so live mode can hide it. */
+  .milestone-points {
+    display: grid;
+    gap: 0.25rem;
+  }
+
   .milestones {
     display: grid;
     gap: 0.75rem;
@@ -742,7 +748,32 @@
     position: absolute;
     inset: 0;
     z-index: -1;
-    background: linear-gradient(to right, rgb(5 8 15 / 0.66), rgb(5 8 15 / 0.28) 34%, transparent 58%);
+    background: linear-gradient(
+      to right,
+      rgb(5 8 15 / 0.76),
+      rgb(5 8 15 / 0.5) 36%,
+      transparent 62%
+    );
+    /* The narrative paints above the stage, so stop short of the HUD band
+       rather than dimming its readouts. */
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 9rem), transparent calc(100% - 5rem));
+  }
+
+  /* Portrait frames: the aircraft flies in the upper part of the frame (see
+     PORTRAIT_LIFT in FlightController) and the text sits beneath it. */
+  @media (max-aspect-ratio: 1/1) {
+    [data-flight="live"] .chapter-panel {
+      align-items: flex-end;
+    }
+
+    [data-flight="live"] .chapter-panel::before {
+      background: linear-gradient(
+        to top,
+        rgb(5 8 15 / 0.78),
+        rgb(5 8 15 / 0.55) 45%,
+        transparent 72%
+      );
+    }
   }
 
   [data-flight="live"] .chapter-panel header {
@@ -774,8 +805,89 @@
     display: none;
   }
 
+  /* The current milestone is lit; the ones already passed step back. */
+  [data-flight="live"] .milestone {
+    position: relative;
+  }
+
+  [data-flight="live"] .milestone::before {
+    content: "";
+    position: absolute;
+    inset-block: -1px;
+    left: -1px;
+    width: 2px;
+    background: var(--accent);
+    opacity: var(--lit, 0);
+  }
+
+  [data-flight="live"] .milestone-body {
+    opacity: calc(0.6 + 0.4 * var(--lit, 0));
+  }
+
+  /* Where a full list will not fit, milestones share one slot and only the
+     current one shows; the HUD waypoints still show how far along it is.
+     filter, not opacity: the director animates opacity for entrances. */
+  @media (max-width: 40rem), (max-height: 50rem) {
+    [data-flight="live"] .milestone {
+      grid-area: 1 / 1;
+      filter: opacity(var(--lit, 0));
+    }
+
+    [data-flight="live"] .milestone-body {
+      opacity: 1;
+    }
+  }
+
+  [data-flight="live"] .chapter-panel .shell {
+    position: relative;
+  }
+
+  /* The closing message takes the place of the last chapter's text. */
   [data-flight="live"] .flight-closing {
-    display: none;
+    position: absolute;
+    top: 50%;
+    left: 0;
+    max-width: 34rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    translate: 0 -50%;
+  }
+
+  /* Veil used to cut between distant parts of the flight (see director.ts). */
+  .flight-veil {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    background: var(--color-night-950);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 240ms var(--ease-flight);
+  }
+
+  .flight-veil[data-on="true"] {
+    opacity: 1;
+  }
+
+  /* Staged entrance for the opening: tagline first, then the rest. The
+     tagline itself is never hidden, so it paints immediately. */
+  @keyframes opening-rise {
+    from {
+      opacity: 0;
+      transform: translateY(0.75rem);
+    }
+  }
+
+  [data-flight="live"] [data-opening="follow"] {
+    animation: opening-rise 900ms 450ms var(--ease-settle) both;
+  }
+
+  [data-flight="live"] [data-opening="identity"] {
+    animation: opening-rise 900ms 1050ms var(--ease-settle) both;
+  }
+
+  [data-flight="live"] [data-opening="hint"] {
+    animation: opening-rise 900ms 1800ms var(--ease-settle) both;
   }
 }
 
@@ -1009,6 +1121,56 @@
     .hud-field[data-priority="3"] {
       display: flex;
     }
+  }
+
+  /* Milestone waypoints on the rail: small ticks, a pointer shortcut. */
+  .hud-waypoints {
+    position: absolute;
+    inset: 0;
+    display: none;
+  }
+
+  @media (min-width: 64rem) and (pointer: fine) {
+    .hud-waypoints {
+      display: block;
+    }
+  }
+
+  .hud-waypoints li {
+    position: absolute;
+    top: 0;
+    left: calc(var(--at) * 100%);
+    transform: translateX(-50%);
+  }
+
+  .hud-waypoints a {
+    position: relative;
+    display: block;
+    width: 0.625rem;
+    height: 1.75rem;
+    min-width: 0;
+    padding: 0;
+  }
+
+  .hud-waypoints a::before {
+    top: 0.6875rem;
+    width: 1px;
+    height: 0.4375rem;
+    background: var(--line-strong);
+  }
+
+  .hud-waypoints a:hover::before,
+  .hud-waypoints a[data-passed="true"]::before {
+    background: var(--accent);
+  }
+
+  /* Content that only makes sense while the 3D flight is running. */
+  .live-only {
+    display: none;
+  }
+
+  [data-flight="live"] .live-only {
+    display: block;
   }
 
   /* ---- Static chapter index --------------------------------------------- */

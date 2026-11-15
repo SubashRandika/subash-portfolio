@@ -13,7 +13,18 @@ import {
   routeLateral,
   routeSpeed,
 } from "./path";
-import { SHOT_KEYS, cameraPose, createCameraPose, shotAt, createShot, shotNameAt } from "./shots";
+import {
+  SHOT_KEYS,
+  cameraHeading,
+  cameraModeAt,
+  cameraPose,
+  createCameraPose,
+  createShot,
+  shotAt,
+  shotNameAt,
+} from "./shots";
+import { CHAPTER_NUMBERS, CHAPTER_RANGES } from "./timeline";
+import { OPENING_EXIT, chapterBeats, milestoneArrival, segmentArrival } from "./waypoints";
 import {
   commitFlightProgress,
   flightStore,
@@ -196,9 +207,10 @@ describe("camera", () => {
     expect(camera.pz).toBeGreaterThan(20); // behind an aircraft facing -Z
     expect(camera.px).toBeLessThan(-10); // off to its left
     expect(camera.py).toBeLessThan(7); // low
-    expect(shotNameAt(0)).toBe("establishing");
-    expect(shotNameAt(0.05)).toBe("rear chase");
-    expect(shotNameAt(0.095)).toBe("side tracking");
+    expect(shotNameAt(0)).toBe("parked at dawn");
+    expect(cameraModeAt(0)).toBe("establishing");
+    expect(cameraModeAt(0.05)).toBe("rear chase");
+    expect(cameraModeAt(0.095)).toBe("side tracking");
 
     const side = shotAt(0.09, createShot());
     expect(side.azimuth).toBeCloseTo(82, 5);
@@ -226,6 +238,33 @@ describe("camera", () => {
       expect(step).toBeLessThan(60);
       expect(Math.hypot(b.ux, b.uy, b.uz)).toBeCloseTo(1, 6);
     }
+  });
+
+  it("uses all six camera modes, in order of progress", () => {
+    const modes = new Set(SHOT_KEYS.map((key) => key.mode));
+    expect([...modes].sort()).toEqual(
+      ["close-up", "establishing", "high aerial", "rear chase", "side tracking", "top-down"].sort(),
+    );
+    for (let i = 1; i < SHOT_KEYS.length; i++) {
+      expect(SHOT_KEYS[i]!.at).toBeGreaterThan(SHOT_KEYS[i - 1]!.at);
+    }
+    // The mapping chapter is seen from directly overhead; the flight ends wide.
+    expect(cameraModeAt(0.58)).toBe("top-down");
+    expect(cameraModeAt(0.99)).toBe("establishing");
+  });
+
+  it("looks down the direction of travel in the top-down view", () => {
+    const pose = flightPose(0.585, createFlightPose());
+    const camera = cameraPose(0.585, pose, createCameraPose());
+    // Almost directly above the aircraft…
+    expect(camera.py - pose.y).toBeGreaterThan(150);
+    expect(Math.hypot(camera.px - pose.x, camera.pz - pose.z)).toBeLessThan(40);
+    // …with "up" on screen pointing along the route, so the aircraft flies
+    // up the frame as on a map.
+    const heading = cameraHeading(pose.distance);
+    const along = camera.ux * Math.sin(heading) + camera.uz * Math.cos(heading);
+    expect(along).toBeGreaterThan(0.99);
+    expect(Math.abs(camera.uy)).toBeLessThan(0.1);
   });
 
   it("is reversible like the flight itself", () => {
@@ -258,5 +297,50 @@ describe("flight store", () => {
     commitFlightProgress(0.9);
     expect(seen).toEqual([1, 5]);
     resetFlightStore();
+  });
+});
+
+describe("waypoints", () => {
+  it("keeps every beat inside its chapter and in order", () => {
+    for (const chapter of CHAPTER_NUMBERS) {
+      const [start, end] = CHAPTER_RANGES[chapter];
+      const beats = chapterBeats(chapter, 5);
+      const sequence = [
+        beats.introIn[0],
+        beats.introIn[1],
+        ...beats.milestones,
+        beats.exit[0],
+        beats.exit[1],
+        ...(beats.closingIn ?? []),
+      ];
+      expect(sequence[0]).toBeGreaterThan(start);
+      expect(sequence[sequence.length - 1]).toBeLessThan(end);
+      for (let i = 1; i < sequence.length; i++) {
+        expect(sequence[i]).toBeGreaterThan(sequence[i - 1]!);
+      }
+    }
+  });
+
+  it("gives only the final chapter a closing message", () => {
+    expect(chapterBeats(3, 4).closingIn).toBeNull();
+    expect(chapterBeats(6, 3).closingIn).not.toBeNull();
+  });
+
+  it("lands navigation where the destination is on screen", () => {
+    expect(segmentArrival(0)).toBe(0);
+    for (const chapter of CHAPTER_NUMBERS) {
+      const beats = chapterBeats(chapter, 4);
+      const arrival = segmentArrival(chapter);
+      expect(arrival).toBeGreaterThan(beats.introIn[1]);
+      expect(arrival).toBeLessThan(beats.milestones[0]!);
+      expect(milestoneArrival(chapter, 2, 4)).toBeGreaterThan(beats.milestones[2]!);
+      expect(milestoneArrival(chapter, 2, 4)).toBeLessThan(beats.milestones[3]!);
+    }
+    expect(() => milestoneArrival(1, 9, 4)).toThrow(/no milestone/);
+  });
+
+  it("clears the opening text before the first chapter begins", () => {
+    expect(OPENING_EXIT[0]).toBeGreaterThan(0);
+    expect(OPENING_EXIT[1]).toBeLessThan(CHAPTER_RANGES[1][0]);
   });
 });

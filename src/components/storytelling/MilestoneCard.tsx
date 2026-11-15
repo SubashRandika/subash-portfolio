@@ -13,6 +13,11 @@ export function waypointRef(chapter: ChapterNumber, position: number): string {
   return `${chapter}.${position}`;
 }
 
+/** Element id of a milestone card; also the target of its HUD waypoint. */
+export function milestoneId(chapter: ChapterNumber, milestone: Pick<Milestone, "id">): string {
+  return `milestone-${chapter}-${milestone.id}`;
+}
+
 /**
  * One career milestone, styled after an air-traffic flight progress strip:
  * a narrow index field followed by the content field.
@@ -21,7 +26,7 @@ export function MilestoneCard({ milestone, chapter, position }: MilestoneCardPro
   const ref = waypointRef(chapter, position);
   return (
     <li
-      id={`${chapter}-${milestone.id}`}
+      id={milestoneId(chapter, milestone)}
       className="milestone"
       data-milestone={ref}
     >
@@ -37,7 +42,7 @@ export function MilestoneCard({ milestone, chapter, position }: MilestoneCardPro
           <p className="type-small mt-1.5 text-ink-muted">{milestone.summary}</p>
         ) : null}
         {milestone.points ? (
-          <ul className="type-small mt-3 grid gap-1 border-t border-line pt-3">
+          <ul className="milestone-points type-small mt-3 border-t border-line pt-3">
             {milestone.points.map((point) => (
               <li key={point} className="flex gap-2.5">
                 <span aria-hidden="true" className="mt-[0.6em] h-px w-3 shrink-0 bg-accent" />

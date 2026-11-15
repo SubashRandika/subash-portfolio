@@ -34,29 +34,103 @@ export interface Shot {
   frameX: number;
 }
 
+/** The six kinds of framing the choreography is built from. */
+export type CameraMode =
+  | "establishing"
+  | "rear chase"
+  | "side tracking"
+  | "high aerial"
+  | "top-down"
+  | "close-up";
+
 export interface ShotKey extends Shot {
   /** Flight progress at which this framing is reached. */
   at: number;
-  /** Name of the framing, for documentation and debugging. */
+  mode: CameraMode;
+  /** What the shot is for, for documentation and debugging. */
   name: string;
 }
 
+/** Compact constructor so the shot list reads as a table. */
+function shot(
+  at: number,
+  mode: CameraMode,
+  name: string,
+  azimuth: number,
+  elevation: number,
+  distance: number,
+  ahead: number,
+  lift: number,
+  fov: number,
+  bankFollow: number,
+  frameX: number,
+): ShotKey {
+  return { at, mode, name, azimuth, elevation, distance, ahead, lift, fov, bankFollow, frameX };
+}
+
 /**
- * The shot list. Phase 03 covers the opening, takeoff and climb-out with the
- * rear chase and side tracking cameras; later chapters hold the chase view
- * until their choreography is added.
+ * The shot list for the whole flight.
+ *
+ * Columns: progress, mode, purpose, azimuth, elevation, distance, aim ahead,
+ * aim lift, field of view, bank follow, frame offset.
+ *
+ * Within a chapter the camera stays on one side of the aircraft and returns
+ * to the rear chase between chapters, so it never swings through a
+ * disorienting arc.
  */
 export const SHOT_KEYS: readonly ShotKey[] = [
-  { at: 0, name: "establishing", azimuth: -35, elevation: 3.4, distance: 46, ahead: 5, lift: 0.6, fov: 30, bankFollow: 0, frameX: 0.15 },
-  { at: 0.022, name: "approach", azimuth: -22, elevation: 4, distance: 36, ahead: 6, lift: 0.6, fov: 32, bankFollow: 0, frameX: 0.16 },
-  { at: 0.045, name: "rear chase", azimuth: 0, elevation: 8, distance: 27, ahead: 10, lift: 1, fov: 40, bankFollow: 0, frameX: 0.17 },
-  { at: 0.058, name: "rotation", azimuth: 8, elevation: 6, distance: 29, ahead: 9, lift: 1, fov: 42, bankFollow: 0.1, frameX: 0.17 },
-  { at: 0.072, name: "liftoff", azimuth: 55, elevation: 2.5, distance: 34, ahead: 3, lift: 0.5, fov: 36, bankFollow: 0.1, frameX: 0.16 },
-  { at: 0.09, name: "side tracking", azimuth: 82, elevation: 2, distance: 38, ahead: 1, lift: 0.5, fov: 33, bankFollow: 0.1, frameX: 0.14 },
-  { at: 0.125, name: "climb-out", azimuth: 38, elevation: 9, distance: 42, ahead: 6, lift: 1, fov: 40, bankFollow: 0.2, frameX: 0.17 },
-  { at: 0.165, name: "rear chase", azimuth: 0, elevation: 11, distance: 36, ahead: 12, lift: 2, fov: 44, bankFollow: 0.3, frameX: 0.17 },
-  { at: 1, name: "rear chase", azimuth: 0, elevation: 11, distance: 36, ahead: 12, lift: 2, fov: 44, bankFollow: 0.3, frameX: 0.17 },
+  // Opening and takeoff
+  shot(0, "establishing", "parked at dawn", -35, 3.4, 46, 5, 0.6, 30, 0, 0.15),
+  shot(0.022, "establishing", "approach", -22, 4, 36, 6, 0.6, 32, 0, 0.16),
+  shot(0.045, "rear chase", "takeoff roll", 0, 8, 27, 10, 1, 40, 0, 0.17),
+  shot(0.058, "rear chase", "rotation", 8, 6, 29, 9, 1, 42, 0.1, 0.17),
+  shot(0.072, "side tracking", "liftoff", 55, 2.5, 34, 3, 0.5, 36, 0.1, 0.16),
+
+  // Chapter 01: coast and countryside
+  shot(0.09, "side tracking", "gear retraction", 82, 2, 38, 1, 0.5, 33, 0.1, 0.14),
+  shot(0.125, "rear chase", "climb-out", 38, 9, 42, 6, 1, 40, 0.2, 0.17),
+  shot(0.165, "rear chase", "over the coast", 0, 11, 36, 12, 2, 44, 0.3, 0.17),
+  shot(0.2, "high aerial", "coastline", 16, 27, 74, 30, 0, 42, 0.15, 0.15),
+
+  // Chapter 02: mountain valleys
+  shot(0.235, "rear chase", "into the valley", 0, 9, 34, 14, 2, 46, 0.35, 0.17),
+  shot(0.275, "close-up", "banking through the valley", 34, 5, 16, 3, 0.4, 32, 0.45, 0.16),
+  shot(0.315, "side tracking", "ridge line", 80, 4, 42, 2, 0.5, 34, 0.15, 0.14),
+  shot(0.355, "high aerial", "river valley", 24, 31, 88, 34, 0, 42, 0.1, 0.15),
+
+  // Chapter 03: industrial region
+  shot(0.395, "rear chase", "descending to the plain", 0, 13, 40, 16, 2, 44, 0.3, 0.17),
+  shot(0.44, "side tracking", "past the works", -78, 7, 46, 2, 0.5, 34, 0.15, 0.14),
+  shot(0.485, "high aerial", "logistics yards", -24, 37, 98, 36, 0, 42, 0.1, 0.15),
+
+  // Chapter 04: mapped terrain
+  shot(0.525, "high aerial", "climbing over the ridges", 0, 48, 115, 30, 0, 40, 0.05, 0.14),
+  shot(0.565, "top-down", "map view", 0, 86, 190, 0, 0, 30, 0, 0.13),
+  shot(0.605, "top-down", "map view", 0, 86, 200, 0, 0, 30, 0, 0.13),
+  shot(0.64, "high aerial", "descending toward the city", 0, 30, 76, 28, 0, 42, 0.15, 0.15),
+
+  // Chapter 05: the city
+  shot(0.675, "rear chase", "along the river", 0, 10, 34, 14, 2, 46, 0.35, 0.17),
+  shot(0.72, "side tracking", "skyline", -82, 3, 42, 1, 0.5, 33, 0.1, 0.14),
+  shot(0.76, "close-up", "over the business district", -36, 6, 16, 3, 0.4, 32, 0.4, 0.16),
+  shot(0.805, "high aerial", "bridges and parks", -18, 34, 92, 34, 0, 42, 0.1, 0.15),
+
+  // Chapter 06: above the clouds
+  shot(0.845, "rear chase", "climbing into cloud", 0, 8, 32, 14, 2, 46, 0.3, 0.17),
+  shot(0.885, "side tracking", "breaking out on top", 80, 1.5, 40, 2, 0.5, 33, 0.1, 0.14),
+  shot(0.925, "close-up", "toward the sunrise", 30, 4, 17, 4, 0.4, 32, 0.3, 0.16),
+  shot(0.965, "establishing", "the journey continues", -16, 6, 96, 40, 2, 30, 0, 0.14),
+  shot(1, "establishing", "the journey continues", -10, 7, 150, 60, 4, 28, 0, 0.12),
 ];
+
+/** Mode of the most recent shot key at `progress`. */
+export function cameraModeAt(progress: number): CameraMode {
+  let mode = SHOT_KEYS[0]!.mode;
+  for (const key of SHOT_KEYS) {
+    if (key.at <= progress) mode = key.mode;
+  }
+  return mode;
+}
 
 type ShotParameter = keyof Shot;
 
