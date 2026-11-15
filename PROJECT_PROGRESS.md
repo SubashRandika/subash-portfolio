@@ -28,12 +28,12 @@ Taken from the brief and treated as fixed unless Subash changes them:
 | 04 | Master scroll timeline | Complete |
 | 05 | Six realistic geographical environments | Complete |
 | 06 | Career storytelling and milestone integration | Complete |
-| 07 | Complete portfolio sections | In progress |
-| 08 | Performance and accessibility optimization | Not started |
+| 07 | Complete portfolio sections | Complete (contact details and résumé awaiting Subash) |
+| 08 | Performance and accessibility optimization | In progress |
 | 09 | SEO and deployment readiness | Not started |
 | 10 | Final QA and release | Not started |
 
-**Current phase:** 07 — Complete portfolio sections.
+**Current phase:** 08 — Performance and accessibility optimization.
 
 ## Architecture and technical decisions
 
@@ -249,6 +249,30 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Headline decisions:
 | `npm run test:e2e` | Pass, 63 of 63 (new: opening a milestone during the flight, on desktop, tablet and mobile) |
 | Visual review | Opened milestone at 1440 × 900 and 390 × 844; career timeline at both sizes |
 
+### Phase 07 — Complete portfolio sections (complete; contact details awaiting Subash)
+
+**Implemented:**
+
+- All portfolio sections are server-rendered and reachable without the flight: introduction and about, technical expertise, selected projects (each linked to its flight chapter), work experience with the career timeline and logbook, education (shown once supplied), and contact.
+- **Contact details and résumé** (`src/lib/contact.ts`, `src/lib/siteContact.ts`): taken from `src/data/profile.ts` or from deployment environment variables (`NEXT_PUBLIC_CONTACT_EMAIL`, `NEXT_PUBLIC_LINKEDIN_URL`, `NEXT_PUBLIC_GITHUB_URL`, `NEXT_PUBLIC_RESUME_URL`, documented in `.env.example`). Each is validated (a real email form, https LinkedIn and GitHub profile URLs, a PDF in `public/` or on https); anything invalid is dropped with a build warning and never shown.
+- Contact links appear in the contact section and in a footer "Contact and profiles" navigation, external links open in a new tab with `rel="noopener noreferrer"` and say so to screen readers, and the résumé is a download link.
+- In development only, the contact section shows a reminder while no contact details are configured. Visitors never see it.
+- The end-to-end build uses reserved example values (`hello@example.com`, `github.com/example`), so the populated contact section is tested in a real browser.
+
+**Blocked on Subash (outstanding questions 1–3):** the real email, LinkedIn and GitHub addresses, the résumé PDF and education. The site deliberately publishes none of them until supplied. Phase 09's deployment check will refuse to pass while there is no way to get in touch.
+
+**Files:** `src/lib/{contact,contact.test,siteContact}.ts`, `src/components/portfolio/Contact.tsx`, `src/components/layout/SiteFooter.tsx`, `src/app/{layout,page}.tsx`, `.env.example`, `playwright.config.ts`, `e2e/smoke.spec.ts`, `src/components/components.test.tsx`.
+
+**Verification (2026-11-16):**
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Pass |
+| `npm run typecheck` | Pass |
+| `npm run test` | Pass, 98 of 98 in 10 files (new: contact validation and resolution) |
+| `npm run test:e2e` | Pass, 66 of 66 (new: configured contact links in the section and the footer) |
+| Visual review | Portfolio sections at 1440 × 900 and 390 × 844 |
+
 ## Known issues
 
 - **Playwright's bundled Chromium cannot run on this machine.** Windows reports "An Application Control policy has blocked this file" for the unsigned `chrome-headless-shell.exe`. The policy was left untouched. Tests use the installed, signed Google Chrome through `channel: "chrome"`; the blocked download was removed with `npx playwright uninstall`.
@@ -278,4 +302,4 @@ These block publishing the affected content, not the build. Until answered the f
 
 ## Next planned activities
 
-Phase 07: complete the portfolio sections (introduction, about, expertise, projects, experience, education, contact, social links, résumé download), all usable without the flight. Contact links, the résumé and education are data-driven and render as soon as Subash supplies them (outstanding questions 1–3); nothing is invented in the meantime.
+Phase 08: adaptive HIGH, MEDIUM and LOW graphics profiles measured from real rendering; terrain tiles and structure plans off the main thread (removing the hitch measured in Phase 05); a lighter mobile scene; Lighthouse and accessibility audits with fixes.

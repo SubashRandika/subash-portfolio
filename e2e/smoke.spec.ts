@@ -10,7 +10,7 @@ test.describe("page foundation (static experience)", () => {
     await page.goto("/?flight=static");
   });
 
-  test("has one h1 naming Subash and his title", async ({ page }) => {
+  test("has one h1 with the name and title", async ({ page }) => {
     const h1 = page.getByRole("heading", { level: 1 });
     await expect(h1).toHaveCount(1);
     await expect(h1).toContainText("Subash Rodrigo");
@@ -111,6 +111,24 @@ test.describe("page foundation (static experience)", () => {
       // Choosing a destination closes the menu.
       await expect(page.getByRole("button", { name: "Open menu" })).toBeVisible();
     }
+  });
+
+  // The test build is configured with reserved example contact details
+  // (playwright.config.ts); the real ones are set at deployment.
+  test("offers every configured way to get in touch", async ({ page }) => {
+    const contact = page.locator("#contact");
+    await expect(contact.getByRole("link", { name: /Email/ })).toHaveAttribute(
+      "href",
+      "mailto:hello@example.com",
+    );
+    const github = contact.getByRole("link", { name: /GitHub.*opens in a new tab/ });
+    await expect(github).toHaveAttribute("href", "https://github.com/example");
+    await expect(github).toHaveAttribute("rel", "noopener noreferrer");
+    // Nothing that was not configured is shown.
+    await expect(contact.getByRole("link", { name: /LinkedIn|Résumé/ })).toHaveCount(0);
+
+    const footer = page.getByRole("navigation", { name: "Contact and profiles" });
+    await expect(footer.getByRole("link")).toHaveText([/Email/, /GitHub/]);
   });
 });
 

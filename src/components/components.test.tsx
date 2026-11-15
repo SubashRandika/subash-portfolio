@@ -204,7 +204,7 @@ describe("Contact", () => {
   });
 
   it("shows the closing message and no placeholder links when none are supplied", () => {
-    render(<Contact profile={profile} />);
+    render(<Contact profile={profile} links={profile.links} />);
     expect(screen.getByRole("heading", { name: "The journey continues." })).toBeInTheDocument();
     expect(screen.getByText("The next mission could be ours.")).toBeInTheDocument();
     expect(screen.queryAllByRole("link")).toHaveLength(profile.links.email ? 1 : 0);

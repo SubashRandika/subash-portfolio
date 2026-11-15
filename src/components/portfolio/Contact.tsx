@@ -3,6 +3,8 @@ import type { Profile } from "@/types/portfolio";
 
 interface ContactProps {
   profile: Profile;
+  /** Validated contact details (see lib/contact.ts). */
+  links: Profile["links"];
 }
 
 interface ContactLink {
@@ -63,9 +65,9 @@ export function contactLinks(links: Profile["links"]): ContactLink[] {
   return result;
 }
 
-export function Contact({ profile }: ContactProps) {
+export function Contact({ profile, links: details }: ContactProps) {
   const [closingLead, closingFollow] = profile.closingMessage;
-  const links = contactLinks(profile.links);
+  const links = contactLinks(details);
 
   return (
     <section id="contact" data-theme="dusk" aria-labelledby="contact-heading" className="section-space">
@@ -98,6 +100,12 @@ export function Contact({ profile }: ContactProps) {
               </li>
             ))}
           </ul>
+        ) : process.env.NODE_ENV === "development" ? (
+          // A reminder for development only; visitors never see it.
+          <p className="type-small mt-10 max-w-xl border border-dashed border-line-strong p-4 text-ink-muted">
+            No contact details are configured. Set them in src/data/profile.ts or with the
+            NEXT_PUBLIC_CONTACT_* variables described in .env.example.
+          </p>
         ) : null}
       </div>
     </section>

@@ -3,6 +3,7 @@ import { B612, B612_Mono, Michroma } from "next/font/google";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { profile } from "@/data/profile";
+import { siteContact } from "@/lib/siteContact";
 import { FLIGHT_MODE_SCRIPT } from "@/lib/flight-mode-script";
 import "./globals.css";
 
@@ -59,7 +60,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </a>
         <SiteHeader name={profile.name} />
         {children}
-        <SiteFooter name={profile.name} />
+        <SiteFooter name={profile.name} links={siteContact.links} />
       </body>
     </html>
   );

@@ -10,6 +10,7 @@ import { experience } from "@/data/experience";
 import { profile } from "@/data/profile";
 import { projects } from "@/data/projects";
 import { skillGroups } from "@/data/skills";
+import { siteContact } from "@/lib/siteContact";
 
 export default function Home() {
   const currentRole = experience.find((entry) => entry.end === null);
@@ -28,7 +29,7 @@ export default function Home() {
         </div>
       </div>
 
-      <Contact profile={profile} />
+      <Contact profile={profile} links={siteContact.links} />
     </main>
   );
 }
