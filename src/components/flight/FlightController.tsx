@@ -6,11 +6,16 @@ import * as THREE from "three";
 import type { AircraftRig } from "@/components/flight/Aircraft";
 import type { AircraftState } from "@/flight/aircraft";
 import { atmosphereAt } from "@/flight/atmosphere";
+import { applyCloudImmersion } from "@/flight/clouds";
 import { type FlightFrame, flightFrame } from "@/flight/frame";
 import { damp, smoothstep } from "@/flight/math";
 import { LIFTOFF, flightPose } from "@/flight/path";
 import { type CameraPose, cameraPose } from "@/flight/shots";
 import { commitFlightProgress, flightStore } from "@/flight/store";
+import { terrainHeight } from "@/flight/terrain";
+
+/** Ground under the camera, with a margin for the surface between samples. */
+const cameraGround = (x: number, z: number) => terrainHeight(x, z) + 2;
 
 /**
  * How quickly drawn progress follows the director's timeline. The timeline is
@@ -141,7 +146,9 @@ export function FlightController({ rigRef, aircraftState, still = false }: Fligh
     frame.time = state.clock.elapsedTime;
     flightPose(progress, frame.pose);
     atmosphereAt(progress, frame.atmosphere);
-    cameraPose(progress, frame.pose, frame.camera, 0);
+    const portrait = 1 - smoothstep(0.62, 1.1, state.size.width / Math.max(state.size.height, 1));
+    cameraPose(progress, frame.pose, frame.camera, cameraGround, portrait);
+    applyCloudImmersion(frame.atmosphere, frame.camera.py, -frame.camera.pz);
 
     if (rigRef.current) applyRig(rigRef.current, frame, aircraftState, still);
     applyCamera(state.camera, frame.camera, state.size.width, state.size.height);

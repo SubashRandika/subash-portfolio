@@ -54,12 +54,22 @@ export const ROUTE_LENGTH = routeDistance(1);
 // Lateral meander
 // ---------------------------------------------------------------------------
 
-/** The route is dead straight until the aircraft is clear of the airport. */
-const MEANDER_FROM = 3_600;
-const MEANDER_FULL = 7_800;
+/**
+ * The route is dead straight until the aircraft is clear of the airport,
+ * then meanders as the sum of two waves. Exported so the terrain shader can
+ * mirror the same curve.
+ */
+export const MEANDER = {
+  from: 3_600,
+  full: 7_800,
+  waveA: { amplitude: 1_350, length: 11_200, phase: 0.6 },
+  waveB: { amplitude: 250, length: 6_300, phase: 2.1 },
+} as const;
 
-const WAVE_A = { amplitude: 1_350, length: 11_200, phase: 0.6 };
-const WAVE_B = { amplitude: 250, length: 6_300, phase: 2.1 };
+const MEANDER_FROM = MEANDER.from;
+const MEANDER_FULL = MEANDER.full;
+const WAVE_A = MEANDER.waveA;
+const WAVE_B = MEANDER.waveB;
 
 const TAU = Math.PI * 2;
 

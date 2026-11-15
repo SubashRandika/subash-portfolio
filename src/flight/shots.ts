@@ -246,16 +246,25 @@ const MIN_CAMERA_CLEARANCE = 1.1;
 /**
  * Camera placement for a given progress and aircraft pose.
  *
- * @param groundHeight  elevation of the ground under the camera, used to keep
- *                      the camera from dipping below the surface.
+ * @param ground    elevation of the ground (a constant, or a function of world
+ *                  X and Z), used to keep the camera from dipping below it.
+ * @param portrait  0 for a landscape frame, 1 for a tall phone frame. Narrow
+ *                  frames would crop close shots, so these pull back and
+ *                  widen to keep the whole aircraft in view.
  */
 export function cameraPose(
   progress: number,
   pose: FlightPose,
   out: CameraPose,
-  groundHeight = 0,
+  ground: number | ((x: number, z: number) => number) = 0,
+  portrait = 0,
 ): CameraPose {
   const shot = shotAt(progress, scratchShot);
+  if (portrait > 0) {
+    const close = 1 - smoothstep(22, 80, shot.distance);
+    shot.distance *= 1 + 1.1 * portrait * close;
+    shot.fov *= 1 + 0.22 * portrait;
+  }
   const heading = cameraHeading(routeDistance(progress));
 
   // Route-aligned frame: forward along the route, right of travel, world up.
@@ -275,11 +284,12 @@ export function cameraPose(
   const dirZ = -fz * Math.cos(azimuth) + rz * Math.sin(azimuth);
 
   out.px = originX + dirX * horizontal;
+  out.pz = originZ + dirZ * horizontal;
+  const groundHeight = typeof ground === "number" ? ground : ground(out.px, out.pz);
   out.py = Math.max(
     originY + shot.distance * Math.sin(elevation),
     groundHeight + MIN_CAMERA_CLEARANCE,
   );
-  out.pz = originZ + dirZ * horizontal;
 
   out.tx = originX + fx * shot.ahead;
   out.ty = originY + shot.lift;

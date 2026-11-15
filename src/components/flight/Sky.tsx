@@ -28,6 +28,8 @@ const fragmentShader = /* glsl */ `
   uniform vec3 uSunDirection;
   uniform vec3 uGround;
   uniform float uStars;
+  uniform vec3 uFogColor;
+  uniform float uVeil;
   varying vec3 vDirection;
 
   float hash31(vec3 p) {
@@ -75,6 +77,9 @@ const fragmentShader = /* glsl */ `
       color = mix(color, uGround, smoothstep(0.0, -0.22, height));
     }
 
+    // Inside cloud the sky is hidden by the same haze as everything else.
+    color = mix(color, uFogColor, uVeil);
+
     gl_FragColor = vec4(color, 1.0);
     ${OUTPUT_CHUNKS}
   }
@@ -91,6 +96,8 @@ interface SkyUniforms {
   uSunDirection: THREE.IUniform<THREE.Vector3>;
   uGround: THREE.IUniform<THREE.Color>;
   uStars: THREE.IUniform<number>;
+  uFogColor: THREE.IUniform<THREE.Color>;
+  uVeil: THREE.IUniform<number>;
 }
 
 function updateSky(uniforms: SkyUniforms, atmosphere: Atmosphere): void {
@@ -106,6 +113,8 @@ function updateSky(uniforms: SkyUniforms, atmosphere: Atmosphere): void {
     .setRGB(...atmosphere.ambientGround)
     .lerp(_fog.setRGB(...atmosphere.fogColor), 0.55);
   uniforms.uStars.value = atmosphere.stars;
+  uniforms.uFogColor.value.setRGB(...atmosphere.fogColor);
+  uniforms.uVeil.value = atmosphere.veil;
 }
 
 const _fog = new THREE.Color();
@@ -171,6 +180,8 @@ export function Sky({ radius = 50_000, reflectionSize = 128 }: SkyProps) {
       uSunDirection: { value: new THREE.Vector3(0, 1, 0) },
       uGround: { value: new THREE.Color() },
       uStars: { value: 0 },
+      uFogColor: { value: new THREE.Color() },
+      uVeil: { value: 0 },
     };
     const material = new THREE.ShaderMaterial({
       uniforms,

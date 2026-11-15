@@ -48,14 +48,23 @@ Decisions made in Phase 01. Later phases update this file when a decision change
 | `shots.ts` | Camera shot keyframes (establishing, chase, side, aerial, top-down, close-up) and interpolation. |
 | `atmosphere.ts` | Sun direction, sky colors, fog and exposure keyframes. |
 | `store.ts` | Mutable progress store plus coarse subscriptions. |
+| `waypoints.ts` | Where each chapter's intro, milestones, exit and closing fall on the timeline. |
+| `terrain.ts` | Integer-hash noise, the six regions and their blend, the height and water function, land-use rules, and the GLSL mirror of all of it. |
+| `terrainTile.ts` | Vertex data for one world-fixed terrain tile (heights, normals, water, skirt). |
+| `structures.ts` | Placement of the airport buildings, industrial works and yards, city buildings and bridges. |
+| `clouds.ts` | Cloud cover along the route and the haze while the camera is inside the deck. |
 
 React Three Fiber components (`src/components/flight`, `src/components/environments`) read these each frame inside `useFrame`.
 
 ## 5. 3D world
 
 - **One continuous world.** The six environments are regions of a single route so transitions are geographic, not cuts.
-- **Terrain.** A camera-following clipmap grid displaced on the GPU by a height function whose parameters (relief, roughness, vegetation, water) vary along the route. Flat analytic zones host the airport, the industrial region and the city.
-- **Environment sets.** `Airport`, `Mountains`, `IndustrialRegion`, `GeoTerrain`, `City`, `Clouds` are mounted by progress window — the current region and its immediate neighbours only — and dispose their GPU resources on unmount.
+- **Regions.** Six regions follow the six chapters by distance along the route: tropical coast and countryside with the airfield, a river valley between forested ridges, an industrial plain with a canal, ridged uplands cut by rivers, a river city with a business district, and highlands under a cloud deck with mountains on the horizon. Neighbouring regions blend over 2.6 km around each chapter boundary.
+- **One terrain function, two languages.** `src/flight/terrain.ts` defines heights and water in TypeScript and mirrors the same functions in GLSL. Noise is built on an integer hash, which is bit-identical on the CPU and the GPU, so per-pixel features (rivers, streets, plots, beaches) line up exactly with the geometry and with placed buildings.
+- **Terrain tiles.** A quadtree of world-fixed square tiles (`Terrain.tsx`): the camera's distance chooses the tile size, missing detail is built within a 4 ms per-frame budget while the coarser parent stays on screen, and unused tiles are released from an LRU cache. Tiles never move with the camera, so the surface never swims; skirts hide cracks between levels of detail. Heights come from the CPU, so the GPU only shades.
+- **Land use is shaded, not modelled.** Farmland, hedgerows, villages, forest canopies (individually lit crowns), rock, snow, beaches, surf, roads, the airfield's taxiway and apron, industrial plots, city streets, parks and suburbs are drawn per pixel, each fading out once smaller than a pixel.
+- **Structures.** Buildings, tanks, chimneys, container stacks and bridges are instanced boxes and cylinders sharing one shader that draws curtain walls, windows, cladding and roofs (`Structures.tsx`), so a district is two draw calls. Each set mounts only from the chapter before its own to the chapter after (`Environments.tsx`); the terrain streams continuously.
+- **Clouds.** Two world-anchored layers with domain-warped shapes, lit from their density gradient. Inside the deck the haze closes in on everything, including the sky (`clouds.ts`).
 - **Aircraft.** Modelled procedurally by `scripts/build-aircraft.mjs` and exported as a Meshopt-compressed GLB with separately named nodes (landing gear, gear doors, engine fans, navigation lights) for independent animation. See risk R1.
 - **Lighting.** Analytic sky and sun keyframed by progress, exponential height fog for aerial perspective, sky-derived environment reflections, ACES tone mapping. No full-screen post-processing by default; glows are additive sprites and the vignette is CSS.
 
@@ -78,7 +87,7 @@ src/
     ui/             base accessible components
     layout/         header, footer, skip link
     flight/         FlightExperience, FlightScene, Aircraft, FlightCamera, FlightController, terrain, sky
-    environments/   Airport, Mountains, IndustrialRegion, GeoTerrain, City, Clouds
+    environments/   Terrain, Environments (Industrial region, City), Structures, Clouds, Airport
     storytelling/   ChapterSection, MilestoneCard, FlightHUD, ChapterNavigation, Opening
     portfolio/      About, Skills, Projects, Experience, Education, Contact
   data/             profile, chapters, experience, projects, skills (typed, verified facts only)
@@ -128,8 +137,8 @@ Deliberately not added: a global state library, a UI kit, an icon font, a post-p
 | Asset | Source | Status |
 | --- | --- | --- |
 | Executive jet GLB | Generated in-repo by script | Phase 03 |
-| Terrain, sky, water, clouds | Procedural shaders | Phases 03–05 |
-| Airport, industrial, city props | Procedural instanced geometry | Phase 05 |
+| Terrain, sky, water, clouds | Procedural geometry and shaders | Phases 03–05 (done) |
+| Airport, industrial, city structures | Procedural instanced geometry, placed by rule | Phase 05 (done) |
 | Fonts | Open-licensed families via `next/font` (self-hosted at build) | Phase 02 |
 | Icons | Inline SVG drawn for this project | Phase 02 |
 | Poster and social images | Rendered from the scene | Phases 08–09 |

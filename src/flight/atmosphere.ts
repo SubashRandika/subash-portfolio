@@ -257,6 +257,11 @@ export interface Atmosphere {
   exposure: number;
   stars: number;
   lamps: number;
+  /**
+   * How much the sky is hidden by cloud around the camera, 0–1. Always 0
+   * from atmosphereAt; set per frame by applyCloudImmersion.
+   */
+  veil: number;
 }
 
 export function createAtmosphere(): Atmosphere {
@@ -277,6 +282,7 @@ export function createAtmosphere(): Atmosphere {
     exposure: 1,
     stars: 0,
     lamps: 0,
+    veil: 0,
   };
 }
 
@@ -352,6 +358,7 @@ export function atmosphereAt(progress: number, out: Atmosphere): Atmosphere {
   out.exposure = SCALARS.exposure(p);
   out.stars = SCALARS.stars(p);
   out.lamps = SCALARS.lamps(p);
+  out.veil = 0;
   return out;
 }
 

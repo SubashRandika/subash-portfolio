@@ -26,14 +26,14 @@ Taken from the brief and treated as fixed unless Subash changes them:
 | 02 | Design system and responsive foundation | Complete |
 | 03 | Aircraft and flight prototype | Complete |
 | 04 | Master scroll timeline | Complete |
-| 05 | Six realistic geographical environments | In progress |
-| 06 | Career storytelling and milestone integration | Not started |
+| 05 | Six realistic geographical environments | Complete |
+| 06 | Career storytelling and milestone integration | In progress |
 | 07 | Complete portfolio sections | Not started |
 | 08 | Performance and accessibility optimization | Not started |
 | 09 | SEO and deployment readiness | Not started |
 | 10 | Final QA and release | Not started |
 
-**Current phase:** 05 — Six realistic geographical environments.
+**Current phase:** 06 — Career storytelling and milestone integration.
 
 ## Architecture and technical decisions
 
@@ -55,6 +55,11 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Headline decisions:
 15. Custom surface shaders share one lighting and fog model (`shaders/lighting.glsl.ts`) that mirrors Three.js standard materials, so the ground and the aircraft agree about the light.
 16. One GSAP timeline of duration 1, scrubbed by ScrollTrigger, is the only scroll clock (`src/components/flight/director.ts`). Its playhead is flight progress; the 3D scene, chapter text, milestones and HUD all read from it, and every tween is an explicit `fromTo`, so scrubbing backward replays the same states.
 17. Navigation within the flight glides when the target is close (Begin flight plays the takeoff) and cuts through a short veil when it is far, so a jump never streaks through several environments or forces them all to load.
+19. Terrain heights and land use are one TypeScript module mirrored in GLSL, on an integer hash that gives identical noise on CPU and GPU. Geometry, shading, object placement, camera clearance and the tests all agree because they evaluate the same functions.
+20. Terrain is a quadtree of world-fixed tiles built on the CPU within a per-frame budget (never sliding with the camera, so it never swims); land use is shaded per pixel rather than modelled.
+21. Structures are instanced primitives with one procedural facade shader, placed by the same land-use rules the terrain draws, and mounted only around their chapter.
+22. The business district sits about 3 km beside the route: from cruising altitude a near-horizontal shot frames ground 2 km and further away, so that is where a skyline reads.
+23. Portrait frames pull close shots back and widen them, so a phone always sees the whole aircraft.
 18. Where the full milestone list does not fit (narrow or short viewports) the milestones share one slot and only the current one shows; portrait frames put the aircraft in the top of the frame and the text beneath it.
 10. Milestone summaries are optional: when the brief says nothing beyond a milestone's title, the card shows the title alone rather than padded copy.
 
@@ -180,6 +185,44 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Headline decisions:
 - Milestone cards are titles only in the flight; their detail lives in the Experience section. Opening a card for its detail belongs to Phase 06.
 - The world is still the Phase 03 airport and flat ground beyond it; the six environments are Phase 05.
 
+### Phase 05 — Six realistic geographical environments (complete)
+
+**Implemented:**
+
+- **Six regions along one route** (`src/flight/terrain.ts`), blended over 2.6 km at each chapter boundary:
+  1. Tropical coast: sea to the west with turquoise shallows, beach and surf, coastal road, gentle countryside, and the flattened airfield with taxiway, apron, terminal, control tower and hangars.
+  2. Mountain valley: a meandering river and valley road between forested ridges rising to about 1.5 km, with rock on steep ground.
+  3. Industrial plain: works with production halls, chimneys with aviation markings and tank farms, logistics yards with container stacks, warehouse estates, a canal, a railway and a trunk road, among farmland.
+  4. Ridged uplands for the top-down map view: a main river beneath the route, tributaries, contour roads, woods, fields and villages.
+  5. River city: street grid with avenues, parks, suburbs, bridges, mid-rise blocks and a business district of towers up to about 290 m.
+  6. Highlands under a two-layer cloud deck with snow-capped mountains on the horizon. The aircraft climbs through the deck (the haze closes in, sky included) and breaks out on top into the sunrise.
+- **Terrain renderer** (`Terrain.tsx`, `terrainTile.ts`): world-fixed quadtree tiles from 256 m to 131 km, a 4 ms per-frame build budget with coarse fallback, LRU release, and skirts.
+- **Terrain shading:** farmland with staggered, drifting field patterns and hedgerows; villages; individually lit forest crowns; rock and snow by slope and height; water with ripples, sky reflection, sun glint and surf; multi-scale detail that fades by pixel size.
+- **Structures** (`structures.ts`, `Structures.tsx`): 5,757 city and 935 industrial structures plus the airport, placed by the land-use rules (never in water, streets or parks) and drawn as two instanced meshes per set with one facade shader (curtain walls, punched windows, cladding with doors, tanks, container colours, bridge decks, chimney markings).
+- **Clouds** (`clouds.ts`, `Clouds.tsx`): world-anchored layers with domain-warped shapes and gradient lighting; scattered over the city, a full deck in the last chapter.
+- **Loading:** structures mount only from the chapter before theirs to the chapter after (`Environments.tsx`); the terrain streams continuously.
+- Fog now uses the sky's horizon-band model, so distant terrain melts into the dawn sky instead of standing out against it.
+- The camera keeps clear of the real terrain (sampled under the camera every frame), and portrait frames pull close shots back.
+
+**Files:** `src/flight/{terrain,terrainTile,structures,clouds}.ts` and tests, `src/flight/{path,shots,atmosphere}.ts`, `src/components/environments/{Terrain,Structures,Clouds,Environments,Airport}.tsx`, `src/components/flight/{FlightScene,FlightController,Sky}.tsx`, `src/components/flight/shaders/lighting.glsl.ts`, `docs/ARCHITECTURE.md`.
+
+**Verification (2026-11-16):**
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Pass |
+| `npm run typecheck` | Pass |
+| `npm run test` | Pass, 88 of 88 in 9 files. New: region weights and layout, airfield flatness, continuity across boundaries, water where the shading draws it, valley walls, aircraft clearance (over 150 m) and camera clearance (over 40 m, landscape and portrait) for the whole flight, structure determinism, nothing in water, sizes, aircraft and camera clear of every structure |
+| `npm run test:e2e` | Pass, 60 of 60 (production build) |
+| Frame pacing | Headless Chrome on the AMD Radeon 860M at 1440 × 900, scrolling the whole flight in 30 s: median 16.7 ms, p95 17.4 ms, p99 32.9 ms, one hitch of about 290 ms |
+| Visual review | Every chapter at 1440 × 900 and 390 × 844 |
+
+**Limitations carried forward:**
+
+- One main-thread hitch of about 290 ms when a district's structures are generated, and the base terrain tiles are built on the main thread at start. Phase 08 moves tile and structure generation off the main thread (or into idle time) and adds HIGH, MEDIUM and LOW profiles.
+- Buildings are boxes and cylinders without setbacks or rooftop detail: convincing from flight altitude, plain up close.
+- No individual tree geometry: forests are shaded canopies, which read well from altitude.
+
 ## Known issues
 
 - **Playwright's bundled Chromium cannot run on this machine.** Windows reports "An Application Control policy has blocked this file" for the unsigned `chrome-headless-shell.exe`. The policy was left untouched. Tests use the installed, signed Google Chrome through `channel: "chrome"`; the blocked download was removed with `npx playwright uninstall`.
@@ -209,4 +252,4 @@ These block publishing the affected content, not the build. Until answered the f
 
 ## Next planned activities
 
-Phase 05: the six geographical environments (coastal airport and countryside, mountain valleys, industrial region, geographical terrain, modern city, clouds and sunrise) on one continuous procedural world, with progress-windowed loading so only the current and next environment are mounted.
+Phase 06: milestone cards that open to show their detail inside the flight, waypoint interactions, a verified career timeline, chapter introductions and skills per chapter, and a full re-check of every published fact against the brief.

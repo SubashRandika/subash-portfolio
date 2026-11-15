@@ -3,6 +3,7 @@
 import { useFrame } from "@react-three/fiber";
 import { Suspense, useMemo, useRef } from "react";
 import { Airport } from "@/components/environments/Airport";
+import { Environments } from "@/components/environments/Environments";
 import { createAircraftState } from "@/flight/aircraft";
 import { Aircraft, type AircraftRig } from "./Aircraft";
 import { AircraftShadow } from "./AircraftShadow";
@@ -47,6 +48,7 @@ export function FlightScene({ onReady, still = false }: FlightSceneProps) {
       <FlightController rigRef={rigRef} aircraftState={aircraftState} still={still} />
       <Sky />
       <SceneLighting />
+      <Environments />
       <Airport />
       <AircraftShadow />
       <Suspense fallback={null}>

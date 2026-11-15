@@ -39,8 +39,15 @@ export const LIGHTING_FUNCTIONS = /* glsl */ `
     float factor = 1.0 - exp(-uFogDensity * uFogDensity * viewDistance * viewDistance);
     vec2 bearing = normalize(toSurface.xz + vec2(1e-5));
     vec2 sunBearing = normalize(uSunDirection.xz + vec2(1e-5));
-    float toward = pow(max(dot(bearing, sunBearing), 0.0), 2.5);
-    vec3 haze = uFogColor + uGlow * (uGlowStrength * toward * 0.9);
+    float toward = max(dot(bearing, sunBearing), 0.0);
+    // Same horizon band as the sky dome (Sky.tsx), so fully hazed distant
+    // terrain melts into the sky behind it instead of standing out.
+    float height = toSurface.y / max(viewDistance, 1e-3);
+    float lift = max(uSunDirection.y, 0.0) * 0.4;
+    float band = exp(-abs(height - lift) * 24.0);
+    float wide = exp(-abs(height - lift) * 7.0);
+    vec3 haze = uFogColor + uGlow * uGlowStrength
+      * (pow(toward, 2.5) * band * 0.95 + pow(toward, 1.5) * wide * 0.16);
     return mix(color, haze, factor);
   }
 `;

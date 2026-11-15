@@ -37,44 +37,6 @@ const worldVertex = /* glsl */ `
 `;
 
 // ---------------------------------------------------------------------------
-// Ground
-// ---------------------------------------------------------------------------
-
-const groundFragment = /* glsl */ `
-  ${LIGHTING_UNIFORMS}
-  varying vec3 vWorld;
-  ${NOISE_FUNCTIONS}
-  ${LIGHTING_FUNCTIONS}
-
-  void main() {
-    vec2 p = vWorld.xz;
-    float viewDistance = length(vWorld - cameraPosition);
-
-    float broad = fbm(p * 0.0011);
-    float mid = fbm(p * 0.009 + 40.0);
-    // Fine grain is dropped with distance so it never shimmers.
-    float fine = mix(valueNoise(p * 0.4), 0.5, smoothstep(120.0, 700.0, viewDistance));
-
-    vec3 grassDeep = vec3(0.04, 0.078, 0.024);
-    vec3 grassLight = vec3(0.082, 0.112, 0.034);
-    vec3 dry = vec3(0.15, 0.13, 0.066);
-    vec3 albedo = mix(grassDeep, grassLight, smoothstep(0.3, 0.7, broad));
-    albedo = mix(albedo, dry, smoothstep(0.55, 0.82, mid) * 0.42);
-    albedo *= 0.82 + 0.36 * fine;
-
-    // Mown grass around the runway strip.
-    float along = step(-${(RUNWAY.length - RUNWAY.startZ + 120).toFixed(1)}, p.y) * step(p.y, ${(RUNWAY.startZ + 120).toFixed(1)});
-    float strip = (1.0 - smoothstep(40.0, 260.0, abs(p.x))) * along;
-    albedo = mix(albedo, vec3(0.07, 0.098, 0.036) * (0.9 + 0.2 * fine), strip * 0.4);
-
-    vec3 color = surfaceLight(albedo, vec3(0.0, 1.0, 0.0));
-    color = applyFog(color, vWorld - cameraPosition);
-    gl_FragColor = vec4(color, 1.0);
-    ${OUTPUT_CHUNKS}
-  }
-`;
-
-// ---------------------------------------------------------------------------
 // Runway surface and markings
 // ---------------------------------------------------------------------------
 
@@ -268,14 +230,9 @@ interface RunwayUniforms extends LightingUniforms {
 }
 
 interface AirportHandles {
-  ground: THREE.Mesh | null;
-  groundUniforms: LightingUniforms;
   runwayUniforms: RunwayUniforms;
   lampUniforms: LampUniforms;
 }
-
-/** Ground tiles snap in steps of this size as the aircraft moves. */
-const GROUND_SNAP = 1_000;
 
 function updateAirport(
   handles: AirportHandles,
@@ -284,17 +241,11 @@ function updateAirport(
   gl: THREE.WebGLRenderer,
 ): void {
   const { atmosphere, pose } = frame;
-  updateLightingUniforms(handles.groundUniforms, atmosphere);
   updateLightingUniforms(handles.runwayUniforms, atmosphere);
   handles.runwayUniforms.uAircraft.value.set(pose.x, pose.z);
   handles.runwayUniforms.uAircraftForward.value.set(Math.sin(pose.yaw), Math.cos(pose.yaw));
   // The pool fades as the aircraft climbs away from the surface.
   handles.runwayUniforms.uLandingLights.value = pose.landingLights * Math.max(0, 1 - pose.y / 60);
-
-  if (handles.ground) {
-    handles.ground.position.x = Math.round(pose.x / GROUND_SNAP) * GROUND_SNAP;
-    handles.ground.position.z = Math.round(pose.z / GROUND_SNAP) * GROUND_SNAP;
-  }
 
   const lamps = handles.lampUniforms;
   if (camera instanceof THREE.PerspectiveCamera) {
@@ -307,22 +258,14 @@ function updateAirport(
 }
 
 /**
- * The departure airport: runway with full markings and lighting, on open
- * ground. Terminal buildings, taxiways and the coastline arrive with the
- * environment phase.
+ * The departure airport: runway with full markings and lighting. The ground,
+ * taxiway and apron are part of the terrain; the buildings are in
+ * AirportBuildings.
  */
 export function Airport() {
-  const groundRef = useRef<THREE.Mesh>(null);
   const handles = useRef<AirportHandles | null>(null);
 
   const built = useMemo(() => {
-    const groundUniforms = createLightingUniforms();
-    const groundMaterial = new THREE.ShaderMaterial({
-      uniforms: groundUniforms as unknown as Record<string, THREE.IUniform>,
-      vertexShader: worldVertex,
-      fragmentShader: groundFragment,
-    });
-
     const runwayUniforms: RunwayUniforms = {
       ...createLightingUniforms(),
       uAircraft: { value: new THREE.Vector2() },
@@ -372,8 +315,6 @@ export function Airport() {
     });
 
     return {
-      groundUniforms,
-      groundMaterial,
       runwayUniforms,
       runwayMaterial,
       lampGeometry,
@@ -384,14 +325,11 @@ export function Airport() {
 
   useEffect(() => {
     handles.current = {
-      ground: groundRef.current,
-      groundUniforms: built.groundUniforms,
       runwayUniforms: built.runwayUniforms,
       lampUniforms: built.lampUniforms,
     };
     return () => {
       handles.current = null;
-      built.groundMaterial.dispose();
       built.runwayMaterial.dispose();
       built.lampMaterial.dispose();
       built.lampGeometry.dispose();
@@ -406,15 +344,6 @@ export function Airport() {
 
   return (
     <group>
-      <mesh
-        ref={groundRef}
-        rotation-x={-Math.PI / 2}
-        material={built.groundMaterial}
-        frustumCulled={false}
-        renderOrder={-10}
-      >
-        <planeGeometry args={[120_000, 120_000]} />
-      </mesh>
       <mesh
         rotation-x={-Math.PI / 2}
         position={[0, 0, runwayCentreZ]}
