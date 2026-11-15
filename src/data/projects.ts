@@ -14,9 +14,9 @@ export const projects: readonly Project[] = [
     via: "Creative Software",
     summary: "A laboratory scheduling platform for optimizing devices, instruments and workcells.",
     contributions: [
+      "Laboratory scheduling platform",
+      "Optimizing devices, instruments and workcells",
       "Enterprise application engineering",
-      "Technical leadership and architectural decisions",
-      "Mentoring engineers in an international development team",
     ],
     chapter: 6,
   },
@@ -26,7 +26,12 @@ export const projects: readonly Project[] = [
     client: "Biosero",
     via: "Creative Software",
     summary: "A SaaS platform for managing subscriptions, licenses and software packages.",
-    contributions: ["Subscription management", "License management", "Software packages"],
+    contributions: [
+      "Subscription management",
+      "License management",
+      "Software packages",
+      "SaaS platform development",
+    ],
     chapter: 6,
   },
   {
@@ -37,7 +42,9 @@ export const projects: readonly Project[] = [
     summary:
       "IFS Cloud Home widgets, micro-frontend architecture, and the design system and component libraries.",
     contributions: [
-      "IFS Cloud Home widgets in Angular and React",
+      "IFS Cloud Home widgets",
+      "Micro-frontend architecture",
+      "Angular and React development",
       "Granite Angular Component Library, IFS Design System and Shared Component Library",
       "Accessibility and internationalization",
       "Drag-and-drop dashboard layout proof of concept",

@@ -5,6 +5,7 @@ const paths = {
   "arrow-right": <path d="M4 12h15m0 0-6-6m6 6-6 6" />,
   "arrow-up-right": <path d="M7 17 17 7m0 0H8m9 0v9" />,
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
+  plus: <path d="M12 5v14M5 12h14" />,
   close: <path d="m6 6 12 12M18 6 6 18" />,
   download: <path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14" />,
   mail: (

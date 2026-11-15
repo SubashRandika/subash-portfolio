@@ -34,7 +34,7 @@ export function ChapterSection({ chapter, totalChapters, children }: ChapterSect
       <div className="chapter-panel">
         <div className="shell">
           <div data-flight-part="body">
-            <header className="max-w-2xl">
+            <header className="chapter-header">
               <p className="type-label text-ink-muted">
                 <span className="text-accent-ink">
                   Chapter {pad2(chapter.number)}
@@ -56,6 +56,18 @@ export function ChapterSection({ chapter, totalChapters, children }: ChapterSect
                 ) : null}
               </p>
               <p className="type-lead mt-3 text-ink-muted">{chapter.narrative}</p>
+              {chapter.focus.length > 0 ? (
+                <div className="chapter-focus mt-5">
+                  <h4 className="sr-only">Focus</h4>
+                  <ul className="flex flex-wrap gap-2">
+                    {chapter.focus.map((item) => (
+                      <li key={item} className="tag">
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
             </header>
 
             <ol className="milestones">

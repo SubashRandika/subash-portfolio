@@ -103,7 +103,7 @@ export function createFlightDirector(section: HTMLElement): FlightDirector {
 
     if (body.length === 0) continue;
     gsap.set(body, { autoAlpha: 0 });
-    if (cards.length > 0) gsap.set(cards, { autoAlpha: 0, "--lit": 0 });
+    if (cards.length > 0) gsap.set(cards, { autoAlpha: 0, "--lit": 0, attr: { "data-current": "false" } });
     if (closing.length > 0) gsap.set(closing, { autoAlpha: 0 });
 
     timeline.fromTo(
@@ -125,9 +125,14 @@ export function createFlightDirector(section: HTMLElement): FlightDirector {
         at - 0.004,
       );
       timeline.fromTo(card, { "--lit": 0 }, { "--lit": 1, duration: 0.003 }, at - 0.003);
+      // The current strip is also marked, so layouts that show one strip at
+      // a time can keep the others out of reach of pointer and keyboard.
+      // Timeline sets are undone when scrubbing back past them.
+      timeline.set(card, { attr: { "data-current": "true" } }, at - 0.0015);
       // …and hand over to the next one.
       if (next !== undefined) {
         timeline.fromTo(card, { "--lit": 1 }, { "--lit": 0, duration: 0.003 }, next - 0.003);
+        timeline.set(card, { attr: { "data-current": "false" } }, next - 0.0015);
       }
     });
 
@@ -297,10 +302,26 @@ export function createFlightDirector(section: HTMLElement): FlightDirector {
     return index < 0 ? null : milestoneArrival(number, index, cards.length);
   };
 
+  /** Opens or closes a milestone strip's detail. */
+  const toggleMilestone = (button: HTMLButtonElement) => {
+    const card = button.closest<HTMLElement>(".milestone");
+    if (!card) return;
+    const open = card.dataset.open !== "true";
+    if (open) card.dataset.open = "true";
+    else delete card.dataset.open;
+    button.setAttribute("aria-expanded", String(open));
+  };
+
   const onClick = (event: MouseEvent) => {
     if (event.defaultPrevented || event.button !== 0) return;
+    const target = event.target as Element | null;
+    const toggle = target?.closest<HTMLButtonElement>("[data-milestone-toggle]");
+    if (toggle && section.contains(toggle)) {
+      toggleMilestone(toggle);
+      return;
+    }
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    const link = (event.target as Element | null)?.closest<HTMLAnchorElement>('a[href^="#"]');
+    const link = target?.closest<HTMLAnchorElement>('a[href^="#"]');
     const id = link?.getAttribute("href")?.slice(1);
     if (!id) return;
     const progress = progressFor(id);
@@ -357,6 +378,13 @@ export function createFlightDirector(section: HTMLElement): FlightDirector {
         else link.removeAttribute("aria-current");
       }
       for (const waypoint of waypoints) delete waypoint.element.dataset.passed;
+      for (const card of section.querySelectorAll<HTMLElement>(".milestone")) {
+        delete card.dataset.open;
+        delete card.dataset.current;
+      }
+      for (const button of section.querySelectorAll("[data-milestone-toggle]")) {
+        button.setAttribute("aria-expanded", "false");
+      }
     },
   };
 }

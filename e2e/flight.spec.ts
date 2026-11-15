@@ -127,6 +127,27 @@ test.describe("live flight", () => {
     await expect.poll(lit, { timeout: 15_000 }).toEqual([middle]);
   });
 
+  test("opens a milestone to show its detail", async ({ page }) => {
+    await expect(page.locator("#chapter-01 [data-flight-part='body']")).toBeHidden({
+      timeout: 30_000,
+    });
+    await scrollToProgress(page, 0.92);
+    // Let the scrub settle: the current strip changes while it catches up.
+    await expect(page.locator("[data-hud='percent']")).toHaveText("092", { timeout: 15_000 });
+    const chapter = page.locator("#chapter-06");
+    await expect(chapter.locator("[data-flight-part='body']")).toBeVisible({ timeout: 15_000 });
+    // Whichever strip is showing (on small screens only the current one is).
+    const toggle = chapter.locator("[data-milestone-toggle]:visible").first();
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    const detail = page.locator(`#${await toggle.getAttribute("aria-controls")}`);
+    await expect(detail).toBeHidden();
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+    await expect(detail).toBeVisible();
+    await toggle.click();
+    await expect(detail).toBeHidden();
+  });
+
   test("Begin flight glides through the takeoff into chapter 1", async ({ page }) => {
     await expect(page.locator("#chapter-01 [data-flight-part='body']")).toBeHidden({
       timeout: 30_000,

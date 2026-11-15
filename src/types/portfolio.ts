@@ -41,6 +41,12 @@ export interface Chapter {
   /** Short description of the landscape the jet flies through. */
   environment: string;
   narrative: string;
+  /**
+   * Areas of work in this chapter, each restating the brief. Labelled
+   * "Focus" on the page, not "technologies", so nothing implies a stack the
+   * brief does not state.
+   */
+  focus: readonly string[];
   range: ProgressRange;
   milestones: readonly Milestone[];
 }

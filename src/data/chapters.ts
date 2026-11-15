@@ -22,6 +22,11 @@ export const chapters: readonly Chapter[] = [
     destination: "Pearson / WSO2",
     environment: "Tropical coastal runway and green countryside",
     narrative: "The beginning of my engineering journey.",
+    focus: [
+      "Enterprise software development",
+      "WSO2 ESB cloud connectors",
+      "Advanced filtering",
+    ],
     range: CHAPTER_RANGES[1],
     milestones: [
       {
@@ -57,6 +62,12 @@ export const chapters: readonly Chapter[] = [
     environment: "Green mountain valleys, forests and rivers",
     narrative:
       "Moving from software engineering into technical leadership and building solutions at scale.",
+    focus: [
+      "Technical leadership",
+      "Microservices",
+      "Reporting and BI",
+      "Performance optimization",
+    ],
     range: CHAPTER_RANGES[2],
     milestones: [
       {
@@ -93,6 +104,11 @@ export const chapters: readonly Chapter[] = [
     destination: "Senseforce GmbH",
     environment: "Industrial region with factories, warehouses and logistics infrastructure",
     narrative: "Exploring new technical challenges and industrial software solutions.",
+    focus: [
+      "Dashboards and widgets",
+      "Unit testing and code coverage",
+      "Theme customization",
+    ],
     range: CHAPTER_RANGES[3],
     milestones: [
       {
@@ -130,6 +146,12 @@ export const chapters: readonly Chapter[] = [
     environment: "Geographical terrain with ridges, rivers, roads and forests",
     narrative:
       "Building solutions that connect software engineering with geographical intelligence.",
+    focus: [
+      "Large-scale data import and export",
+      "Interactive 3D markers",
+      "Firebase authentication",
+      "Data visualization and mapping",
+    ],
     range: CHAPTER_RANGES[4],
     milestones: [
       {
@@ -163,21 +185,28 @@ export const chapters: readonly Chapter[] = [
     environment: "Modern city with rivers, bridges, parks and business districts",
     narrative:
       "Building enterprise-grade frontend platforms, scalable architecture, and reusable design systems.",
+    focus: [
+      "Angular",
+      "React",
+      "Micro-frontends",
+      "Design systems",
+      "Accessibility",
+      "Internationalization",
+      "Storybook",
+      "Automated testing",
+    ],
     range: CHAPTER_RANGES[5],
     milestones: [
       {
         id: "ifs-cloud-home",
         group: "IFS",
         title: "IFS Cloud Home widgets",
-        summary: "IFS Cloud Home widgets and micro-frontend architecture, in Angular and React.",
         points: ["IFS Cloud Home widgets", "Micro-frontend architecture", "Angular and React development"],
       },
       {
         id: "ifs-design-system",
         group: "IFS",
         title: "Design system and component libraries",
-        summary:
-          "The Granite Angular Component Library, the IFS Design System and the Shared Component Library.",
         points: ["Granite Angular Component Library", "IFS Design System", "Shared Component Library"],
       },
       {
@@ -231,14 +260,19 @@ export const chapters: readonly Chapter[] = [
     environment: "Above the clouds, distant mountains and a sunrise horizon",
     narrative:
       "Leading engineering initiatives, building enterprise SaaS solutions, and preparing for the next professional mission.",
+    focus: [
+      "Enterprise SaaS",
+      "Laboratory scheduling",
+      "Architectural decisions",
+      "Technical leadership",
+      "Mentoring",
+    ],
     range: CHAPTER_RANGES[6],
     milestones: [
       {
         id: "gbg-scheduler",
         group: "Green Button Go Scheduler",
         title: "Laboratory scheduling platform",
-        summary:
-          "A laboratory scheduling platform for optimizing devices, instruments and workcells.",
         points: [
           "Laboratory scheduling platform",
           "Optimizing devices, instruments and workcells",
@@ -249,8 +283,6 @@ export const chapters: readonly Chapter[] = [
         id: "cloud-portal",
         group: "Cloud Portal SaaS",
         title: "Subscriptions, licenses and software packages",
-        summary:
-          "A SaaS platform covering subscription management, license management and software packages.",
         points: [
           "Subscription management",
           "License management",
@@ -261,8 +293,6 @@ export const chapters: readonly Chapter[] = [
       {
         id: "leadership",
         title: "Leading an international team",
-        summary:
-          "Technical leadership, architectural decisions and mentoring while leading and collaborating with an international development team.",
         points: [
           "Technical leadership",
           "Architectural decisions",

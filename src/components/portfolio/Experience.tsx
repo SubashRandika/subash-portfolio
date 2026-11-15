@@ -1,4 +1,5 @@
 import { DocSection } from "@/components/ui/DocSection";
+import { CareerTimeline } from "./CareerTimeline";
 import { formatDate } from "@/lib/utils";
 import type { Engagement, ExperienceEntry } from "@/types/portfolio";
 
@@ -50,6 +51,8 @@ export function Experience({ entries }: ExperienceProps) {
       note="Employers and the clients or products I worked on are listed separately."
       wide
     >
+      <CareerTimeline entries={entries} />
+
       <table className="logbook">
         <caption className="sr-only">Work experience, most recent first</caption>
         <colgroup>

@@ -27,13 +27,13 @@ Taken from the brief and treated as fixed unless Subash changes them:
 | 03 | Aircraft and flight prototype | Complete |
 | 04 | Master scroll timeline | Complete |
 | 05 | Six realistic geographical environments | Complete |
-| 06 | Career storytelling and milestone integration | In progress |
-| 07 | Complete portfolio sections | Not started |
+| 06 | Career storytelling and milestone integration | Complete |
+| 07 | Complete portfolio sections | In progress |
 | 08 | Performance and accessibility optimization | Not started |
 | 09 | SEO and deployment readiness | Not started |
 | 10 | Final QA and release | Not started |
 
-**Current phase:** 06 — Career storytelling and milestone integration.
+**Current phase:** 07 — Complete portfolio sections.
 
 ## Architecture and technical decisions
 
@@ -223,6 +223,32 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Headline decisions:
 - Buildings are boxes and cylinders without setbacks or rooftop detail: convincing from flight altitude, plain up close.
 - No individual tree geometry: forests are shaded canopies, which read well from altitude.
 
+### Phase 06 — Career storytelling and milestone integration (complete)
+
+**Implemented:**
+
+- **Fact re-check against the brief.** Three attribution problems were found and corrected:
+  - The work-experience entry for Creative Software (2022–present) described "technical leadership, architectural decisions and mentoring across an international development team" for the whole period. The brief gives those as Biosero responsibilities, and "technical leadership and mentoring" separately for IFS. Both are now attributed.
+  - The Green Button Go Scheduler project listed leadership and mentoring as its contributions; the brief does not tie them to that product. It now lists only the product facts.
+  - "IFS Cloud Home widgets in Angular and React" implied the widgets were built in both; the brief lists widgets, micro-frontend architecture and Angular and React development separately. Now listed separately in the chapter, project and experience entries.
+- **Milestone cards open during the flight.** Each strip with detail has a disclosure button (`aria-expanded`, `aria-controls`); the detail is always in the HTML and the static page shows it. Summaries that only repeated a strip's own points were removed.
+- **Focus areas per chapter**, restating the brief and labelled "Focus" (not "technologies") so they imply no stack.
+- **Career timeline** at the top of Work experience: one row per employment on a shared time axis, dates as `<time>` elements, the current role fading out toward "Present" (the page is built ahead of time and cannot know today's date), and links from each role to its flight chapters.
+- **Fixed during review:** where milestones share one slot (short or narrow screens), the invisible strips stacked on top took clicks and focus away from the current one. The timeline now marks the current strip (`data-current`, undone when scrubbing back), and only it takes pointer and keyboard input. Found by the new end-to-end test.
+- The chapter header width limit in live mode was being overridden by a Tailwind utility; it is now a component class, so the text stays on the darkened side of the frame.
+
+**Files:** `src/data/{chapters,experience,projects}.ts`, `src/types/portfolio.ts`, `src/components/storytelling/{MilestoneCard,ChapterSection}.tsx`, `src/components/portfolio/{CareerTimeline,Experience}.tsx`, `src/components/ui/Icon.tsx`, `src/components/flight/director.ts`, `src/app/globals.css`, `src/components/components.test.tsx`, `e2e/flight.spec.ts`.
+
+**Verification (2026-11-16):**
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Pass |
+| `npm run typecheck` | Pass |
+| `npm run test` | Pass, 92 of 92 in 9 files (new: disclosure markup, timeline layout and links, focus areas) |
+| `npm run test:e2e` | Pass, 63 of 63 (new: opening a milestone during the flight, on desktop, tablet and mobile) |
+| Visual review | Opened milestone at 1440 × 900 and 390 × 844; career timeline at both sizes |
+
 ## Known issues
 
 - **Playwright's bundled Chromium cannot run on this machine.** Windows reports "An Application Control policy has blocked this file" for the unsigned `chrome-headless-shell.exe`. The policy was left untouched. Tests use the installed, signed Google Chrome through `channel: "chrome"`; the blocked download was removed with `npx playwright uninstall`.
@@ -252,4 +278,4 @@ These block publishing the affected content, not the build. Until answered the f
 
 ## Next planned activities
 
-Phase 06: milestone cards that open to show their detail inside the flight, waypoint interactions, a verified career timeline, chapter introductions and skills per chapter, and a full re-check of every published fact against the brief.
+Phase 07: complete the portfolio sections (introduction, about, expertise, projects, experience, education, contact, social links, résumé download), all usable without the flight. Contact links, the résumé and education are data-driven and render as soon as Subash supplies them (outstanding questions 1–3); nothing is invented in the meantime.

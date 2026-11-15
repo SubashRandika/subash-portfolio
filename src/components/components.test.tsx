@@ -2,7 +2,9 @@ import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { Contact, contactLinks } from "@/components/portfolio/Contact";
 import { Education } from "@/components/portfolio/Education";
+import { CareerTimeline, layoutTimeline } from "@/components/portfolio/CareerTimeline";
 import { Experience } from "@/components/portfolio/Experience";
+import { ChapterSection } from "@/components/storytelling/ChapterSection";
 import { FlightHUD, formatProgress } from "@/components/storytelling/FlightHUD";
 import { MilestoneCard } from "@/components/storytelling/MilestoneCard";
 import { Button, ButtonLink } from "@/components/ui/Button";
@@ -52,7 +54,28 @@ describe("MilestoneCard", () => {
         <MilestoneCard chapter={3} position={1} milestone={{ id: "y", title: "Widgets" }} />
       </ol>,
     );
-    expect(screen.getByRole("listitem").querySelectorAll("p")).toHaveLength(0);
+    const item = screen.getByRole("listitem");
+    expect(item.querySelectorAll("p")).toHaveLength(0);
+    // Nothing to open, so no button.
+    expect(within(item).queryByRole("button")).toBeNull();
+  });
+
+  it("has a disclosure button that controls the detail", () => {
+    render(
+      <ol>
+        <MilestoneCard
+          chapter={6}
+          position={3}
+          milestone={{ id: "lead", title: "Leading", points: ["Mentoring engineers"] }}
+        />
+      </ol>,
+    );
+    const button = screen.getByRole("button", { name: "Details: Leading" });
+    expect(button).toHaveAttribute("aria-expanded", "false");
+    const detail = document.getElementById(button.getAttribute("aria-controls") ?? "");
+    expect(detail).not.toBeNull();
+    expect(detail).toHaveTextContent("Mentoring engineers");
+    expect(button.closest("li.milestone")).toHaveAttribute("id", "milestone-6-lead");
   });
 });
 
@@ -104,8 +127,63 @@ describe("Experience", () => {
 
   it("marks the current role as Present and shows Pearson / WSO2 as stated", () => {
     render(<Experience entries={experience} />);
-    expect(screen.getByText("Present")).toBeInTheDocument();
-    expect(screen.getByText("Pearson / WSO2")).toBeInTheDocument();
+    const table = screen.getByRole("table", { name: /Work experience/ });
+    expect(within(table).getByText("Present")).toBeInTheDocument();
+    expect(within(table).getByText("Pearson / WSO2")).toBeInTheDocument();
+  });
+});
+
+describe("CareerTimeline", () => {
+  it("lays the career out oldest first on one axis", () => {
+    const { rows, years } = layoutTimeline(experience);
+    expect(rows.map((r) => r.entry.id)).toEqual([
+      "pearson-wso2-2013",
+      "creative-software-2017",
+      "paze-industries-2021",
+      "ascentic-2022",
+      "creative-software-2022",
+    ]);
+    rows.forEach((row, index) => {
+      expect(row.width).toBeGreaterThan(0);
+      expect(row.left + row.width).toBeLessThanOrEqual(1 + 1e-9);
+      const next = rows[index + 1];
+      if (next) expect(next.left).toBeGreaterThanOrEqual(row.left + row.width - 0.002);
+    });
+    // Only the current role is open-ended, and it runs to the end of the track.
+    expect(rows.filter((r) => r.open).map((r) => r.entry.id)).toEqual(["creative-software-2022"]);
+    expect(rows.at(-1)!.left + rows.at(-1)!.width).toBeCloseTo(1, 9);
+    expect(years[0]!.year).toBe(2014);
+    expect(years.at(-1)!.year).toBe(2022);
+  });
+
+  it("reads as text and links each role to its flight chapters", () => {
+    render(<CareerTimeline entries={experience} />);
+    const figure = screen.getByRole("figure", { name: "Career timeline" });
+    const items = within(figure).getAllByRole("listitem");
+    expect(items).toHaveLength(5);
+    expect(items[0]).toHaveTextContent("Pearson / WSO2");
+    expect(items[0]).toHaveTextContent("17 Jun 2013");
+    expect(items[4]).toHaveTextContent("Present");
+    const hrefs = within(figure)
+      .getAllByRole("link")
+      .map((a) => a.getAttribute("href"));
+    expect(hrefs).toEqual([
+      "#chapter-01",
+      "#chapter-02",
+      "#chapter-03",
+      "#chapter-04",
+      "#chapter-05",
+      "#chapter-06",
+    ]);
+  });
+});
+
+describe("ChapterSection", () => {
+  it("lists the chapter's focus areas", () => {
+    const chapter = chapters[4]!;
+    render(<ChapterSection chapter={chapter} totalChapters={6} />);
+    const focus = screen.getByRole("heading", { name: "Focus" }).nextElementSibling as HTMLElement;
+    expect(within(focus).getAllByRole("listitem").map((li) => li.textContent)).toEqual(chapter.focus);
   });
 });
 
