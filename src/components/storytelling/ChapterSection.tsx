@@ -54,7 +54,7 @@ export function ChapterSection({ chapter, totalChapters, children }: ChapterSect
             <p className="type-lead mt-3 text-ink-muted">{chapter.narrative}</p>
           </header>
 
-          <ol className="milestones mt-9 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <ol className="milestones">
             {chapter.milestones.map((milestone, index) => (
               <MilestoneCard
                 key={milestone.id}

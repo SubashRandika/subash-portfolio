@@ -1,8 +1,13 @@
 import { expect, test } from "@playwright/test";
 
-test.describe("page foundation", () => {
+/**
+ * The page foundation is tested in static mode, which is what crawlers,
+ * reduced-motion visitors and browsers without WebGL receive. The live 3D
+ * flight has its own spec.
+ */
+test.describe("page foundation (static experience)", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/?flight=static");
   });
 
   test("has one h1 naming Subash and his title", async ({ page }) => {
@@ -39,8 +44,17 @@ test.describe("page foundation", () => {
     ]) {
       await expect(page.locator(`#${id}`)).toHaveCount(1);
     }
-    await expect(page.getByRole("heading", { name: "Engineering at Scale" })).toBeAttached();
+    await expect(page.getByRole("heading", { name: "Engineering at Scale" })).toBeVisible();
     await expect(page.getByRole("table", { name: /Work experience/ })).toBeAttached();
+  });
+
+  test("does not start WebGL", async ({ page }) => {
+    await expect(page.locator("html")).toHaveAttribute("data-flight", "static");
+    await expect(page.locator(".flight-canvas canvas")).toHaveCount(0);
+    // Every milestone is readable without scrolling through a flight.
+    await expect(
+      page.locator("#chapter-01").getByText("Close to 200 WSO2 ESB cloud connectors."),
+    ).toBeVisible();
   });
 
   test("every in-page link points at an element that exists", async ({ page }) => {
@@ -70,7 +84,7 @@ test.describe("page foundation", () => {
     expect(overflow).toBeLessThanOrEqual(0);
   });
 
-  test("primary navigation reaches every section", async ({ page }, testInfo) => {
+  test("primary navigation reaches every section", async ({ page }) => {
     const wide = (page.viewportSize()?.width ?? 0) >= 1024;
     if (!wide) {
       const toggle = page.getByRole("button", { name: "Open menu" });
@@ -97,6 +111,14 @@ test.describe("page foundation", () => {
       // Choosing a destination closes the menu.
       await expect(page.getByRole("button", { name: "Open menu" })).toBeVisible();
     }
-    testInfo.annotations.push({ type: "layout", description: wide ? "inline nav" : "menu" });
+  });
+});
+
+test.describe("reduced motion", () => {
+  test("visitors who ask for reduced motion get the static experience", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/");
+    await expect(page.locator("html")).toHaveAttribute("data-flight", "static");
+    await expect(page.locator(".flight-canvas canvas")).toHaveCount(0);
   });
 });

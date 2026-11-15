@@ -24,8 +24,8 @@ Taken from the brief and treated as fixed unless Subash changes them:
 | --- | --- | --- |
 | 01 | Project inspection and architecture planning | Complete |
 | 02 | Design system and responsive foundation | Complete |
-| 03 | Aircraft and flight prototype | In progress |
-| 04 | Master scroll timeline | Not started |
+| 03 | Aircraft and flight prototype | Complete |
+| 04 | Master scroll timeline | In progress |
 | 05 | Six realistic geographical environments | Not started |
 | 06 | Career storytelling and milestone integration | Not started |
 | 07 | Complete portfolio sections | Not started |
@@ -33,7 +33,7 @@ Taken from the brief and treated as fixed unless Subash changes them:
 | 09 | SEO and deployment readiness | Not started |
 | 10 | Final QA and release | Not started |
 
-**Current phase:** 03 — Aircraft and flight prototype.
+**Current phase:** 04 — Master scroll timeline.
 
 ## Architecture and technical decisions
 
@@ -48,6 +48,11 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Headline decisions:
 7. Playwright drives installed Chrome locally (see known issues).
 8. Visual identity: Michroma for titles, B612 and B612 Mono (the Airbus cockpit typefaces) for text and data; three themes that follow the sky through the day (night for the flight, day for the portfolio documents, dusk for contact).
 9. Work experience is a logbook table with separate Employer and Client / product columns, so the two can never be confused.
+11. Live or static is decided before first paint by an inline head script that sets `<html data-flight>`; CSS lays the page out from that attribute, so there is no layout shift on hydration. `?flight=static` and `?flight=live` override it for testing.
+12. In live mode each chapter is one viewport taller than its share of the flight and overlaps the previous one, so its sticky panel is pinned for exactly its progress range and its top stays at its true scroll position.
+13. Per-frame values live in `src/flight/frame.ts` (a plain mutable object). The flight controller fills it first each frame; sky, lights, runway and aircraft read from it.
+14. Scene-graph objects that are mutated every frame are held in refs and changed inside module-level functions. This keeps the React Compiler lint rules (`react-hooks/immutability`) enabled without exceptions.
+15. Custom surface shaders share one lighting and fog model (`shaders/lighting.glsl.ts`) that mirrors Three.js standard materials, so the ground and the aircraft agree about the light.
 10. Milestone summaries are optional: when the brief says nothing beyond a milestone's title, the card shows the title alone rather than padded copy.
 
 ## Phase summaries
@@ -105,11 +110,50 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Headline decisions:
 
 **Limitations:** the painted CSS skies are stand-ins until poster frames can be rendered from the 3D scene (Phase 08). Milestone copy is deliberately terse because it restates the brief without embellishment.
 
+### Phase 03 — Aircraft and flight prototype (complete)
+
+**Implemented:**
+
+- **Aircraft model.** `scripts/build-aircraft.mjs` (`npm run build:aircraft`) generates `public/models/sr-01.glb`: lofted fuselage with a two-tone pearl and graphite paint line, swept wings with blended winglets, T-tail, twin rear turbofans with fans and pylons, wraparound cockpit visor, cabin windows, landing gear, navigation, beacon and landing lights. 22,520 triangles, 160 KB with Meshopt compression and quantization. Fans, the three gear legs and the light groups are separate nodes; empty anchor nodes mark glow and marking positions.
+- **Aircraft runtime** (`src/components/flight/Aircraft.tsx`): gear retraction about the hinges, spinning fans, flashing beacons, light glows whose strength follows ambient light, and the SR-01 marking drawn at runtime in the title typeface.
+- **Flight core** (`src/flight`, no React): `path.ts` (route distance, meander, altitude profile, heading, climb angle, bank from turn curvature, takeoff rotation), `shots.ts` (camera choreography with a route-aligned frame and a screen-space framing offset that moves the aircraft aside for text), `atmosphere.ts` (nine art-directed looks from pre-dawn to the final sunrise), `store.ts`, `frame.ts`, `math.ts`.
+- **Scene:** sky dome with sun, horizon glow and stars; sky-derived reflections captured to a cube map only when the light changes; sun, hemisphere light and fog; a basic airport (ground, runway with full markings, wet-look sheen, landing-light pool, 390-odd runway lights); a contact shadow from a distance-field silhouette.
+- **Cameras:** establishing, approach, rear chase, rotation, liftoff, side tracking, climb-out.
+- **Page integration:** `FlightStage` loads the WebGL chunk on demand, pauses rendering when the stage is off screen, cross-fades from the painted poster once frames are drawn, and falls back to the static page on a render error or lost context.
+- Internal inspection page at `/lab/aircraft` (noindex).
+
+**Bugs found and fixed during the phase:**
+
+- Bank angle jumped about 8° where the route's meander fades in (second-derivative discontinuity). Caught by the continuity unit test; fixed with a C2 envelope.
+- Heading wrapped between +π and −π when flying due "north". Caught by the same test.
+- **The page scrolled by itself in live mode.** Browser scroll anchoring fought the sticky, overlapping chapter panels. Fixed with `overflow-anchor: none` on the flight section and covered by an end-to-end regression test.
+
+**Verification (2026-11-15):**
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Pass |
+| `npm run typecheck` | Pass |
+| `npm run test` | Pass, 66 of 66 in 7 files |
+| `npm run test:e2e` | Pass, 48 of 48 (static, reduced motion and live suites × desktop, tablet, mobile) |
+| `npm run build` | Pass; all routes static |
+| Visual review | Aircraft from seven angles; opening, rear chase, liftoff and side tracking in the live page on a real GPU (AMD Radeon 860M) |
+
+**Limitations carried forward:**
+
+- Chapter text is not yet choreographed: panels overlap during transitions and the HUD shows its initial values. Both belong to Phase 04.
+- The ground is a flat placeholder. Terrain, coastline and airport buildings arrive in Phase 05.
+- Landing gear folds into the airframe without gear doors.
+- The aircraft is a procedural model: convincing at chase-camera distance, not a hero-shot asset.
+
 ## Known issues
 
 - **Playwright's bundled Chromium cannot run on this machine.** Windows reports "An Application Control policy has blocked this file" for the unsigned `chrome-headless-shell.exe`. The policy was left untouched. Tests use the installed, signed Google Chrome through `channel: "chrome"`; the blocked download was removed with `npx playwright uninstall`.
 - **`npm audit` reports 8 moderate advisories**, all inside the ESLint toolchain pulled in by `eslint-config-next`. They are development-only and are not shipped. To be re-checked in Phase 10.
 - **Blender is not installed**, so asset preparation is done in code.
+- **The dev server's file watcher sometimes misses stylesheet writes** on this machine (seen with Turbopack on Windows). Re-saving `src/app/globals.css` triggers the rebuild. Production builds are unaffected.
+- **Browser automation only renders frames when a screenshot forces one**, because the automation window is occluded and `requestAnimationFrame` is throttled. Visual checks therefore take a priming screenshot first.
+- Three.js r187 logs two deprecation warnings that originate inside React Three Fiber (`THREE.Clock`, `PCFSoftShadowMap`). They are harmless.
 - **A `next dev` server for this project was already running on port 3000** (not started by this build process). It was left running and used for visual checks. Next.js allows only one dev server per project directory.
 
 ## Technical debt
@@ -130,4 +174,4 @@ These block publishing the affected content, not the build. Until answered the f
 
 ## Next planned activities
 
-Phase 03: the aircraft model (generated GLB with separate gear, fan and light nodes), a first environment, the flight path, rear chase and side cameras, the takeoff animation and the initial 3D scene.
+Phase 04: GSAP ScrollTrigger master timeline, choreographed chapter text (fade in and out with progress), live HUD readouts and rail, waypoint markers, the full six-chapter camera choreography, and precise chapter navigation.

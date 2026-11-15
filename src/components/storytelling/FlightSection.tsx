@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { FlightStage } from "@/components/flight/FlightStage";
 import { ButtonLink } from "@/components/ui/Button";
 import type { Chapter, Profile } from "@/types/portfolio";
 import { ChapterNavigation } from "./ChapterNavigation";
@@ -9,8 +9,6 @@ import { Opening } from "./Opening";
 interface FlightSectionProps {
   profile: Profile;
   chapters: readonly Chapter[];
-  /** The 3D scene. Rendered inside the sticky stage, hidden from assistive technology. */
-  stage?: ReactNode;
 }
 
 /**
@@ -19,15 +17,19 @@ interface FlightSectionProps {
  * All of the narrative is server-rendered HTML in document order. The stage
  * (3D canvas and HUD) only becomes visible in live mode.
  */
-export function FlightSection({ profile, chapters, stage }: FlightSectionProps) {
+export function FlightSection({ profile, chapters }: FlightSectionProps) {
   const [closingLead, closingFollow] = profile.closingMessage;
   const lastChapter = chapters[chapters.length - 1];
 
   return (
     <section id="flight" data-theme="night" className="flight" aria-labelledby="flight-heading">
       <div className="flight-stage">
+        {/* Painted sky shown until the first 3D frame is ready. */}
+        <div className="flight-poster sky" data-sky="0" aria-hidden="true">
+          <div className="runway" />
+        </div>
         <div className="absolute inset-0" aria-hidden="true">
-          {stage}
+          <FlightStage />
         </div>
         <FlightHUD chapters={chapters} profile={profile} />
       </div>

@@ -3,6 +3,7 @@ import { B612, B612_Mono, Michroma } from "next/font/google";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { profile } from "@/data/profile";
+import { FLIGHT_MODE_SCRIPT } from "@/lib/flight-mode-script";
 import "./globals.css";
 
 // Titles: wide, engineered capitals in the aerospace instrument tradition.
@@ -46,7 +47,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       className={`${michroma.variable} ${b612.variable} ${b612Mono.variable} antialiased`}
+      // The inline script below sets data-flight on this element before hydration.
+      suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: FLIGHT_MODE_SCRIPT }} />
+      </head>
       <body data-theme="night" className="flex min-h-svh flex-col">
         <a href="#main" className="skip-link">
           Skip to content
