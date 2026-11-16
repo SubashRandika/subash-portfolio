@@ -12,7 +12,7 @@ interface FlightSectionProps {
 }
 
 /**
- * The Career Flight: opening, six chapters and the closing message.
+ * The career journey: opening, six chapters and the closing message.
  *
  * All of the narrative is server-rendered HTML in document order. The stage
  * (3D canvas and HUD) only becomes visible in live mode.
@@ -40,10 +40,11 @@ export function FlightSection({ profile, chapters }: FlightSectionProps) {
 
         <div className="flight-intro shell pt-14 pb-4">
           <h2 id="flight-heading" className="type-display-md">
-            The Career Flight
+            Career Journey
           </h2>
           <p className="type-small mt-3 max-w-xl text-ink-muted">
-            Six chapters, from the first takeoff in {profile.careerStartYear} to the current mission.
+            Six chapters, from my first role in {profile.careerStartYear} to leading engineering
+            today.
           </p>
           <div className="mt-8">
             <ChapterNavigation chapters={chapters} />

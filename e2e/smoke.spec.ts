@@ -98,9 +98,10 @@ test.describe("page foundation (static experience)", () => {
     const nav = page.getByRole("navigation", { name: "Primary" }).filter({ visible: true });
     await expect(nav.getByRole("link")).toHaveText([
       "Home",
-      "Flight Experience",
+      "Career Journey",
       "Projects",
       "Experience",
+      "Education",
       "About",
       "Contact",
     ]);

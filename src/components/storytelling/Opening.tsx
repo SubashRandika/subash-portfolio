@@ -47,7 +47,7 @@ export function Opening({ profile }: OpeningProps) {
 
             <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 sm:mt-0">
               <ButtonLink href="#chapter-01" icon="arrow-down">
-                Begin flight
+                Begin the journey
               </ButtonLink>
               <ButtonLink href="#about" variant="quiet">
                 Skip to portfolio
@@ -56,7 +56,7 @@ export function Opening({ profile }: OpeningProps) {
           </div>
 
           <p className="live-only type-label mt-5 text-ink-muted" data-opening="hint">
-            Scroll to fly at your own pace
+            Scroll to explore at your own pace
           </p>
         </div>
       </div>

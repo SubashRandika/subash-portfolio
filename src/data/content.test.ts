@@ -20,14 +20,16 @@ describe("chapters", () => {
     }
   });
 
+  // Titles from the brief, with the aviation terms replaced by plain career
+  // language at Subash's request (2026-11-16).
   it("uses the chapter titles and organisations from the brief", () => {
     expect(chapters.map((c) => [c.title, c.organisation])).toEqual([
-      ["First Takeoff", "Virtusa / WSO2 and JKCS / Pearson"],
+      ["Laying the Foundations", "Virtusa / WSO2 and JKCS / Pearson"],
       ["Building Momentum", "Creative Software / Qmatic AB"],
       ["A New Horizon", "Paze Industries / Senseforce GmbH"],
       ["Mapping New Possibilities", "Ascentic / Geposit"],
       ["Engineering at Scale", "Creative Software / IFS and Finago"],
-      ["Leading the Mission", "Creative Software / Biosero"],
+      ["Leading the Way", "Creative Software / Biosero"],
     ]);
   });
 

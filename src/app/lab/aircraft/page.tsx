@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { AircraftLabLoader } from "@/components/lab/AircraftLabLoader";
 
 export const metadata: Metadata = {
-  title: "Aircraft lab — The Career Flight",
+  title: "Aircraft lab — Career Journey",
   robots: { index: false, follow: false },
 };
 

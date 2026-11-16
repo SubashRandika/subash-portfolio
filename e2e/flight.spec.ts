@@ -21,9 +21,9 @@ test.describe("live flight", () => {
 
   test("chooses live mode before paint and draws the scene", async ({ page }) => {
     await expect(page.locator("html")).toHaveAttribute("data-flight", "live");
-    await expect(page.locator(".flight-canvas canvas")).toBeVisible({ timeout: 30_000 });
-    // Software rendering compiles the terrain and building shaders on the CPU;
-    // with several test workers sharing it, the first frame can take a while.
+    // Software rendering loads and compiles the 3D scene on the CPU; with the
+    // other test workers sharing it, the first frame can take a while.
+    await expect(page.locator(".flight-canvas canvas")).toBeVisible({ timeout: 90_000 });
     await expect(page.locator("html")).toHaveAttribute("data-flight-ready", "true", {
       timeout: 120_000,
     });
@@ -103,7 +103,7 @@ test.describe("live flight", () => {
     // …and back again, skipping chapters on the way.
     await visit(0.3, "02 / 06", 2);
     await visit(0.15, "01 / 06", 1);
-    await visit(0, "Takeoff", null);
+    await visit(0, "Start", null);
     await expect(opening).toBeVisible();
     for (const n of [1, 2, 3, 4, 5, 6]) await expect(body(n)).toBeHidden();
   });
@@ -167,11 +167,11 @@ test.describe("live flight", () => {
     await expect(detail).toBeHidden();
   });
 
-  test("Begin flight glides through the takeoff into chapter 1", async ({ page }) => {
+  test("Begin the journey glides through the takeoff into chapter 1", async ({ page }) => {
     await expect(page.locator("#chapter-01 [data-flight-part='body']")).toBeHidden({
       timeout: 30_000,
     });
-    await page.getByRole("link", { name: "Begin flight" }).click();
+    await page.getByRole("link", { name: "Begin the journey" }).click();
     // A glide, not a cut: the veil stays down and progress passes through the roll.
     await expect(page.locator(".flight-veil")).not.toHaveAttribute("data-on", "true");
     await expect(page.locator("[data-hud='chapter-count']")).toHaveText("01 / 06", {

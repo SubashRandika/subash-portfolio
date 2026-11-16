@@ -7,7 +7,7 @@ import { chapters, getChapter } from "@/data/chapters";
 import { profile } from "@/data/profile";
 
 export const metadata: Metadata = {
-  title: "Design system — The Career Flight",
+  title: "Design system — Career Journey",
   robots: { index: false, follow: false },
 };
 
@@ -94,7 +94,7 @@ export default function Styleguide() {
           <div className="shell">
             <h2 className="type-display-md">Theme: {theme}</h2>
             <div className="mt-6 flex flex-wrap items-center gap-4">
-              <Button icon="arrow-down">Begin flight</Button>
+              <Button icon="arrow-down">Begin the journey</Button>
               <Button variant="secondary">Secondary</Button>
               <ButtonLink href="#main" variant="quiet">
                 Quiet link

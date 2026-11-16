@@ -7,7 +7,7 @@ import { milestoneId, waypointRef } from "./MilestoneCard";
 
 interface FlightHUDProps {
   chapters: readonly Chapter[];
-  profile: Pick<Profile, "yearsOfExperience">;
+  profile: Pick<Profile, "yearsOfExperience" | "careerStartYear">;
   /** Segment shown as current. 0 is the takeoff sequence. */
   segment?: TimelineSegment;
   /** Flight progress, 0–1. */
@@ -19,8 +19,8 @@ export function formatProgress(progress: number): string {
   return String(Math.round(clamp01(progress) * 100)).padStart(3, "0");
 }
 
-/** Readout shown for the takeoff sequence, before chapter 1. */
-export const TAKEOFF_READOUT = { count: "Takeoff", title: "Runway" } as const;
+/** Readout shown for the opening, before chapter 1. */
+export const TAKEOFF_READOUT = { count: "Start", title: "Introduction" } as const;
 
 /**
  * The persistent flight HUD.
@@ -39,7 +39,7 @@ export function FlightHUD({ chapters, profile, segment = 0, progress = 0 }: Flig
   return (
     <div className="hud" data-hud="root">
       <div className="shell">
-        <nav aria-label="Flight chapters" className="hud-rail" data-hud="rail" style={railStyle}>
+        <nav aria-label="Journey progress" className="hud-rail" data-hud="rail" style={railStyle}>
           <span className="hud-rail-track" aria-hidden="true">
             <span className="hud-rail-fill" />
           </span>
@@ -76,8 +76,8 @@ export function FlightHUD({ chapters, profile, segment = 0, progress = 0 }: Flig
                 data-destination={firstDestination}
                 aria-current={segment === 0 ? "step" : undefined}
               >
-                <span aria-hidden="true">T/O</span>
-                <span className="sr-only">Takeoff</span>
+                <span aria-hidden="true">00</span>
+                <span className="sr-only">Introduction</span>
               </a>
             </li>
             {chapters.map((chapter) => (
@@ -103,8 +103,8 @@ export function FlightHUD({ chapters, profile, segment = 0, progress = 0 }: Flig
 
         <dl className="hud-strip">
           <div className="hud-field" data-priority="2">
-            <dt>SR-01</dt>
-            <dd>Career Flight</dd>
+            <dt>Career</dt>
+            <dd>{profile.careerStartYear}–present</dd>
           </div>
           <div className="hud-field" data-priority="1">
             <dt data-hud="chapter-count">
@@ -113,15 +113,15 @@ export function FlightHUD({ chapters, profile, segment = 0, progress = 0 }: Flig
             <dd data-hud="chapter-title">{current ? current.title : TAKEOFF_READOUT.title}</dd>
           </div>
           <div className="hud-field" data-priority="2">
-            <dt>Dest</dt>
+            <dt>Client</dt>
             <dd data-hud="destination">{current ? current.destination : firstDestination}</dd>
           </div>
           <div className="hud-field" data-priority="3">
-            <dt>Exp</dt>
-            <dd>{profile.yearsOfExperience} yrs</dd>
+            <dt>Experience</dt>
+            <dd>{profile.yearsOfExperience} years</dd>
           </div>
           <div className="hud-field" data-priority="1" data-field="progress">
-            <dt className="sr-only">Flight progress</dt>
+            <dt className="sr-only">Journey progress</dt>
             <dd className="type-data">
               <span data-hud="percent">{formatProgress(progress)}</span>
               <span aria-hidden="true"> %</span>

@@ -14,8 +14,11 @@ import { profile } from "@/data/profile";
 
 describe("Button", () => {
   it("defaults to type=button so it never submits a form by accident", () => {
-    render(<Button>Begin flight</Button>);
-    expect(screen.getByRole("button", { name: "Begin flight" })).toHaveAttribute("type", "button");
+    render(<Button>Begin the journey</Button>);
+    expect(screen.getByRole("button", { name: "Begin the journey" })).toHaveAttribute(
+      "type",
+      "button",
+    );
   });
 
   it("renders external links safely and announces the new tab", () => {
@@ -87,9 +90,9 @@ describe("FlightHUD", () => {
     expect(formatProgress(7)).toBe("100");
   });
 
-  it("links to takeoff and all six chapters and marks the current one", () => {
+  it("links to the start and all six chapters and marks the current one", () => {
     render(<FlightHUD chapters={chapters} profile={profile} segment={2} progress={0.3} />);
-    const nav = screen.getByRole("navigation", { name: "Flight chapters" });
+    const nav = screen.getByRole("navigation", { name: "Journey progress" });
     const links = within(nav).getAllByRole("link");
     expect(links.map((l) => l.getAttribute("href"))).toEqual([
       "#takeoff",
@@ -217,7 +220,7 @@ describe("Contact", () => {
     const none = { email: null, linkedin: null, github: null, resume: null };
     render(<Contact profile={profile} links={none} />);
     expect(screen.getByRole("heading", { name: "The journey continues." })).toBeInTheDocument();
-    expect(screen.getByText("The next mission could be ours.")).toBeInTheDocument();
+    expect(screen.getByText("The next chapter could be ours.")).toBeInTheDocument();
     expect(screen.queryAllByRole("link")).toHaveLength(0);
   });
 

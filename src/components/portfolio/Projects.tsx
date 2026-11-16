@@ -40,7 +40,7 @@ export function Projects({ projects }: ProjectsProps) {
               </ul>
               <p className="type-small mt-4">
                 <a href={`#chapter-${pad2(project.chapter)}`} className="text-link">
-                  See chapter {pad2(project.chapter)} of the flight
+                  See chapter {pad2(project.chapter)} of the career journey
                 </a>
               </p>
             </article>

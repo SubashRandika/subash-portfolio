@@ -13,7 +13,7 @@ export const profile: Profile = {
   yearsOfExperience: "13+",
   careerStartYear: 2013,
   tagline: ["Every journey begins with a takeoff.", "Mine began in 2013."],
-  closingMessage: ["The journey continues.", "The next mission could be ours."],
+  closingMessage: ["The journey continues.", "The next chapter could be ours."],
   summary: [
     "I am a lead software engineer with 13+ years of software development experience across enterprise applications and SaaS platforms.",
     "My work centres on React, Next.js, Angular and TypeScript: frontend architecture, micro-frontends, design systems and reusable component libraries, built to be accessible, internationalized, tested and fast.",

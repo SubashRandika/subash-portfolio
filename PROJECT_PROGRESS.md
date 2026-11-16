@@ -17,6 +17,7 @@ Taken from the brief and treated as fixed unless Subash changes them:
 - Adaptive HIGH / MEDIUM / LOW graphics; never load all six environments at once.
 - `NEXT_PUBLIC_SITE_URL` instead of a hardcoded domain.
 - No invented facts, dates, metrics, URLs or credentials.
+- **Wording (changed at Subash's request, 2026-11-16):** the flight is presented as the *career journey*. Navigation, HUD, buttons and chapter titles use plain career language rather than aviation terms ("Career Journey" not "Flight Experience"; "Laying the Foundations" not "First Takeoff"; "Leading the Way" not "Leading the Mission"; the HUD reads Career, Client, Experience instead of SR-01, Dest, Exp, T/O). The metaphor stays in the visuals and in the opening line ("Every journey begins with a takeoff."), which is what the visitor sees on screen at that moment. The closing line is now "The next chapter could be ours." Education is in the primary navigation.
 
 ## Status
 

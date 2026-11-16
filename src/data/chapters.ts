@@ -13,7 +13,7 @@ export const chapters: readonly Chapter[] = [
   {
     number: 1,
     id: "chapter-01",
-    title: "First Takeoff",
+    title: "Laying the Foundations",
     period: "2013–2017",
     // Two employments: Virtusa for WSO2 (2013–2015), then JKCS for Pearson (2015–2017).
     organisation: "Virtusa / WSO2 and JKCS / Pearson",
@@ -243,14 +243,14 @@ export const chapters: readonly Chapter[] = [
   {
     number: 6,
     id: "chapter-06",
-    title: "Leading the Mission",
+    title: "Leading the Way",
     period: "Current",
     organisation: "Creative Software / Biosero",
     product: null,
     destination: "Biosero",
     environment: "Above the clouds, distant mountains and a sunrise horizon",
     narrative:
-      "Leading engineering initiatives, building enterprise SaaS solutions, and preparing for the next professional mission.",
+      "Leading engineering initiatives, building enterprise SaaS solutions, and mentoring engineers.",
     focus: [
       "Enterprise SaaS",
       "Laboratory scheduling",

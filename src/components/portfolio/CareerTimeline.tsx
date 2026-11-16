@@ -103,7 +103,7 @@ export function CareerTimeline({ entries }: CareerTimelineProps) {
               <div className="timeline-chapters">
                 {entry.chapters.map((n) => (
                   <a key={n} href={`#chapter-${pad2(n)}`} className="tag">
-                    <span className="sr-only">Flight chapter </span>
+                    <span className="sr-only">Career journey chapter </span>
                     <span aria-hidden="true">Ch. </span>
                     {pad2(n)}
                   </a>
