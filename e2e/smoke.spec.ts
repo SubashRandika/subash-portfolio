@@ -157,6 +157,22 @@ test.describe("page foundation (static experience)", () => {
     await expect
       .poll(() => image.evaluate((img: HTMLImageElement) => (img.complete ? img.naturalWidth : 0)))
       .toBeGreaterThan(0);
+
+    // Regression: the orbit and corner marks once reached past the column
+    // and were cut off. Every part stays inside the figure, and the figure
+    // inside the page.
+    const overhang = await portrait.evaluate((figure) => {
+      const box = figure.getBoundingClientRect();
+      const parts = figure.querySelectorAll(".portrait-orbit, .portrait-corner");
+      let worst = 0;
+      for (const part of parts) {
+        const r = part.getBoundingClientRect();
+        worst = Math.max(worst, box.left - r.left, r.right - box.right);
+      }
+      return { worst, pageRight: document.documentElement.clientWidth - box.right };
+    });
+    expect(overhang.worst).toBeLessThanOrEqual(1);
+    expect(overhang.pageRight).toBeGreaterThanOrEqual(0);
   });
 });
 

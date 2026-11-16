@@ -1423,9 +1423,6 @@
     display: grid;
     gap: 2.5rem 3rem;
     align-items: start;
-    /* The orbit reaches past the plate; never let it widen the page. */
-    overflow-x: clip;
-    overflow-y: visible;
   }
 
   @media (min-width: 48rem) {
@@ -1437,9 +1434,12 @@
   .portrait {
     --plate-radius: 0.375rem;
     position: relative;
-    width: min(19rem, 76%);
+    width: min(19rem, 86%);
     margin: 0;
-    padding: 1.5rem 1.25rem 0;
+    /* Room on every side for the orbit (10% of the plate's width beyond each
+       edge) and the corner marks, so nothing reaches outside the column and
+       nothing needs clipping. */
+    padding: 1.75rem 9% 0;
     /* On narrow screens the portrait leads the section. */
     order: -1;
   }
@@ -1473,9 +1473,9 @@
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 128%;
+    width: 120%;
     aspect-ratio: 1;
-    translate: -50% -56%;
+    translate: -50% -55%;
     overflow: visible;
     pointer-events: none;
   }
