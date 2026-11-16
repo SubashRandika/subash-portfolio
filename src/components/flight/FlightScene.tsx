@@ -3,12 +3,13 @@
 import { useFrame } from "@react-three/fiber";
 import { Suspense, useMemo, useRef } from "react";
 import { Airport } from "@/components/environments/Airport";
+import { useQuality } from "@/hooks/useQuality";
 import { Environments } from "@/components/environments/Environments";
 import { createAircraftState } from "@/flight/aircraft";
 import { Aircraft, type AircraftRig } from "./Aircraft";
 import { AircraftShadow } from "./AircraftShadow";
 import { FlightController } from "./FlightController";
-import { RenderProfile } from "./RenderProfile";
+import { QualityGovernor } from "./QualityGovernor";
 import { SceneLighting } from "./SceneLighting";
 import { Sky } from "./Sky";
 import { SunShadows } from "./SunShadows";
@@ -22,6 +23,21 @@ interface FlightSceneProps {
 
 /** Frames to draw after the aircraft appears before the scene is called ready. */
 const WARM_UP_FRAMES = 3;
+
+/**
+ * Compiles every material in the scene in the background once the aircraft
+ * has loaded, including those not yet visible (the cloud deck), so nothing
+ * stalls on shader compilation when it first comes into view.
+ */
+function Precompile() {
+  const done = useRef(false);
+  useFrame(({ gl, scene, camera }) => {
+    if (done.current) return;
+    done.current = true;
+    void gl.compileAsync(scene, camera).catch(() => undefined);
+  });
+  return null;
+}
 
 /**
  * Rendered inside the same Suspense boundary as the aircraft, so it only
@@ -44,10 +60,11 @@ function ReadySignal({ onReady }: { onReady?: () => void }) {
 export function FlightScene({ onReady, still = false }: FlightSceneProps) {
   const rigRef = useRef<AircraftRig | null>(null);
   const aircraftState = useMemo(() => createAircraftState(), []);
+  const { glows } = useQuality();
 
   return (
     <>
-      <RenderProfile />
+      <QualityGovernor />
       <FlightController rigRef={rigRef} aircraftState={aircraftState} still={still} />
       <Sky />
       <SceneLighting />
@@ -56,8 +73,9 @@ export function FlightScene({ onReady, still = false }: FlightSceneProps) {
       <Airport />
       <AircraftShadow />
       <Suspense fallback={null}>
-        <Aircraft rigRef={rigRef} state={aircraftState} still={still} />
+        <Aircraft rigRef={rigRef} state={aircraftState} still={still} glows={glows} />
         <ReadySignal onReady={onReady} />
+        <Precompile />
       </Suspense>
     </>
   );

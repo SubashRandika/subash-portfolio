@@ -361,8 +361,25 @@ function midRise(
   }
 }
 
-export function cityStructures(): Structure[] {
+/** Runs a generator of building steps to completion. */
+function runAll(steps: (out: Structure[]) => Generator<void, void, void>): Structure[] {
   const out: Structure[] = [];
+  const generator = steps(out);
+  while (!generator.next().done) {
+    // Each step adds a column of blocks or a row of plots.
+  }
+  return out;
+}
+
+export function cityStructures(): Structure[] {
+  return runAll(cityStructureSteps);
+}
+
+/**
+ * The city, built one column of blocks per step so the work can be spread
+ * over several frames. Appends to `out`.
+ */
+export function* cityStructureSteps(out: Structure[]): Generator<void, void, void> {
   const { block } = CITY_GRID;
 
   // Grid cells covering the city's stretch of route.
@@ -503,10 +520,11 @@ export function cityStructures(): Structure[] {
         });
       }
     }
+    // Let the caller spread the work over several frames.
+    yield;
   }
 
   bridges(out);
-  return out;
 }
 
 /** Bridges carry the avenues across the river. */
@@ -661,7 +679,14 @@ function gantryCrane(site: Site, lx: number, lz: number, span: number, seed: num
 }
 
 export function industrialStructures(): Structure[] {
-  const out: Structure[] = [];
+  return runAll(industrialStructureSteps);
+}
+
+/**
+ * The industrial plain, built one row of plots per step so the work can be
+ * spread over several frames. Appends to `out`.
+ */
+export function* industrialStructureSteps(out: Structure[]): Generator<void, void, void> {
   const P = INDUSTRIAL_PLOT;
   const iz0 = Math.floor(-INDUSTRY_TO / P);
   const iz1 = Math.ceil(-INDUSTRY_FROM / P);
@@ -806,8 +831,9 @@ export function industrialStructures(): Structure[] {
         }
       }
     }
+    // Let the caller spread the work over several frames.
+    yield;
   }
-  return out;
 }
 
 // ---------------------------------------------------------------------------

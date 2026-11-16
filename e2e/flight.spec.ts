@@ -27,6 +27,8 @@ test.describe("live flight", () => {
     await expect(page.locator("html")).toHaveAttribute("data-flight-ready", "true", {
       timeout: 120_000,
     });
+    // A graphics profile is chosen from the device and recorded on the page.
+    await expect(page.locator("html")).toHaveAttribute("data-flight-quality", /^(high|medium|low)$/);
   });
 
   test("keeps the opening text as the first thing a visitor reads", async ({ page }) => {

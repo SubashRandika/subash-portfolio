@@ -21,6 +21,7 @@ import {
   shadowUniforms,
 } from "@/components/flight/sunShadow";
 import { flightFrame } from "@/flight/frame";
+import { getQuality } from "@/flight/quality";
 import { CITY_AXIS, CITY_GRID, TERRAIN_CONSTANTS, TERRAIN_GLSL } from "@/flight/terrain";
 import { TILE_VERTICES, buildTile, tileIndices } from "@/flight/terrainTile";
 
@@ -854,12 +855,8 @@ const ROOT = { x: 0, z: -24_000, size: 131_072 } as const;
 /** Smallest tile, in metres. */
 const MIN_TILE = 256;
 const MAX_LEVEL = Math.round(Math.log2(ROOT.size / MIN_TILE));
-/** A tile splits when the camera is closer than this many tile widths. */
-const LOD_FACTOR = 2.1;
 /** Levels built up front, so a coarse surface is always available. */
 const BASE_LEVEL = 3;
-/** Milliseconds per frame spent building tiles. */
-const BUILD_BUDGET_MS = 4;
 /** Tiles kept in memory before the least recently used are released. */
 const CACHE_LIMIT = 520;
 
@@ -970,7 +967,7 @@ function selectTiles(
   const dy = Math.max(camera.y - top, 0);
   const distance = Math.hypot(dx, dy, dz);
 
-  if (level >= MAX_LEVEL || distance > size * LOD_FACTOR) {
+  if (level >= MAX_LEVEL || distance > size * getQuality().terrainDetail) {
     show(state, tile, selected);
     return;
   }
@@ -1052,7 +1049,8 @@ function updateTerrain(state: TerrainState, camera: THREE.Camera): void {
   state.spare = state.visible;
   state.visible = selected;
 
-  buildWanted(state, BUILD_BUDGET_MS);
+  // Detail and build budget follow the graphics profile.
+  buildWanted(state, getQuality().tileBudgetMs);
   evict(state);
 }
 

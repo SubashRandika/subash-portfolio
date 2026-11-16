@@ -201,6 +201,8 @@ export function createShadowRig(): ShadowRig {
     far: createCascade(FAR_HALF_EXTENT, shadowUniforms.uShadowFar, SHADOW_FAR_LAYER),
     depthMaterial: new THREE.MeshBasicMaterial({
       colorWrite: false,
+      // Never tone mapped: keeps one program whether drawn or precompiled.
+      toneMapped: false,
       side: THREE.DoubleSide,
       fog: false,
       polygonOffset: true,
@@ -211,6 +213,28 @@ export function createShadowRig(): ShadowRig {
     enabled: 1,
     allocated: false,
   };
+}
+
+/**
+ * Compiles the shadow pass's programs (plain and instanced) in the
+ * background, so the first shadow redraw does not stall on compilation. The
+ * render target is bound, and the real scene supplies the environment, so the
+ * programs match the ones the shadow pass will ask for.
+ */
+export function precompileShadowPrograms(
+  rig: ShadowRig,
+  gl: THREE.WebGLRenderer,
+  target: THREE.Scene,
+): void {
+  const geometry = new THREE.BoxGeometry();
+  const scene = new THREE.Scene();
+  scene.add(new THREE.Mesh(geometry, rig.depthMaterial));
+  scene.add(new THREE.InstancedMesh(geometry, rig.depthMaterial, 1));
+  const previous = gl.getRenderTarget();
+  gl.setRenderTarget(rig.near.target);
+  const done = gl.compileAsync(scene, rig.near.camera, target);
+  gl.setRenderTarget(previous);
+  void done.finally(() => geometry.dispose());
 }
 
 export function disposeShadowRig(rig: ShadowRig): void {
