@@ -22,7 +22,7 @@ describe("chapters", () => {
 
   it("uses the chapter titles and organisations from the brief", () => {
     expect(chapters.map((c) => [c.title, c.organisation])).toEqual([
-      ["First Takeoff", "WSO2 and Pearson"],
+      ["First Takeoff", "Virtusa / WSO2 and JKCS / Pearson"],
       ["Building Momentum", "Creative Software / Qmatic AB"],
       ["A New Horizon", "Paze Industries / Senseforce GmbH"],
       ["Mapping New Possibilities", "Ascentic / Geposit"],
@@ -47,18 +47,19 @@ describe("experience", () => {
     expect(experience.filter((e) => e.end === null)).toHaveLength(1);
   });
 
-  it("keeps the employment dates given in the brief", () => {
+  it("keeps the employment dates given in the brief and by Subash", () => {
     expect(experience.map((e) => [e.role, e.start, e.end])).toEqual([
       ["Technical Lead", "2022-03-15", null],
       ["Associate Technical Lead", "2022-01-01", "2022-03-14"],
       ["Senior Software Engineer", "2021-10-04", "2021-12-31"],
       ["Associate Technical Lead", "2017-04-17", "2021-09-30"],
-      ["Software Engineer", "2013-06-17", "2017-04-14"],
+      ["Software Engineer", "2015", "2017-04-14"],
+      ["Software Engineer", "2013-06-17", "2015"],
     ]);
   });
 
   it("never lists a client or product as an employer", () => {
-    const clients = ["Qmatic", "Senseforce", "Geposit", "IFS", "Finago", "Biosero"];
+    const clients = ["WSO2", "Pearson", "Qmatic", "Senseforce", "Geposit", "IFS", "Finago", "Biosero"];
     for (const entry of experience) {
       for (const client of clients) {
         expect(entry.employer ?? "").not.toContain(client);
@@ -69,24 +70,32 @@ describe("experience", () => {
       "Ascentic",
       "Paze Industries",
       "Creative Software",
-      null,
+      "JKCS",
+      "Virtusa",
     ]);
   });
 
-  it("shows WSO2 and Pearson as clients and names no employer for 2013–2017", () => {
-    const first = experience[experience.length - 1];
-    expect(first?.employer).toBeNull();
-    expect(first?.engagements).toEqual([
-      { client: "WSO2", period: "2013–2015" },
-      { client: "Pearson", period: "2015–2017" },
-    ]);
+  it("keeps WSO2 and Pearson as clients of Virtusa and JKCS", () => {
+    const byEmployer = Object.fromEntries(
+      experience.map((entry) => [entry.employer, entry.engagements.map((e) => e.client)]),
+    );
+    expect(byEmployer.Virtusa).toEqual(["WSO2"]);
+    expect(byEmployer.JKCS).toEqual(["Pearson"]);
   });
 
-  it("dates only the engagements Subash dated", () => {
+  it("shows the 2015 change of employer as a year, not an invented date", () => {
+    const virtusa = experience.find((entry) => entry.employer === "Virtusa");
+    const jkcs = experience.find((entry) => entry.employer === "JKCS");
+    expect(virtusa?.end).toBe("2015");
+    expect(jkcs?.start).toBe("2015");
+  });
+
+  it("does not invent dates for individual client engagements", () => {
     for (const entry of experience) {
       for (const engagement of entry.engagements) {
-        const dated = engagement.client === "WSO2" || engagement.client === "Pearson";
-        expect(engagement.period !== undefined).toBe(dated);
+        for (const key of Object.keys(engagement)) {
+          expect(["client", "product", "role"]).toContain(key);
+        }
       }
     }
   });

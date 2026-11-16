@@ -15,8 +15,8 @@ export const chapters: readonly Chapter[] = [
     id: "chapter-01",
     title: "First Takeoff",
     period: "2013–2017",
-    // Two client engagements, in order: WSO2 (2013–2015), then Pearson (2015–2017).
-    organisation: "WSO2 and Pearson",
+    // Two employments: Virtusa for WSO2 (2013–2015), then JKCS for Pearson (2015–2017).
+    organisation: "Virtusa / WSO2 and JKCS / Pearson",
     product: null,
     destination: "WSO2 and Pearson",
     environment: "Tropical coastal runway and green countryside",

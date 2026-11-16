@@ -14,6 +14,10 @@ describe("formatDate", () => {
     expect(formatDate("2021-12-31")).toBe("31 Dec 2021");
   });
 
+  it("shows a bare year where only the year is known", () => {
+    expect(formatDate("2015")).toBe("2015");
+  });
+
   it("rejects anything that is not an ISO date", () => {
     expect(() => formatDate("17/06/2013")).toThrow(/ISO date/);
     expect(() => formatDate("2013-13-01")).toThrow(/Invalid month/);

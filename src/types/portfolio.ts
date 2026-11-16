@@ -57,15 +57,13 @@ export interface Engagement {
   product?: string;
   /** Role on this engagement when it differs from the employment role. */
   role?: string;
-  /** Years of this engagement, only where Subash has stated them. */
-  period?: string;
 }
 
 export interface ExperienceEntry {
   id: string;
-  /** ISO date (YYYY-MM-DD). */
+  /** ISO date (YYYY-MM-DD), or a year (YYYY) where only the year is known. */
   start: string;
-  /** ISO date, or `null` when the employment is current. */
+  /** As `start`, or `null` when the employment is current. */
   end: string | null;
   role: string;
   /** The employing company, or `null` where it has not been named. */

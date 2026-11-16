@@ -3,12 +3,13 @@ import type { ExperienceEntry } from "@/types/portfolio";
 /**
  * Full work experience, newest first.
  *
- * Employer and client are separate fields on purpose: Creative Software,
- * Paze Industries and Ascentic are employers; Qmatic, Senseforce, Geposit,
- * IFS, Finago and Biosero are client or product engagements.
+ * Employer and client are separate fields on purpose: Virtusa, JKCS,
+ * Creative Software, Paze Industries and Ascentic are employers; WSO2,
+ * Pearson, Qmatic, Senseforce, Geposit, IFS, Finago and Biosero are client
+ * or product engagements.
  *
- * In 2013–2017 WSO2 (2013–2015) and Pearson (2015–2017) were clients; the
- * employer for that period has not been named, so none is shown.
+ * The move from Virtusa to JKCS happened in 2015; the exact date has not
+ * been given, so that boundary is shown as the year only.
  * Engagement roles are from the résumé. No dates are given for the
  * individual IFS, Finago or Biosero engagements, so none are shown.
  */
@@ -90,19 +91,28 @@ export const experience: readonly ExperienceEntry[] = [
     chapters: [2],
   },
   {
-    id: "pearson-wso2-2013",
-    start: "2013-06-17",
+    id: "jkcs-2015",
+    start: "2015",
     end: "2017-04-14",
     role: "Software Engineer",
-    employer: null,
-    engagements: [
-      { client: "WSO2", period: "2013–2015" },
-      { client: "Pearson", period: "2015–2017" },
+    employer: "JKCS",
+    engagements: [{ client: "Pearson", product: "MyDashboard" }],
+    highlights: [
+      "UI development for MyDashboard, a Pearson product.",
+      "Advanced filtering functionality for MyDashboard.",
     ],
+    chapters: [1],
+  },
+  {
+    id: "virtusa-2013",
+    start: "2013-06-17",
+    end: "2015",
+    role: "Software Engineer",
+    employer: "Virtusa",
+    engagements: [{ client: "WSO2" }],
     highlights: [
       "Enterprise software development.",
-      "WSO2: close to 200 WSO2 ESB cloud connectors.",
-      "Pearson: advanced filtering functionality for MyDashboard.",
+      "Close to 200 WSO2 ESB cloud connectors.",
     ],
     chapters: [1],
   },

@@ -26,6 +26,8 @@ const MONTHS = [
  * can never differ by locale or time zone.
  */
 export function formatDate(iso: string): string {
+  // A bare year is used where only the year is known.
+  if (/^\d{4}$/.test(iso)) return iso;
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
   if (!match) throw new Error(`Expected an ISO date (YYYY-MM-DD), received "${iso}".`);
   const [, year, month, day] = match;

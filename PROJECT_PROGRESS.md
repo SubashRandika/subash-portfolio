@@ -293,10 +293,10 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Headline decisions:
 These block publishing the affected content, not the build. Until answered the fields stay empty and are not rendered.
 
 1. ~~**Contact links.**~~ Answered 2026-11-16: email, LinkedIn and GitHub supplied and published.
-2. ~~**Résumé.**~~ Answered 2026-11-16: `public/resume.pdf` supplied; offered as "Subash-Rodrigo-Resume.pdf" from the contact section and footer. Note: it includes a phone number and home town, which are therefore public.
+2. ~~**Résumé.**~~ Answered 2026-11-16: `public/resume.pdf` supplied (phone number removed at Subash's request; town kept), offered as "Subash-Rodrigo-Resume.pdf" from the contact section and footer.
 3. ~~**Education.**~~ Answered 2026-11-16: BSc in Computer Science (Special), University of Kelaniya, Sri Lanka, graduated 2013.
 4. ~~**Displayed title.**~~ Answered 2026-11-16: "Lead Software Engineer" confirmed.
-5. ~~**Pearson / WSO2 (2013–2017).**~~ Answered 2026-11-16: two client engagements, WSO2 2013–2015 then Pearson 2015–2017. MyDashboard is a Pearson product (résumé). Shown as clients with their years. *Optional follow-up:* the employer for 2013–2017 is not named in the brief or the résumé, so the logbook leaves it blank.
+5. ~~**Pearson / WSO2 (2013–2017).**~~ Answered 2026-11-16: two employments. Virtusa (17 Jun 2013–2015) for client WSO2, then JKCS (2015–14 Apr 2017) for client Pearson (MyDashboard). The month of the 2015 move was not given, so it is shown as the year only.
 6. ~~**Finago "approximately 50% UX improvement".**~~ Answered 2026-11-16: confirmed. Per the résumé it came from the simplified customer-creation wizard, so it is published there.
 7. **Optional.** Biosero engagement start date, location or time zone to display, and whether to state availability for new work.
 

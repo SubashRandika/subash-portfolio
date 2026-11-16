@@ -125,14 +125,18 @@ describe("Experience", () => {
     expect(cells[1]).not.toHaveTextContent("Qmatic");
   });
 
-  it("marks the current role as Present and lists WSO2 and Pearson as clients", () => {
+  it("marks the current role as Present and shows the 2015 change as a year", () => {
     render(<Experience entries={experience} />);
     const table = screen.getByRole("table", { name: /Work experience/ });
     expect(within(table).getByText("Present")).toBeInTheDocument();
-    const row = within(table).getByText("WSO2").closest("tr") as HTMLElement;
-    expect(within(row).getByText("Pearson")).toBeInTheDocument();
-    expect(row).toHaveTextContent("2013–2015");
-    expect(row).toHaveTextContent("2015–2017");
+    const virtusa = within(table).getByText("Virtusa").closest("tr") as HTMLElement;
+    expect(virtusa).toHaveTextContent("17 Jun 2013");
+    expect(virtusa).toHaveTextContent("WSO2");
+    const jkcs = within(table).getByText("JKCS").closest("tr") as HTMLElement;
+    expect(jkcs).toHaveTextContent("14 Apr 2017");
+    expect(jkcs).toHaveTextContent("Pearson");
+    expect(within(virtusa).getByText("2015")).toBeInTheDocument();
+    expect(within(jkcs).getByText("2015")).toBeInTheDocument();
   });
 });
 
@@ -140,7 +144,8 @@ describe("CareerTimeline", () => {
   it("lays the career out oldest first on one axis", () => {
     const { rows, years } = layoutTimeline(experience);
     expect(rows.map((r) => r.entry.id)).toEqual([
-      "pearson-wso2-2013",
+      "virtusa-2013",
+      "jkcs-2015",
       "creative-software-2017",
       "paze-industries-2021",
       "ascentic-2022",
@@ -163,14 +168,16 @@ describe("CareerTimeline", () => {
     render(<CareerTimeline entries={experience} />);
     const figure = screen.getByRole("figure", { name: "Career timeline" });
     const items = within(figure).getAllByRole("listitem");
-    expect(items).toHaveLength(5);
-    expect(items[0]).toHaveTextContent("WSO2, Pearson");
+    expect(items).toHaveLength(6);
+    expect(items[0]).toHaveTextContent("Virtusa · WSO2");
     expect(items[0]).toHaveTextContent("17 Jun 2013");
-    expect(items[4]).toHaveTextContent("Present");
+    expect(items[1]).toHaveTextContent("JKCS · Pearson");
+    expect(items[5]).toHaveTextContent("Present");
     const hrefs = within(figure)
       .getAllByRole("link")
       .map((a) => a.getAttribute("href"));
     expect(hrefs).toEqual([
+      "#chapter-01",
       "#chapter-01",
       "#chapter-02",
       "#chapter-03",

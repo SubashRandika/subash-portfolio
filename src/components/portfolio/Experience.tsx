@@ -30,9 +30,6 @@ function EngagementList({ engagements }: { engagements: readonly Engagement[] })
         <li key={engagement.client}>
           <span className="font-bold">{engagement.client}</span>
           {engagement.product ? <span className="text-ink-muted"> — {engagement.product}</span> : null}
-          {engagement.period ? (
-            <span className="type-data ml-2 text-[0.8125rem] text-ink-muted">{engagement.period}</span>
-          ) : null}
           {engagement.role ? (
             <span className="type-small block text-ink-muted">as {engagement.role}</span>
           ) : null}
