@@ -30,6 +30,17 @@ export const LIGHTING_FUNCTIONS = /* glsl */ `
     return albedo * RECIPROCAL_PI_ * (direct + ambient);
   }
 
+  // The same, with the sun's share scaled by a shadow term (1 lit, 0 shadowed).
+  // Shadowed ground still receives the sky, and a little light bounced off
+  // its sunlit surroundings.
+  vec3 surfaceLightShadowed(vec3 albedo, vec3 normal, float lit) {
+    float sun = max(dot(normal, uSunDirection), 0.0);
+    vec3 direct = uSunColor * (uSunIntensity * sun * lit);
+    vec3 ambient = mix(uAmbientGround, uAmbientSky, normal.y * 0.5 + 0.5) * uAmbientIntensity;
+    vec3 bounce = uSunColor * (uSunIntensity * 0.035 * (1.0 - lit) * max(uSunDirection.y, 0.0));
+    return albedo * RECIPROCAL_PI_ * (direct + ambient + bounce);
+  }
+
   // Exponential-squared distance fog, matching THREE.FogExp2, with light
   // scattered in from the sun's bearing: haze glows where you look toward
   // the sun and stays cool elsewhere. toSurface runs from the camera to the

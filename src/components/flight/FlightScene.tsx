@@ -8,8 +8,10 @@ import { createAircraftState } from "@/flight/aircraft";
 import { Aircraft, type AircraftRig } from "./Aircraft";
 import { AircraftShadow } from "./AircraftShadow";
 import { FlightController } from "./FlightController";
+import { RenderProfile } from "./RenderProfile";
 import { SceneLighting } from "./SceneLighting";
 import { Sky } from "./Sky";
+import { SunShadows } from "./SunShadows";
 
 interface FlightSceneProps {
   /** Called once the aircraft is loaded and frames are being drawn. */
@@ -45,9 +47,11 @@ export function FlightScene({ onReady, still = false }: FlightSceneProps) {
 
   return (
     <>
+      <RenderProfile />
       <FlightController rigRef={rigRef} aircraftState={aircraftState} still={still} />
       <Sky />
       <SceneLighting />
+      <SunShadows />
       <Environments />
       <Airport />
       <AircraftShadow />

@@ -22,8 +22,10 @@ test.describe("live flight", () => {
   test("chooses live mode before paint and draws the scene", async ({ page }) => {
     await expect(page.locator("html")).toHaveAttribute("data-flight", "live");
     await expect(page.locator(".flight-canvas canvas")).toBeVisible({ timeout: 30_000 });
+    // Software rendering compiles the terrain and building shaders on the CPU;
+    // with several test workers sharing it, the first frame can take a while.
     await expect(page.locator("html")).toHaveAttribute("data-flight-ready", "true", {
-      timeout: 45_000,
+      timeout: 120_000,
     });
   });
 

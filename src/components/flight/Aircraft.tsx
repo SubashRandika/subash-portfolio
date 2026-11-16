@@ -11,7 +11,9 @@ import {
   AIRCRAFT_MODEL_URL,
   AIRCRAFT_NODES,
   type AircraftState,
+  createBracePose,
   gearPose,
+  noseBracePose,
 } from "@/flight/aircraft";
 
 /** Wrapper groups the flight controller drives directly. */
@@ -92,11 +94,18 @@ interface AnimatedParts {
   gearNose: THREE.Object3D | null;
   gearMainLeft: THREE.Object3D | null;
   gearMainRight: THREE.Object3D | null;
+  doorNoseLeft: THREE.Object3D | null;
+  doorNoseRight: THREE.Object3D | null;
+  bayNose: THREE.Object3D | null;
+  braceUpper: THREE.Object3D | null;
+  braceLower: THREE.Object3D | null;
   lightsBeacon: THREE.Object3D | null;
   lightsLanding: THREE.Object3D | null;
   glows: Glow[];
   fanAngle: number;
 }
+
+const brace = createBracePose();
 
 /** Applies gear, fan and light state to the scene graph for one frame. */
 function animateParts(
@@ -119,6 +128,28 @@ function animateParts(
   if (p.gearMainRight) {
     p.gearMainRight.rotation.z = gear.mainRightRotationZ;
     p.gearMainRight.visible = gear.visible;
+  }
+  if (p.doorNoseLeft) {
+    p.doorNoseLeft.rotation.z = gear.noseDoorLeftRotationZ;
+    p.doorNoseLeft.visible = gear.visible;
+  }
+  if (p.doorNoseRight) {
+    p.doorNoseRight.rotation.z = gear.noseDoorRightRotationZ;
+    p.doorNoseRight.visible = gear.visible;
+  }
+  // The dark well shows only while the doors stand open.
+  if (p.bayNose) p.bayNose.visible = gear.visible && gear.noseDoorLeftRotationZ > 0.03;
+  // The drag brace folds at its knee as the leg swings forward.
+  noseBracePose(gear.noseRotationX, brace);
+  if (p.braceUpper) {
+    p.braceUpper.rotation.x = brace.upperRotationX;
+    p.braceUpper.visible = gear.visible;
+  }
+  if (p.braceLower) {
+    p.braceLower.position.y = brace.lowerY;
+    p.braceLower.position.z = brace.lowerZ;
+    p.braceLower.rotation.x = brace.lowerRotationX;
+    p.braceLower.visible = gear.visible;
   }
 
   // Fans
@@ -226,6 +257,11 @@ export function Aircraft({ rigRef, state, glows = true, still = false }: Aircraf
       gearNose: find(AIRCRAFT_NODES.gearNose),
       gearMainLeft: find(AIRCRAFT_NODES.gearMainLeft),
       gearMainRight: find(AIRCRAFT_NODES.gearMainRight),
+      doorNoseLeft: find(AIRCRAFT_NODES.doorNoseLeft),
+      doorNoseRight: find(AIRCRAFT_NODES.doorNoseRight),
+      bayNose: find(AIRCRAFT_NODES.bayNose),
+      braceUpper: find(AIRCRAFT_NODES.braceNoseUpper),
+      braceLower: find(AIRCRAFT_NODES.braceNoseLower),
       lightsBeacon: find(AIRCRAFT_NODES.lightsBeacon),
       lightsLanding: find(AIRCRAFT_NODES.lightsLanding),
       glows: glowList,

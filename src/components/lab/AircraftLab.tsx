@@ -7,7 +7,7 @@ import * as THREE from "three";
 import { Aircraft } from "@/components/flight/Aircraft";
 import { createAircraftState } from "@/flight/aircraft";
 
-type View = "front34" | "rear34" | "side" | "top" | "front" | "low" | "detail";
+type View = "front34" | "rear34" | "side" | "top" | "front" | "low" | "detail" | "nose";
 
 interface ViewPreset {
   position: [number, number, number];
@@ -23,6 +23,7 @@ const VIEWS: Record<View, ViewPreset> = {
   front: { position: [0, 3.2, 42], target: [0, 2.8, 0], fov: 28 },
   low: { position: [-9.5, 1.3, -23], target: [0, 2.6, 1], fov: 34 },
   detail: { position: [-7.5, 4.2, 15.5], target: [0, 2.4, 7.5], fov: 30 },
+  nose: { position: [-7.2, 1.1, 8.8], target: [0, 1.5, 8.8], fov: 30 },
 };
 
 /** Simple outdoor-like surroundings so the paint has something to reflect. */

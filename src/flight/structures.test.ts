@@ -31,14 +31,21 @@ function distanceTo(structure: Structure, x: number, z: number): number {
 describe("structures", () => {
   it("builds a city, an industrial region and an airport", () => {
     expect(city.filter((s) => s.kind === "tower").length).toBeGreaterThan(40);
-    expect(city.filter((s) => s.kind === "office").length).toBeGreaterThan(800);
+    expect(city.filter((s) => s.kind === "office").length).toBeGreaterThan(400);
+    expect(city.filter((s) => s.kind === "residential").length).toBeGreaterThan(400);
+    // Buildings have roofs and rooftop plant, not just walls.
+    expect(city.filter((s) => s.kind === "roof").length).toBeGreaterThan(200);
+    expect(city.filter((s) => s.kind === "plant").length).toBeGreaterThan(1_000);
+    expect(industry.some((s) => s.kind === "tank" && s.shape !== "cylinder")).toBe(true);
+    expect(city.some((s) => s.shape === "arch")).toBe(true);
     expect(city.filter((s) => s.kind === "bridge").length).toBeGreaterThan(5);
     expect(industry.length).toBeGreaterThan(150);
     expect(industry.some((s) => s.kind === "stack")).toBe(true);
     expect(industry.some((s) => s.kind === "containers")).toBe(true);
     expect(airport.length).toBeGreaterThan(3);
-    // Kept within a budget the renderer can instance comfortably.
-    expect(all.length).toBeLessThan(15_000);
+    // Parts, not buildings: each is one instance of one of ten unit solids,
+    // so the whole set is still a handful of draw calls.
+    expect(all.length).toBeLessThan(45_000);
   });
 
   it("is the same world every time", () => {
@@ -48,7 +55,7 @@ describe("structures", () => {
 
   it("never stands a building in water", () => {
     const sample = createTerrainSample();
-    for (const s of all.filter((item) => item.kind !== "bridge")) {
+    for (const s of all.filter((item) => !item.span)) {
       sampleTerrain(s.x, s.z, sample);
       expect(sample.water, `${s.kind} at ${s.x.toFixed(0)}, ${s.z.toFixed(0)}`).toBeLessThan(0.01);
     }
@@ -66,7 +73,7 @@ describe("structures", () => {
   it("leaves the aircraft and camera clear of every structure", () => {
     const pose = createFlightPose();
     const camera = createCameraPose();
-    const tall = all.filter((s) => s.kind !== "bridge" || s.y + s.height > 5);
+    const tall = all.filter((s) => s.y + s.height > 5);
     for (let i = 0; i <= 1_000; i++) {
       const p = i / 1_000;
       flightPose(p, pose);

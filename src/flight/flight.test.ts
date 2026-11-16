@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { gearPose } from "./aircraft";
+import { NOSE_BRACE_LINK, createBracePose, gearPose, noseBracePose } from "./aircraft";
 import { clamp, createTrack, damp, DEG, smoothstep } from "./math";
 import {
+  GEAR_UP,
   LIFTOFF,
   ROLL_END,
   ROLL_START,
@@ -162,6 +163,9 @@ describe("flight pose", () => {
 
   it("retracts the gear after takeoff and turns the landing lights off", () => {
     expect(flightPose(0.06, createFlightPose()).gear).toBe(1);
+    // Still down just after the wheels leave the runway, as on a real departure.
+    expect(flightPose(LIFTOFF + 0.015, createFlightPose()).gear).toBe(1);
+    expect(routeAltitude(GEAR_UP.from)).toBeGreaterThan(30);
     const climbing = flightPose(0.14, createFlightPose());
     expect(climbing.gear).toBe(0);
     expect(climbing.landingLights).toBe(0);
@@ -187,16 +191,61 @@ describe("flight pose", () => {
 
 describe("landing gear", () => {
   it("is straight when down and folded and hidden when stowed", () => {
-    expect(gearPose(1)).toEqual({
-      noseRotationX: -0,
-      mainLeftRotationZ: -0,
-      mainRightRotationZ: 0,
-      visible: true,
-    });
+    const down = gearPose(1);
+    expect(down.visible).toBe(true);
+    expect(down.noseRotationX).toBeCloseTo(0, 10);
+    expect(down.mainLeftRotationZ).toBeCloseTo(0, 10);
+    expect(down.mainRightRotationZ).toBeCloseTo(0, 10);
+    // The bay doors hang open while the gear is down.
+    expect(down.noseDoorLeftRotationZ).toBeGreaterThan(1.2);
+    expect(down.noseDoorRightRotationZ).toBeCloseTo(-down.noseDoorLeftRotationZ, 10);
+
     const stowed = gearPose(0);
     expect(stowed.visible).toBe(false);
     expect(stowed.noseRotationX).toBeLessThan(-1.5);
     expect(stowed.mainLeftRotationZ).toBeCloseTo(-stowed.mainRightRotationZ, 10);
+    expect(stowed.noseDoorLeftRotationZ).toBeCloseTo(0, 10);
+  });
+
+  it("folds the nose drag brace at its knee, keeping both links whole", () => {
+    const brace = createBracePose();
+    let previousKnee = -Infinity;
+    for (let e = 1; e >= 0; e -= 0.05) {
+      noseBracePose(gearPose(e).noseRotationX, brace);
+      // Each link keeps its length: from the anchor to the knee, and from the
+      // pin on the leg to the knee.
+      const upper = Math.hypot(brace.kneeY - 1.62, brace.kneeZ - 9.25);
+      const lower = Math.hypot(brace.kneeY - brace.lowerY, brace.kneeZ - brace.lowerZ);
+      expect(upper).toBeCloseTo(NOSE_BRACE_LINK, 6);
+      expect(lower).toBeCloseTo(NOSE_BRACE_LINK, 6);
+      // The knee rises as it folds up into the bay (it may settle by a hair
+      // as it passes over centre at the end of its travel).
+      expect(brace.kneeY).toBeGreaterThanOrEqual(previousKnee - 0.01);
+      previousKnee = Math.max(previousKnee, brace.kneeY);
+    }
+    // Stowed, the knee is well up inside the nose, above the bay doors.
+    expect(brace.kneeY).toBeGreaterThan(1.95);
+    // Locked straight with the gear down: the knee is on the line between the pins.
+    noseBracePose(gearPose(1).noseRotationX, brace);
+    // The two links then point in opposite directions.
+    expect(Math.cos(brace.upperRotationX - brace.lowerRotationX)).toBeCloseTo(-1, 4);
+  });
+
+  it("moves the nose leg first, then the main legs, then closes the doors", () => {
+    const early = gearPose(0.85);
+    expect(early.noseRotationX).toBeLessThan(0);
+    expect(early.mainLeftRotationZ).toBeCloseTo(0, 10);
+    const late = gearPose(0.3);
+    expect(Math.abs(late.mainLeftRotationZ)).toBeGreaterThan(0.5);
+    expect(late.noseDoorLeftRotationZ).toBeGreaterThan(1.2);
+    // Each leg only ever moves one way as the gear comes up.
+    let previous = gearPose(1);
+    for (let e = 0.99; e >= 0; e -= 0.01) {
+      const pose = gearPose(e);
+      expect(pose.noseRotationX).toBeLessThanOrEqual(previous.noseRotationX + 1e-12);
+      expect(pose.mainRightRotationZ).toBeGreaterThanOrEqual(previous.mainRightRotationZ - 1e-12);
+      previous = pose;
+    }
   });
 });
 

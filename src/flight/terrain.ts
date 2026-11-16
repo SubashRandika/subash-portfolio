@@ -399,6 +399,24 @@ export function downtown(x: number, z: number): number {
 export const PARK_SHARE = 0.09;
 
 /**
+ * How a built-up block outside the business district is laid out. The
+ * structures and the ground between them (courtyards, lawns, car parks) are
+ * drawn by different code, so both ask this.
+ */
+export const CITY_BLOCK_TYPES = { lots: 0, courtyard: 1, slabs: 2, commercial: 3 } as const;
+
+export function cityBlockType(bu: number, bv: number): number {
+  const roll = hash2(bu + 191, bv + 57);
+  return roll < 0.34
+    ? CITY_BLOCK_TYPES.courtyard
+    : roll < 0.58
+      ? CITY_BLOCK_TYPES.lots
+      : roll < 0.82
+        ? CITY_BLOCK_TYPES.slabs
+        : CITY_BLOCK_TYPES.commercial;
+}
+
+/**
  * Industrial plot use at plot indices: 0 farmland, 1 works, 2 logistics yard,
  * 3 warehouses. Zoned by the industrial region weight and distance from the
  * route.
@@ -532,6 +550,12 @@ export const TERRAIN_GLSL = /* glsl */ `
     float across = lateral - ${f(CITY_CENTRE.lateral)};
     float r2 = along * along / 1.8 + across * across;
     return exp(-r2 / ${f(2 * CITY_CENTRE.radius * CITY_CENTRE.radius)});
+  }
+
+  // Layout of a built-up city block: 0 lots, 1 courtyard, 2 slabs, 3 commercial.
+  float tCityBlockType(ivec2 cell) {
+    float roll = tHash(cell + ivec2(191, 57));
+    return roll < 0.34 ? 1.0 : roll < 0.58 ? 0.0 : roll < 0.82 ? 2.0 : 3.0;
   }
 
   // Industrial plot use: 0 farmland, 1 works, 2 logistics yard, 3 warehouses.

@@ -216,6 +216,18 @@ const THROTTLE_KEYS: readonly Keyframe[] = [
 ];
 const throttleAt = createTrack(THROTTLE_KEYS);
 
+/**
+ * The gear stays down through the rotation, the liftoff and the first of the
+ * climb, as on a real departure (it is raised only once the aircraft is
+ * established in the climb), then travels at a steady rate.
+ */
+export const GEAR_UP = { from: 0.079, to: 0.108 } as const;
+
+/** 0 with the gear down, 1 once it is stowed. Linear: gearPose eases each leg. */
+function gearSequence(progress: number): number {
+  return clamp((progress - GEAR_UP.from) / (GEAR_UP.to - GEAR_UP.from), 0, 1);
+}
+
 /** Progress step used to measure the climb angle. */
 const PITCH_STEP = 0.0015;
 
@@ -254,9 +266,9 @@ export function flightPose(progress: number, out: FlightPose): FlightPose {
   const settle = smoothstep(LIFTOFF, LIFTOFF + 0.03, p);
   out.roll = clamp(bank, -MAX_BANK, MAX_BANK) * settle;
 
-  out.gear = 1 - smoothstep(0.068, 0.094, p);
+  out.gear = 1 - gearSequence(p);
   out.throttle = throttleAt(p);
-  out.landingLights = 1 - smoothstep(0.1, 0.135, p);
+  out.landingLights = 1 - smoothstep(0.112, 0.14, p);
 
   return out;
 }

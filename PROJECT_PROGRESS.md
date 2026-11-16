@@ -61,6 +61,9 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Headline decisions:
 22. The business district sits about 3 km beside the route: from cruising altitude a near-horizontal shot frames ground 2 km and further away, so that is where a skyline reads.
 23. Portrait frames pull close shots back and widen them, so a phone always sees the whole aircraft.
 18. Where the full milestone list does not fit (narrow or short viewports) the milestones share one slot and only the current one shows; portrait frames put the aircraft in the top of the frame and the text beneath it.
+24. Sun shadows for the custom terrain and building shaders come from two depth maps rendered from the sun (detailed around the aircraft, coarse out to the mountains), compared in the shader. They are redrawn only when the aircraft has moved a good part of a map's width, the sun has turned or scenery has changed. Software renderers never get them, and any device that cannot hold about 40 fps with them on drops them for the rest of the visit.
+25. Every moving part of the aircraft hangs from its own mesh-less pivot node. Mesh quantization folds a dequantizing offset into the transform of the node that holds a mesh, which would otherwise move a part's pivot off its hinge.
+26. Buildings are assembled from ten instanced unit solids (box, gable, pyramid, dome, sphere, cone, taper, cooling tower, arch, cylinder) through a small "site" helper, so a building is described once in its own frame and stood anywhere. Features are placed whole or not at all if any part would stand in water.
 10. Milestone summaries are optional: when the brief says nothing beyond a milestone's title, the card shows the title alone rather than padded copy.
 
 ## Phase summaries
@@ -273,6 +276,47 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Headline decisions:
 | `npm run test:e2e` | Pass, 66 of 66 (new: configured contact links in the section and the footer) |
 | Visual review | Portfolio sections at 1440 × 900 and 390 × 844 |
 
+### Realism pass (requested by Subash, 2026-11-16)
+
+Requested: landing gear that retracts realistically, and terrain, buildings, roads, rivers and tanks that look real rather than like boxes and stripes.
+
+**Aircraft and landing gear**
+- Gear of realistic length (the airframe now stands 0.55 m higher), trailing-link main legs with leg doors, a nose leg with oleo, torque links and taxi lights, and squat aircraft tyres on dished wheels.
+- The gear stays down through rotation and the first of the climb and is raised once climbing (as on a real departure). The nose leg moves first, the main legs follow, the nose doors close last.
+- A two-link nose drag brace that folds at its knee as the leg swings forward, and a dark wheel well between the open doors.
+- **Root cause of the "collapsing" nose gear:** mesh quantization had moved each moving part's pivot off its hinge, so the nose leg swung about a point half-way down itself. Fixed with separate pivot nodes (decision 25).
+- `/lab/aircraft?view=nose&gear=0..1` shows the nose gear close up.
+
+**Buildings** (`src/flight/structures.ts`, `src/components/environments/Structures.tsx`)
+- Towers with podiums, setbacks and crowns (plant rooms, masts, pyramid roofs); mid-rise buildings with wings; perimeter blocks around courtyards; apartment slabs; retail sheds with car parks; pitched roofs; rooftop plant on flat roofs.
+- Industrial sheds with multi-span metal roofs; tank farms (cone or dome roofs, bund walls, pipe racks, pressure spheres); silo rows with conveyors; cooling towers; tapered chimneys; gantry cranes over the container stacks; trailers at the docks.
+- Airport terminal with an oversailing roof and piers, a tapering control tower with a glazed cab, hangars and a fuel farm.
+- Bridges with parapets and piers; every third has a steel through-arch with hangers.
+- Facades: curtain walls in three mullion styles, punched windows in brick or concrete with shopfronts and signs, balconies on flats, cladding with coloured bands and loading doors, tank plates with rust streaks and stairs; windows lit at dawn and dusk.
+
+**Ground** (`src/components/environments/Terrain.tsx`)
+- Roads with edge and centre lines and traffic; a dual carriageway with a planted reservation; city streets with lane markings, zebra crossings, stop lines, kerbs, paved footways, street trees, planted avenue medians, and moving and parked cars.
+- Block interiors drawn to match the buildings: courtyards, lawns and paths, car parks with bays and cars, plazas with trees, parks with paths and ponds; suburb houses with pitched-roof shading and drives.
+- Rivers with shingle bars, tree-lined banks, silt shallows and current lines; the city river between stone embankments with a riverside walk; the canal with walls and a towpath; surf that rolls in.
+- A double-track railway; airfield concrete with joints, stand markings, hangar hardstanding and a car park; rock strata and scree on mountains; tramlines in fields.
+- Sun shadows on the ground and buildings (decision 24).
+
+**Performance**
+- Detail smaller than a pixel or two (cars, tree crowns, bays) is skipped in the terrain shader rather than computed and blended away.
+- Software renderers get half resolution and no shadows (`RenderProfile`, `SunShadows`).
+- The live-flight end-to-end tests run one at a time per device: several software renderers at once starve the CPU (see known issues).
+
+**Verification (2026-11-16)**
+
+| Check | Result |
+| --- | --- |
+| `npm run lint` | Pass |
+| `npm run typecheck` | Pass |
+| `npm run test` | Pass, 107 of 107 (new: gear sequence, folding drag brace keeps both links whole, shadow frame budget, structures placed whole and dry) |
+| `npm run test:e2e` | Pass, 72 of 72, twice in a row |
+| Visual review | Gear at 0, 0.25, 0.5, 0.75 and 1 in the lab; takeoff, every chapter at 1280 × 720 |
+| Frame pacing (AMD Radeon 860M, production build, 30 s scroll) | With shadows off, a steady 17 ms in every tenth of the flight (cool machine). With shadows on, the second half of the flight dropped to 33 ms frames. Later runs were affected by thermal throttling (shadows-off runs also slowed), so no clean on/off comparison was possible; the adaptive fallback covers devices that cannot afford shadows. |
+
 ## Known issues
 
 - **Playwright's bundled Chromium cannot run on this machine.** Windows reports "An Application Control policy has blocked this file" for the unsigned `chrome-headless-shell.exe`. The policy was left untouched. Tests use the installed, signed Google Chrome through `channel: "chrome"`; the blocked download was removed with `npx playwright uninstall`.
@@ -283,6 +327,9 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Headline decisions:
 - In the automation window GSAP's lag smoothing caps each throttled frame at 33 ms, so a 0.7 s scrub takes many seconds to settle there. Headless runs, which render at full rate, settle normally; the end-to-end tests run headless.
 - Three.js r187 logs two deprecation warnings that originate inside React Three Fiber (`THREE.Clock`, `PCFSoftShadowMap`). They are harmless.
 - **A `next dev` server for this project was already running on port 3000** (not started by this build process). It was left running and used for visual checks. Next.js allows only one dev server per project directory.
+
+- **Frame pacing on this laptop varies with its thermal state** by up to 2×, so single benchmark runs are unreliable. Compare runs taken back to back, alternating `?shadows=off`.
+- **Live-flight end-to-end tests are CPU-bound** under software rendering. They run one per device project (`*-flight`), which keeps the suite at about 1.5 minutes; raising their parallelism makes them time out.
 
 ## Technical debt
 

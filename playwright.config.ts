@@ -16,6 +16,15 @@ const baseURL = `http://127.0.0.1:${PORT}`;
 const requestedChannel = process.env.PLAYWRIGHT_CHANNEL ?? (process.env.CI ? "bundled" : "chrome");
 const channel = requestedChannel === "bundled" ? undefined : requestedChannel;
 
+const devicesUnderTest = [
+  { name: "desktop", use: { ...devices["Desktop Chrome"], channel } },
+  { name: "tablet", use: { ...devices["iPad (gen 7)"], browserName: "chromium" as const, channel } },
+  { name: "mobile", use: { ...devices["Pixel 7"], channel } },
+];
+
+/** Specs that start the WebGL flight. */
+const LIVE_FLIGHT = /flight\.spec\.ts$/;
+
 /**
  * End-to-end tests run against the production build so they exercise what
  * visitors actually receive.
@@ -32,11 +41,13 @@ export default defineConfig({
     channel,
     trace: "retain-on-failure",
   },
-  projects: [
-    { name: "desktop", use: { ...devices["Desktop Chrome"], channel } },
-    { name: "tablet", use: { ...devices["iPad (gen 7)"], browserName: "chromium", channel } },
-    { name: "mobile", use: { ...devices["Pixel 7"], channel } },
-  ],
+  projects: devicesUnderTest.flatMap(({ name, use }) => [
+    { name, use, testIgnore: LIVE_FLIGHT },
+    // The live 3D flight renders in software in headless browsers. Each
+    // software renderer is multithreaded, so a few at a time is all the CPU
+    // can share; more only makes every one of them miss its timeouts.
+    { name: `${name}-flight`, use, testMatch: LIVE_FLIGHT, workers: 1 },
+  ]),
   webServer: {
     command: `npm run build && npm run start -- --port ${PORT}`,
     url: baseURL,

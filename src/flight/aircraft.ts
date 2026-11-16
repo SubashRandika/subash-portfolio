@@ -10,13 +10,13 @@
 export const AIRCRAFT_MODEL_URL = "/models/sr-01.glb";
 
 /** Height of the fuselage centreline above the origin (the roll axis). */
-export const AIRCRAFT_CENTRELINE_Y = 1.95;
+export const AIRCRAFT_CENTRELINE_Y = 2.5;
 
 /** Overall dimensions in metres, used for camera framing. */
 export const AIRCRAFT_DIMENSIONS = {
   length: 21,
   wingspan: 20.9,
-  height: 6.5,
+  height: 7.05,
 } as const;
 
 export const AIRCRAFT_NODES = {
@@ -26,6 +26,11 @@ export const AIRCRAFT_NODES = {
   gearNose: "Gear_Nose",
   gearMainLeft: "Gear_Main_L",
   gearMainRight: "Gear_Main_R",
+  doorNoseLeft: "Door_Nose_L",
+  doorNoseRight: "Door_Nose_R",
+  bayNose: "Bay_Nose",
+  braceNoseUpper: "Brace_Nose_Upper",
+  braceNoseLower: "Brace_Nose_Lower",
   lightsNav: "Lights_Nav",
   lightsBeacon: "Lights_Beacon",
   lightsLanding: "Lights_Landing",
@@ -63,7 +68,16 @@ export const GEAR_TRAVEL = {
   /** Nose gear swings forward and up, about the X axis. */
   noseAngle: -118 * DEG,
   /** Main gear swings inward into the belly fairing, about the Z axis. */
-  mainAngle: 86 * DEG,
+  mainAngle: 88 * DEG,
+  /** Nose bay doors hang this far open while the gear is down. */
+  doorAngle: 84 * DEG,
+  /**
+   * The legs do not move together: the nose leg starts first and the main
+   * legs follow, each taking this share of the whole sequence.
+   */
+  legShare: 0.8,
+  /** The nose doors close over this last share of the sequence. */
+  doorShare: 0.22,
   /** Below this extension the gear is fully stowed and can be hidden. */
   stowedBelow: 0.02,
 } as const;
@@ -72,24 +86,111 @@ export interface GearPose {
   noseRotationX: number;
   mainLeftRotationZ: number;
   mainRightRotationZ: number;
+  /** Swing of the nose bay doors about their hinge lines; 0 is closed. */
+  noseDoorLeftRotationZ: number;
+  noseDoorRightRotationZ: number;
   visible: boolean;
 }
 
 /** Eases gear travel so it starts and stops gently. */
 function easeInOut(t: number): number {
-  return t * t * (3 - 2 * t);
+  const c = Math.min(1, Math.max(0, t));
+  return c * c * (3 - 2 * c);
 }
 
 export function gearPose(extension: number): GearPose {
   const e = Math.min(1, Math.max(0, extension));
-  const retracted = easeInOut(1 - e);
+  const sequence = 1 - e;
+  const share = GEAR_TRAVEL.legShare;
+  const nose = easeInOut(sequence / share);
+  const main = easeInOut((sequence - (1 - share)) / share);
+  const doors = 1 - easeInOut((sequence - (1 - GEAR_TRAVEL.doorShare)) / GEAR_TRAVEL.doorShare);
   return {
-    noseRotationX: GEAR_TRAVEL.noseAngle * retracted,
+    noseRotationX: GEAR_TRAVEL.noseAngle * nose,
     // The left gear is on +X, so swinging inward is a negative rotation.
-    mainLeftRotationZ: -GEAR_TRAVEL.mainAngle * retracted,
-    mainRightRotationZ: GEAR_TRAVEL.mainAngle * retracted,
+    mainLeftRotationZ: -GEAR_TRAVEL.mainAngle * main,
+    mainRightRotationZ: GEAR_TRAVEL.mainAngle * main,
+    noseDoorLeftRotationZ: GEAR_TRAVEL.doorAngle * doors,
+    noseDoorRightRotationZ: -GEAR_TRAVEL.doorAngle * doors,
     visible: e > GEAR_TRAVEL.stowedBelow,
   };
+}
+
+/**
+ * Nose gear geometry in model coordinates (metres, +Z nose, +Y up, origin on
+ * the ground under the main gear). Mirrors GEAR.nose and NOSE_BRACE in
+ * scripts/build-aircraft.mjs.
+ */
+export const NOSE_GEAR = {
+  hinge: { y: 1.55, z: 8.3 },
+  /** Where the drag brace hangs from the airframe. */
+  braceAnchor: { y: 1.62, z: 9.25 },
+  /** Where the brace is pinned to the leg, relative to the hinge, gear down. */
+  braceOnLeg: { y: -1.27 * 0.36, z: 0.07 },
+} as const;
+
+/** Each of the two brace links is half the anchor-to-leg distance, gear down. */
+export const NOSE_BRACE_LINK =
+  Math.hypot(
+    NOSE_GEAR.braceAnchor.y - (NOSE_GEAR.hinge.y + NOSE_GEAR.braceOnLeg.y),
+    NOSE_GEAR.braceAnchor.z - (NOSE_GEAR.hinge.z + NOSE_GEAR.braceOnLeg.z),
+  ) / 2;
+
+export interface BracePose {
+  /** Rotation of the upper link about X at its anchor. */
+  upperRotationX: number;
+  /** Position of the pin on the leg, which carries the lower link. */
+  lowerY: number;
+  lowerZ: number;
+  /** Rotation of the lower link about X at that pin. */
+  lowerRotationX: number;
+  /** The knee where the two links meet. */
+  kneeY: number;
+  kneeZ: number;
+}
+
+export function createBracePose(): BracePose {
+  return { upperRotationX: 0, lowerY: 0, lowerZ: 0, lowerRotationX: 0, kneeY: 0, kneeZ: 0 };
+}
+
+/** Rotation about X that turns a link hanging along -Y toward (dy, dz). */
+const hangToward = (dy: number, dz: number) => Math.atan2(-dz, -dy);
+
+/**
+ * Where the two links of the nose gear drag brace lie for a given nose leg
+ * rotation. The pin on the leg moves with the leg; the knee is found from
+ * the two link lengths and always folds upward, into the bay.
+ * Allocation-free: fills and returns `out`.
+ */
+export function noseBracePose(noseRotationX: number, out: BracePose): BracePose {
+  const c = Math.cos(noseRotationX);
+  const s = Math.sin(noseRotationX);
+  const { y: py, z: pz } = NOSE_GEAR.braceOnLeg;
+  const by = NOSE_GEAR.hinge.y + py * c - pz * s;
+  const bz = NOSE_GEAR.hinge.z + py * s + pz * c;
+  const ay = NOSE_GEAR.braceAnchor.y;
+  const az = NOSE_GEAR.braceAnchor.z;
+  const dy = by - ay;
+  const dz = bz - az;
+  const distance = Math.hypot(dy, dz) || 1e-6;
+  const half = Math.min(distance / 2, NOSE_BRACE_LINK);
+  const rise = Math.sqrt(Math.max(NOSE_BRACE_LINK * NOSE_BRACE_LINK - half * half, 0));
+  // Perpendicular to the brace line, on its upper side.
+  let ny = -dz / distance;
+  let nz = dy / distance;
+  if (ny < 0) {
+    ny = -ny;
+    nz = -nz;
+  }
+  const ky = ay + dy / 2 + ny * rise;
+  const kz = az + dz / 2 + nz * rise;
+  out.upperRotationX = hangToward(ky - ay, kz - az);
+  out.lowerY = by;
+  out.lowerZ = bz;
+  out.lowerRotationX = hangToward(ky - by, kz - bz);
+  out.kneeY = ky;
+  out.kneeZ = kz;
+  return out;
 }
 
 /**

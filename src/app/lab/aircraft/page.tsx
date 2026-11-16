@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 /**
  * Internal inspection page for the aircraft model. Not linked or indexed.
- * Views: ?view=front34|rear34|side|top|front|low|detail, gear: ?gear=0..1
+ * Views: ?view=front34|rear34|side|top|front|low|detail|nose, gear: ?gear=0..1
  */
 export default function AircraftLabPage() {
   return (

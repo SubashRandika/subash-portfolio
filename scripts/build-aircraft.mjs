@@ -39,8 +39,14 @@ const OUT_FILE = resolve(dirname(fileURLToPath(import.meta.url)), "../public/mod
 
 const LENGTH = 21;
 const NOSE_Z = 10.9;
-/** Height of the fuselage centreline above the ground with the gear down. */
+/**
+ * Height of the fuselage centreline in the airframe's own coordinates. The
+ * airframe was drawn sitting low; BODY_LIFT raises it onto landing gear of
+ * realistic length, so the centreline stands CENTER_Y + BODY_LIFT above the
+ * ground.
+ */
 const CENTER_Y = 1.95;
+const BODY_LIFT = 0.55;
 const DEG = Math.PI / 180;
 
 const zAt = (t) => NOSE_Z - t * LENGTH;
@@ -549,7 +555,7 @@ function buildTailBullet() {
 /** Wing-to-body fairing; also hides the retracted main gear. */
 function buildBellyFairing() {
   const geometry = new THREE.SphereGeometry(1, 28, 16);
-  geometry.applyMatrix4(new THREE.Matrix4().makeScale(1.3, 0.5, 4.2));
+  geometry.applyMatrix4(new THREE.Matrix4().makeScale(1.44, 0.56, 4.3));
   translate(geometry, 0, 0.98, 0.25);
   return clean(geometry);
 }
@@ -710,48 +716,208 @@ function cylinderBetween(a, b, radius, segments = 12) {
   return clean(geometry);
 }
 
-function wheel(x, y, z, radius, width) {
-  const tyre = new THREE.TorusGeometry(radius - width * 0.42, width * 0.42, 10, 28);
-  tyre.rotateY(Math.PI / 2);
-  translate(tyre, x, y, z);
-  const hub = new THREE.CylinderGeometry(radius * 0.62, radius * 0.62, width * 0.7, 20);
-  hub.rotateZ(Math.PI / 2);
-  translate(hub, x, y, z);
-  return { tyre: clean(tyre), hub: clean(hub) };
+/** A flat panel, given by its centre and size. */
+function plate(cx, cy, cz, sx, sy, sz) {
+  const geometry = new THREE.BoxGeometry(sx, sy, sz);
+  translate(geometry, cx, cy, cz);
+  return clean(geometry);
 }
 
 /**
- * @param {number} drop     distance from hinge down to the axle
- * @param {number} radius   wheel radius
- * @param {number} track    lateral spacing of the wheel pair
- * @param {THREE.Vector3} brace  where the drag brace meets the airframe, hinge-relative
+ * A tyre on its wheel, turning about the X axis. The tyre is lathed from a
+ * rounded section (tread, shoulders, sidewalls) rather than a torus, so it
+ * has the squat look of an aircraft tyre.
  */
-function buildGear(drop, radius, track, brace) {
-  const v = (x, y, z) => new THREE.Vector3(x, y, z);
-  const metal = [
-    cylinderBetween(v(0, 0.12, 0), v(0, -drop * 0.55, 0), 0.075),
-    cylinderBetween(v(-track / 2 - 0.02, -drop, 0), v(track / 2 + 0.02, -drop, 0), 0.045),
-    cylinderBetween(v(0, -drop * 0.42, 0), brace, 0.032, 8),
-    cylinderBetween(v(0.07, -drop * 0.5, -0.06), v(0.07, -drop * 0.92, -0.06), 0.02, 6),
+function wheel(x, y, z, radius, width) {
+  const half = width / 2;
+  const rim = radius * 0.56;
+  const wall = radius - rim;
+  // [along the axle, distance from it], shoulder to shoulder.
+  const section = [
+    [-half * 0.8, rim],
+    [-half, rim + wall * 0.38],
+    [-half, rim + wall * 0.72],
+    [-half * 0.8, radius - wall * 0.1],
+    [-half * 0.42, radius],
+    [half * 0.42, radius],
+    [half * 0.8, radius - wall * 0.1],
+    [half, rim + wall * 0.72],
+    [half, rim + wall * 0.38],
+    [half * 0.8, rim],
   ];
-  const polished = [cylinderBetween(v(0, -drop * 0.5, 0), v(0, -drop, 0), 0.05)];
+  const fromAxle = (p) => new THREE.Vector3(0, p.y, p.z).normalize();
+  const tyre = new THREE.LatheGeometry(
+    section.map(([along, out]) => new THREE.Vector2(out, along)),
+    30,
+  );
+  tyre.rotateZ(-Math.PI / 2);
+  orient(tyre, fromAxle);
+  translate(tyre, x, y, z);
+
+  // Wheel: a dished disc on each side, with a hub cap.
+  const disc = new THREE.LatheGeometry(
+    [
+      [-half * 0.86, rim * 1.02],
+      [-half * 0.62, rim * 0.8],
+      [-half * 0.7, rim * 0.34],
+      [-half * 0.92, rim * 0.3],
+      [-half * 0.94, 0.004],
+    ].map(([along, out]) => new THREE.Vector2(out, along)),
+    22,
+  );
+  disc.rotateZ(-Math.PI / 2);
+  orient(disc, () => new THREE.Vector3(-1, 0, 0));
+  clean(disc);
+  const discs = mergeGeometries([disc, mirrored(disc)]);
+  translate(discs, x, y, z);
+  return { tyre: clean(tyre), hub: discs };
+}
+
+/**
+ * Hinge positions are in aircraft coordinates with the airframe on its gear.
+ * `drop` is the distance from the hinge down to the axle; the wheels touch
+ * the ground at y = 0.
+ */
+const GEAR_NOSE_DROP = 1.27;
+
+const GEAR = {
+  nose: { hinge: [0, 1.55, 8.3], drop: GEAR_NOSE_DROP, radius: 0.28, width: 0.17, track: 0.37 },
+  // The main gear is a trailing-link leg: the axle sits behind the hinge.
+  main: { hinge: [2.05, 1.5, 0.34], drop: 1.07, radius: 0.43, width: 0.26, track: 0.52, trail: 0.34 },
+};
+
+/**
+ * Nose gear drag brace. It is two links: the upper hangs from the airframe
+ * ahead of the leg, the lower is pinned to the front of the leg, and they meet
+ * at a knee. Locked straight with the gear down; as the leg swings forward
+ * the knee folds up into the bay. The runtime positions both links (see
+ * noseBracePose in src/flight/aircraft.ts, which mirrors these numbers).
+ */
+const NOSE_BRACE = {
+  /** Where the upper link hangs from the airframe. */
+  anchor: [0, 1.62, 9.25],
+  /** Where the lower link is pinned to the leg, relative to the leg's hinge. */
+  onLeg: [0, -GEAR_NOSE_DROP * 0.36, 0.07],
+  radius: 0.042,
+};
+
+/** Length of each brace link: half the anchor-to-leg distance, gear down. */
+function noseBraceLink() {
+  const [, hy, hz] = GEAR.nose.hinge;
+  const dy = NOSE_BRACE.anchor[1] - (hy + NOSE_BRACE.onLeg[1]);
+  const dz = NOSE_BRACE.anchor[2] - (hz + NOSE_BRACE.onLeg[2]);
+  return Math.hypot(dy, dz) / 2;
+}
+
+/** One brace link, hanging from its pin along -Y, with lugs at both ends. */
+function buildBraceLink(length) {
+  const v = (x, y, z) => new THREE.Vector3(x, y, z);
+  return mergeGeometries([
+    cylinderBetween(v(0, 0, 0), v(0, -length, 0), NOSE_BRACE.radius, 10),
+    cylinderBetween(v(-0.07, 0, 0), v(0.07, 0, 0), 0.05, 10),
+    cylinderBetween(v(-0.07, -length, 0), v(0.07, -length, 0), 0.05, 10),
+  ]);
+}
+
+/** Nose gear: oleo strut, torque links, steering collar and twin wheels. */
+function buildNoseGear() {
+  const v = (x, y, z) => new THREE.Vector3(x, y, z);
+  const { drop, radius, width, track } = GEAR.nose;
+  const painted = [
+    // Trunnion across the hinge, outer cylinder, steering collar at its foot.
+    cylinderBetween(v(-0.2, 0, 0), v(0.2, 0, 0), 0.06, 12),
+    cylinderBetween(v(0, 0.12, 0), v(0, -drop * 0.5, 0), 0.098, 16),
+    cylinderBetween(v(0, -drop * 0.44, 0), v(0, -drop * 0.53, 0), 0.124, 16),
+    // Lug on the front of the leg where the drag brace is pinned.
+    cylinderBetween(v(-0.07, NOSE_BRACE.onLeg[1], NOSE_BRACE.onLeg[2]), v(0.07, NOSE_BRACE.onLeg[1], NOSE_BRACE.onLeg[2]), 0.05, 10),
+    cylinderBetween(v(0, NOSE_BRACE.onLeg[1] + 0.08, 0.02), v(0, NOSE_BRACE.onLeg[1], NOSE_BRACE.onLeg[2]), 0.035, 8),
+    // Torque links (scissors) ahead of the strut.
+    cylinderBetween(v(0, -drop * 0.5, 0.06), v(0, -drop * 0.7, 0.21), 0.024, 8),
+    cylinderBetween(v(0, -drop * 0.7, 0.21), v(0, -drop * 0.93, 0.05), 0.024, 8),
+    cylinderBetween(v(-0.05, -drop * 0.7, 0.21), v(0.05, -drop * 0.7, 0.21), 0.03, 8),
+    // Axle and its fork.
+    cylinderBetween(v(-track / 2 - 0.03, -drop, 0), v(track / 2 + 0.03, -drop, 0), 0.04, 10),
+    cylinderBetween(v(0, -drop * 0.9, 0), v(0, -drop - 0.03, 0), 0.062, 12),
+    // Taxi light housings on the strut.
+    cylinderBetween(v(-0.12, -drop * 0.3, 0.02), v(-0.12, -drop * 0.3, 0.1), 0.045, 10),
+    cylinderBetween(v(0.12, -drop * 0.3, 0.02), v(0.12, -drop * 0.3, 0.1), 0.045, 10),
+    cylinderBetween(v(-0.12, -drop * 0.3, 0.05), v(0.12, -drop * 0.3, 0.05), 0.018, 6),
+  ];
+  // Chromed piston showing below the outer cylinder.
+  const polished = [cylinderBetween(v(0, -drop * 0.5, 0), v(0, -drop * 0.92, 0), 0.066, 14)];
   const tyres = [];
   for (const side of [-1, 1]) {
-    const w = wheel((side * track) / 2, -drop, 0, radius, radius * 0.62);
+    const w = wheel((side * track) / 2, -drop, 0, radius, width);
     tyres.push(w.tyre);
-    metal.push(w.hub);
+    polished.push(w.hub);
   }
   return {
-    metal: mergeGeometries(metal),
+    metal: mergeGeometries(painted),
     polished: mergeGeometries(polished),
     tyre: mergeGeometries(tyres),
   };
 }
 
-const GEAR = {
-  nose: { hinge: [0, 1.05, 8.3], drop: 0.75, radius: 0.3, track: 0.36, brace: [0, 0.0, -0.8] },
-  main: { hinge: [1.42, 1.02, 0], drop: 0.6, radius: 0.42, track: 0.46, brace: [-0.7, 0.04, 0] },
-};
+/**
+ * Left main gear: a trailing-link leg. The post hangs from the wing, a
+ * trailing arm carries the axle behind it, and the shock strut bridges the
+ * two. A door panel on the outboard side closes the wheel well when the leg
+ * swings inward.
+ */
+function buildMainGearLeft() {
+  const v = (x, y, z) => new THREE.Vector3(x, y, z);
+  const { drop, radius, width, track, trail } = GEAR.main;
+  const knee = v(0, -drop * 0.66, 0.02);
+  const axle = v(0, -drop, -trail);
+  const armMid = new THREE.Vector3().lerpVectors(knee, axle, 0.62);
+  const painted = [
+    // Post, with its trunnion across the hinge line.
+    cylinderBetween(v(0, 0.1, 0), knee, 0.092, 16),
+    cylinderBetween(v(0, 0, -0.22), v(0, 0, 0.22), 0.06, 10),
+    // Trailing arm and the knuckle it pivots on.
+    cylinderBetween(knee, axle, 0.068, 12),
+    cylinderBetween(v(-0.11, knee.y, knee.z), v(0.11, knee.y, knee.z), 0.075, 12),
+    // Shock strut body.
+    cylinderBetween(v(0, -drop * 0.14, -0.15), v(0, -drop * 0.52, -0.2), 0.062, 12),
+    // Side stay, folding inboard toward the fuselage.
+    cylinderBetween(v(0, -drop * 0.4, 0), v(-0.86, 0.05, 0), 0.04, 10),
+    cylinderBetween(v(0, -drop * 0.22, 0.03), v(-0.46, 0.06, 0.03), 0.024, 8),
+    // Axle.
+    cylinderBetween(v(-track / 2 - 0.04, -drop, -trail), v(track / 2 + 0.04, -drop, -trail), 0.052, 12),
+    // Brake line down the post.
+    cylinderBetween(v(0.07, -0.05, 0.07), v(0.07, knee.y, 0.08), 0.012, 6),
+  ];
+  const polished = [cylinderBetween(v(0, -drop * 0.5, -0.197), armMid, 0.044, 12)];
+  const tyres = [];
+  for (const side of [-1, 1]) {
+    const w = wheel((side * track) / 2, -drop, -trail, radius, width);
+    tyres.push(w.tyre);
+    polished.push(w.hub);
+  }
+  // Leg door on the outboard side, with the two brackets that carry it.
+  const door = mergeGeometries([
+    plate(0.2, -drop * 0.4, -0.1, 0.022, drop * 0.72, 0.74),
+    cylinderBetween(v(0, -drop * 0.12, 0), v(0.2, -drop * 0.12, 0), 0.016, 6),
+    cylinderBetween(v(0, -drop * 0.56, 0), v(0.2, -drop * 0.56, 0), 0.016, 6),
+  ]);
+  return {
+    metal: mergeGeometries(painted),
+    polished: mergeGeometries(polished),
+    tyre: mergeGeometries(tyres),
+    door,
+  };
+}
+
+/**
+ * Nose gear bay doors. Each is hinged along the edge of the bay and hangs
+ * open while the gear is down. Built closed, around the hinge line, for the
+ * left (+X) door: the panel reaches from the hinge toward the centreline.
+ */
+const NOSE_DOOR = { halfBay: 0.24, length: 1.5, y: 1.6, z: 9.02, slope: 10.5 * DEG };
+
+function buildNoseDoorLeft() {
+  return plate(-NOSE_DOOR.halfBay / 2, 0, 0, NOSE_DOOR.halfBay, 0.02, NOSE_DOOR.length);
+}
 
 // ---------------------------------------------------------------------------
 // Lights
@@ -839,8 +1005,9 @@ async function main() {
     polished: material("Metal_Polished", [0.78, 0.79, 0.81], 1, 0.16),
     darkMetal: material("Metal_Dark", [0.05, 0.052, 0.058], 0.8, 0.48),
     fan: material("Metal_Fan", [0.3, 0.31, 0.33], 1, 0.36).setDoubleSided(true),
-    gearMetal: material("Gear_Metal", [0.52, 0.54, 0.57], 0.9, 0.38),
+    gearMetal: material("Gear_Metal", [0.74, 0.75, 0.76], 0.35, 0.42),
     tyre: material("Rubber_Tyre", [0.022, 0.022, 0.024], 0, 0.88),
+    bay: material("Bay_Dark", [0.018, 0.019, 0.021], 0.2, 0.9),
     lightNav: emissive("Light_Nav", [0.45, 0.72, 1], 6),
     lightBeacon: emissive("Light_Beacon", [1, 0.2, 0.14], 6),
     lightLanding: emissive("Light_Landing", [1, 0.96, 0.86], 8),
@@ -848,18 +1015,28 @@ async function main() {
 
   const root = doc.createNode("SR01");
   scene.addChild(root);
+  // Everything except the landing gear hangs from this node, which lifts the
+  // airframe onto its gear.
+  const body = doc.createNode("Body").setTranslation([0, BODY_LIFT, 0]);
+  root.addChild(body);
   let vertexTotal = 0;
   let triangleTotal = 0;
 
   /** Adds a node holding one mesh made of [geometry, material] pairs. */
-  const addMeshNode = (name, parts, parent = root, translation) => {
+  const addMeshNode = (name, parts, parent = body, translation) => {
     const mesh = doc.createMesh(name);
     for (const [geometry, mat] of parts) {
       clean(geometry);
       vertexTotal += addPrimitive(doc, buffer, mesh, geometry, mat);
       triangleTotal += geometry.getIndex().count / 3;
     }
-    const node = doc.createNode(name).setMesh(mesh);
+    // The named node carries no mesh: it is the part's pivot. Mesh
+    // quantization (below) folds a dequantizing offset and scale into the
+    // transform of whichever node holds the mesh, which would move a moving
+    // part's pivot off its hinge. Keeping the mesh on a child node leaves the
+    // pivot where it was placed.
+    const node = doc.createNode(name);
+    node.addChild(doc.createNode(`${name}_Mesh`).setMesh(mesh));
     if (translation) node.setTranslation(translation);
     parent.addChild(node);
     return node;
@@ -922,31 +1099,57 @@ async function main() {
         [fan.blade.clone(), M.fan],
         [mergeGeometries([fan.spinner.clone(), fan.backing.clone()]), M.darkMetal],
       ],
-      root,
+      body,
       [side * ENGINE.x, ENGINE.y, fanZ],
     );
   }
 
   // ---- Landing gear -------------------------------------------------------
-  const gearNode = (name, spec, mirror) => {
-    const built = buildGear(spec.drop, spec.radius, spec.track, new THREE.Vector3(...spec.brace));
-    const parts = mirror ? mirrorAll(built) : built;
-    const hinge = [...spec.hinge];
-    if (mirror) hinge[0] = -hinge[0];
-    return addMeshNode(
-      name,
-      [
-        [parts.metal, M.gearMetal],
-        [parts.polished, M.polished],
-        [parts.tyre, M.tyre],
-      ],
-      root,
-      hinge,
-    );
+  const gearNode = (name, built, hinge, withDoor) => {
+    const parts = [
+      [built.metal, M.gearMetal],
+      [built.polished, M.polished],
+      [built.tyre, M.tyre],
+    ];
+    if (withDoor) parts.push([built.door, M.pearl]);
+    return addMeshNode(name, parts, root, hinge);
   };
-  gearNode("Gear_Nose", GEAR.nose, false);
-  gearNode("Gear_Main_L", GEAR.main, false);
-  gearNode("Gear_Main_R", GEAR.main, true);
+  gearNode("Gear_Nose", buildNoseGear(), GEAR.nose.hinge, false);
+  const mainL = buildMainGearLeft();
+  const [mx, my, mz] = GEAR.main.hinge;
+  gearNode("Gear_Main_L", mainL, [mx, my, mz], true);
+  gearNode("Gear_Main_R", mirrorAll(mainL), [-mx, my, mz], true);
+
+  // Nose bay doors: the node sits on the hinge line, tilted to follow the
+  // underside of the nose; the runtime swings it about its own Z axis.
+  const doorL = buildNoseDoorLeft();
+  const doorTilt = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -NOSE_DOOR.slope);
+  for (const [name, side, geometry] of [
+    ["Door_Nose_L", 1, doorL],
+    ["Door_Nose_R", -1, mirrored(doorL)],
+  ]) {
+    addMeshNode(name, [[geometry, M.graphite]], root, [
+      side * NOSE_DOOR.halfBay,
+      NOSE_DOOR.y,
+      NOSE_DOOR.z,
+    ]).setRotation(doorTilt.toArray());
+  }
+  // The open bay between the doors: a dark well, shown only while they are open.
+  addMeshNode(
+    "Bay_Nose",
+    [[plate(0, 0, 0, NOSE_DOOR.halfBay * 2, 0.012, NOSE_DOOR.length), M.bay]],
+    root,
+    [0, NOSE_DOOR.y - 0.045, NOSE_DOOR.z],
+  ).setRotation(doorTilt.toArray());
+
+  // Drag brace links, placed by the runtime.
+  const link = noseBraceLink();
+  addMeshNode("Brace_Nose_Upper", [[buildBraceLink(link), M.gearMetal]], root, NOSE_BRACE.anchor);
+  addMeshNode("Brace_Nose_Lower", [[buildBraceLink(link), M.gearMetal]], root, [
+    0,
+    GEAR.nose.hinge[1] + NOSE_BRACE.onLeg[1],
+    GEAR.nose.hinge[2] + NOSE_BRACE.onLeg[2],
+  ]);
 
   // ---- Lights -------------------------------------------------------------
   addMeshNode("Lights_Nav", [
@@ -973,12 +1176,12 @@ async function main() {
   ]);
   // Empty anchors for runtime glow sprites.
   for (const [name, position] of Object.entries(LIGHTS)) {
-    root.addChild(doc.createNode(name).setTranslation(position));
+    body.addChild(doc.createNode(name).setTranslation(position));
   }
 
   // ---- Marking anchors (the SR-01 decal is drawn at runtime) ---------------
-  root.addChild(doc.createNode("Decal_SR01_L").setTranslation([0.168, 4.42, -8.5]));
-  root.addChild(doc.createNode("Decal_SR01_R").setTranslation([-0.168, 4.42, -8.5]));
+  body.addChild(doc.createNode("Decal_SR01_L").setTranslation([0.168, 4.42, -8.5]));
+  body.addChild(doc.createNode("Decal_SR01_R").setTranslation([-0.168, 4.42, -8.5]));
 
   // ---- Optimise and write -------------------------------------------------
   await MeshoptEncoder.ready;
@@ -1006,7 +1209,7 @@ async function main() {
   console.log(`  vertices:  ${vertexTotal.toLocaleString("en-US")}`);
   console.log(`  triangles: ${Math.round(triangleTotal).toLocaleString("en-US")}`);
   console.log(`  size:      ${(bytes / 1024).toFixed(1)} KB`);
-  console.log(`  centreline height: ${CENTER_Y} m, tail z: ${zAt(1).toFixed(2)}, t(z=0): ${tAt(0).toFixed(3)}`);
+  console.log(`  centreline height: ${CENTER_Y + BODY_LIFT} m, tail z: ${zAt(1).toFixed(2)}, t(z=0): ${tAt(0).toFixed(3)}`);
 }
 
 main().catch((error) => {
