@@ -95,10 +95,21 @@ describe("content integrity", () => {
     expect(allText()).not.toMatch(/50\s?%/);
   });
 
-  it("leaves unsupplied personal facts empty instead of inventing them", () => {
-    // These become real values only when Subash provides them.
-    expect(profile.links).toEqual({ linkedin: null, github: null, email: null, resume: null });
-    expect(profile.education).toEqual([]);
+  it("publishes only the contact details and education Subash supplied", () => {
+    expect(profile.links).toEqual({
+      linkedin: "https://www.linkedin.com/in/subash-rodrigo/",
+      github: "https://github.com/SubashRandika",
+      email: "subash.rodrigo@gmail.com",
+      // Not supplied yet: never invented.
+      resume: null,
+    });
+    expect(profile.education).toEqual([
+      {
+        institution: "University of Kelaniya, Sri Lanka",
+        qualification: "Bachelor of Science in Computer Science (Special)",
+        period: "Graduated 2013",
+      },
+    ]);
   });
 
   it("links every project to a chapter that exists", () => {

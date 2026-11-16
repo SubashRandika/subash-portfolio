@@ -113,22 +113,28 @@ test.describe("page foundation (static experience)", () => {
     }
   });
 
-  // The test build is configured with reserved example contact details
-  // (playwright.config.ts); the real ones are set at deployment.
-  test("offers every configured way to get in touch", async ({ page }) => {
+  test("offers every way to get in touch", async ({ page }) => {
     const contact = page.locator("#contact");
     await expect(contact.getByRole("link", { name: /Email/ })).toHaveAttribute(
       "href",
-      "mailto:hello@example.com",
+      "mailto:subash.rodrigo@gmail.com",
     );
-    const github = contact.getByRole("link", { name: /GitHub.*opens in a new tab/ });
-    await expect(github).toHaveAttribute("href", "https://github.com/example");
-    await expect(github).toHaveAttribute("rel", "noopener noreferrer");
-    // Nothing that was not configured is shown.
-    await expect(contact.getByRole("link", { name: /LinkedIn|Résumé/ })).toHaveCount(0);
-
+    for (const [name, href] of [
+      [/LinkedIn.*opens in a new tab/, "https://www.linkedin.com/in/subash-rodrigo/"],
+      [/GitHub.*opens in a new tab/, "https://github.com/SubashRandika"],
+    ] as const) {
+      const link = contact.getByRole("link", { name });
+      await expect(link).toHaveAttribute("href", href);
+      await expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    }
     const footer = page.getByRole("navigation", { name: "Contact and profiles" });
-    await expect(footer.getByRole("link")).toHaveText([/Email/, /GitHub/]);
+    await expect(footer.getByRole("link")).toHaveText([/Email/, /LinkedIn/, /GitHub/]);
+  });
+
+  test("shows education", async ({ page }) => {
+    const education = page.locator("#education");
+    await expect(education).toContainText("Bachelor of Science in Computer Science (Special)");
+    await expect(education).toContainText("University of Kelaniya, Sri Lanka");
   });
 });
 

@@ -204,10 +204,27 @@ describe("Contact", () => {
   });
 
   it("shows the closing message and no placeholder links when none are supplied", () => {
-    render(<Contact profile={profile} links={profile.links} />);
+    const none = { email: null, linkedin: null, github: null, resume: null };
+    render(<Contact profile={profile} links={none} />);
     expect(screen.getByRole("heading", { name: "The journey continues." })).toBeInTheDocument();
     expect(screen.getByText("The next mission could be ours.")).toBeInTheDocument();
-    expect(screen.queryAllByRole("link")).toHaveLength(profile.links.email ? 1 : 0);
+    expect(screen.queryAllByRole("link")).toHaveLength(0);
+  });
+
+  it("links to every supplied way to get in touch", () => {
+    render(<Contact profile={profile} links={profile.links} />);
+    expect(screen.getByRole("link", { name: /Email/ })).toHaveAttribute(
+      "href",
+      "mailto:subash.rodrigo@gmail.com",
+    );
+    expect(screen.getByRole("link", { name: /LinkedIn/ })).toHaveAttribute(
+      "href",
+      "https://www.linkedin.com/in/subash-rodrigo/",
+    );
+    expect(screen.getByRole("link", { name: /GitHub/ })).toHaveAttribute(
+      "href",
+      "https://github.com/SubashRandika",
+    );
   });
 });
 
@@ -215,5 +232,14 @@ describe("Education", () => {
   it("renders nothing until real entries exist", () => {
     const { container } = render(<Education entries={[]} />);
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it("shows the degree, university and year", () => {
+    render(<Education entries={profile.education} />);
+    expect(
+      screen.getByRole("heading", { name: "Bachelor of Science in Computer Science (Special)" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("University of Kelaniya, Sri Lanka")).toBeInTheDocument();
+    expect(screen.getByText("Graduated 2013")).toBeInTheDocument();
   });
 });

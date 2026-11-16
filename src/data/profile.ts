@@ -20,10 +20,17 @@ export const profile: Profile = {
     "I lead and mentor engineers, make architectural decisions, and collaborate with international development teams.",
   ],
   links: {
-    linkedin: null,
-    github: null,
-    email: null,
+    linkedin: "https://www.linkedin.com/in/subash-rodrigo/",
+    github: "https://github.com/SubashRandika",
+    email: "subash.rodrigo@gmail.com",
+    // Pending: the résumé PDF (to be placed in public/ as /resume.pdf).
     resume: null,
   },
-  education: [],
+  education: [
+    {
+      institution: "University of Kelaniya, Sri Lanka",
+      qualification: "Bachelor of Science in Computer Science (Special)",
+      period: "Graduated 2013",
+    },
+  ],
 };

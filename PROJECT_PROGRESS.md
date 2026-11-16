@@ -28,7 +28,7 @@ Taken from the brief and treated as fixed unless Subash changes them:
 | 04 | Master scroll timeline | Complete |
 | 05 | Six realistic geographical environments | Complete |
 | 06 | Career storytelling and milestone integration | Complete |
-| 07 | Complete portfolio sections | Complete (contact details and résumé awaiting Subash) |
+| 07 | Complete portfolio sections | Complete (résumé PDF awaiting Subash) |
 | 08 | Performance and accessibility optimization | In progress |
 | 09 | SEO and deployment readiness | Not started |
 | 10 | Final QA and release | Not started |
@@ -292,9 +292,9 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Headline decisions:
 
 These block publishing the affected content, not the build. Until answered the fields stay empty and are not rendered.
 
-1. **Contact links.** LinkedIn URL, GitHub URL, and the email address to show publicly.
+1. ~~**Contact links.**~~ Answered 2026-11-16: email, LinkedIn and GitHub supplied and published.
 2. **Résumé.** The PDF to offer for download.
-3. **Education.** Institution, qualification and years.
+3. ~~**Education.**~~ Answered 2026-11-16: BSc in Computer Science (Special), University of Kelaniya, Sri Lanka, graduated 2013.
 4. **Displayed title.** The brief uses "Senior Lead Software Engineer", "Lead Software Engineer" and "Technical Lead". Which one is the headline title? Working assumption: "Lead Software Engineer", matching the requested page title.
 5. **Pearson / WSO2 (2013–2017).** Were these two successive employers, or one employer and one client or product? Until clarified the site shows the pairing exactly as written in the brief.
 6. **Finago "approximately 50% UX improvement".** Is this figure verified and approved for publication, and what did it measure? It is withheld until confirmed.

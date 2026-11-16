@@ -44,10 +44,6 @@ export default defineConfig({
     timeout: 240_000,
     env: {
       NEXT_PUBLIC_SITE_URL: baseURL,
-      // Reserved example values, so the populated contact section is tested.
-      // The real details are configured at deployment.
-      NEXT_PUBLIC_CONTACT_EMAIL: "hello@example.com",
-      NEXT_PUBLIC_GITHUB_URL: "https://github.com/example",
     },
   },
 });
