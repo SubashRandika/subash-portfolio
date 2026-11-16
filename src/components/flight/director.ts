@@ -102,7 +102,26 @@ export function createFlightDirector(section: HTMLElement): FlightDirector {
     const beats = chapterBeats(number, cards.length);
 
     if (body.length === 0) continue;
+    const panel = track(Array.from(chapter.querySelectorAll<HTMLElement>(".chapter-panel")));
+    const keepsScrim = Boolean(beats.closingIn && closing.length > 0);
     gsap.set(body, { autoAlpha: 0 });
+    // The panel's darkening scrim follows the text in and out.
+    gsap.set(panel, { "--scrim": 0 });
+    timeline.fromTo(
+      panel,
+      { "--scrim": 0 },
+      { "--scrim": 1, duration: beats.introIn[1] - beats.introIn[0], ease: "power1.out" },
+      beats.introIn[0],
+    );
+    // The last chapter keeps it for the closing message.
+    if (!keepsScrim) {
+      timeline.fromTo(
+        panel,
+        { "--scrim": 1 },
+        { "--scrim": 0, duration: beats.exit[1] - beats.exit[0], ease: "power1.in" },
+        beats.exit[0],
+      );
+    }
     if (cards.length > 0) gsap.set(cards, { autoAlpha: 0, "--lit": 0, attr: { "data-current": "false" } });
     if (closing.length > 0) gsap.set(closing, { autoAlpha: 0 });
 

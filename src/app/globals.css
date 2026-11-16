@@ -803,6 +803,11 @@
     /* The narrative paints above the stage, so stop short of the HUD band
        rather than dimming its readouts. */
     mask-image: linear-gradient(to bottom, #000 calc(100% - 9rem), transparent calc(100% - 5rem));
+    /* Shown only while this chapter's text is. The flight director fades
+       --scrim with the text, so a panel still sliding into place never
+       drags a hard-edged dark band across the chapter before it. Off by
+       default: GSAP removes the variable rather than writing 0. */
+    opacity: var(--scrim, 0);
   }
 
   /* Portrait frames: the aircraft flies in the upper part of the frame (see
