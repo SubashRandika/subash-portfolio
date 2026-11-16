@@ -449,6 +449,12 @@ const B = REGION_BOUNDARIES;
  * are prefixed with `t` to stay clear of other shader chunks.
  */
 export const TERRAIN_GLSL = /* glsl */ `
+  // Upper bound for every loop in the terrain shaders. It is a uniform, not a
+  // constant, on purpose: Direct3D (Chrome and Edge on Windows) fully unrolls
+  // loops with constant bounds, and the unrolled terrain shader took over
+  // twenty seconds to compile. Set it to TERRAIN_LOOP_LIMIT.
+  uniform int uLoopLimit;
+
   float tHash(ivec2 c) {
     uvec2 q = uvec2(c + ivec2(${LATTICE_OFFSET}));
     uint h = (q.x * 0x27d4eb2du) ^ (q.y * 0x165667b1u);
@@ -475,7 +481,8 @@ export const TERRAIN_GLSL = /* glsl */ `
     float value = 0.0;
     float amplitude = 0.5;
     float total = 0.0;
-    for (int i = 0; i < octaves; i++) {
+    for (int i = 0; i < uLoopLimit; i++) {
+      if (i >= octaves) break;
       value += amplitude * tNoise(p);
       total += amplitude;
       p = p * 2.03 + vec2(17.3, 9.1);
@@ -571,6 +578,9 @@ export const TERRAIN_GLSL = /* glsl */ `
     return kind < 0.4 ? 1.0 : kind < 0.65 ? 2.0 : 3.0;
   }
 `;
+
+/** Value for the uLoopLimit uniform that TERRAIN_GLSL declares. */
+export const TERRAIN_LOOP_LIMIT = 64;
 
 /** Constants the terrain shader needs alongside TERRAIN_GLSL. */
 export const TERRAIN_CONSTANTS = {

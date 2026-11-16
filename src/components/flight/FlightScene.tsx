@@ -5,6 +5,7 @@ import { Suspense, useMemo, useRef } from "react";
 import { Airport } from "@/components/environments/Airport";
 import { useQuality } from "@/hooks/useQuality";
 import { Environments } from "@/components/environments/Environments";
+import { terrainStatus } from "@/components/environments/Terrain";
 import { createAircraftState } from "@/flight/aircraft";
 import { Aircraft, type AircraftRig } from "./Aircraft";
 import { AircraftShadow } from "./AircraftShadow";
@@ -47,6 +48,8 @@ function ReadySignal({ onReady }: { onReady?: () => void }) {
   const frames = useRef(0);
   useFrame(() => {
     if (frames.current < 0) return;
+    // The ground compiles in the background; wait for it to be drawn.
+    if (!terrainStatus.ready) return;
     frames.current++;
     if (frames.current >= WARM_UP_FRAMES) {
       frames.current = -1;

@@ -15,7 +15,7 @@ import {
 } from "@/components/flight/shaders/lighting.glsl";
 import { CLOUD_GLSL, CLOUD_LAYERS, cloudCover } from "@/flight/clouds";
 import { flightFrame } from "@/flight/frame";
-import { TERRAIN_GLSL } from "@/flight/terrain";
+import { TERRAIN_GLSL, TERRAIN_LOOP_LIMIT } from "@/flight/terrain";
 
 const vertexShader = /* glsl */ `
   varying vec3 vWorld;
@@ -127,6 +127,7 @@ export function Clouds() {
         uniforms: {
           ...(layerUniforms as unknown as Record<string, THREE.IUniform>),
           uLayer: { value: index },
+          uLoopLimit: { value: TERRAIN_LOOP_LIMIT },
         },
         vertexShader,
         fragmentShader,

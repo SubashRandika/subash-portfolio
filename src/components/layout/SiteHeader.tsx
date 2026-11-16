@@ -44,7 +44,7 @@ export function SiteHeader({ name }: SiteHeaderProps) {
   return (
     <header
       data-theme="night"
-      className="fixed inset-x-0 top-0 z-50 bg-night-900/70 backdrop-blur-md"
+      className="fixed inset-x-0 top-0 z-50 bg-night-900/90 backdrop-blur-md"
       style={{ borderBottom: "1px solid var(--line)" }}
     >
       <div className="shell flex h-(--header-height) items-center justify-between gap-6">

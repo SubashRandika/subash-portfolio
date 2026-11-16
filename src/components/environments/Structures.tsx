@@ -1,6 +1,6 @@
 "use client";
 
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
@@ -609,6 +609,31 @@ function buildInstances(
   return mesh;
 }
 
+/**
+ * Shows a set of buildings only once their shader has compiled, in the
+ * background. Drawing them before then would freeze the page while the
+ * driver compiles (over a second on Direct3D). Returns a cancel function.
+ */
+function revealWhenCompiled(
+  group: THREE.Group,
+  gl: THREE.WebGLRenderer,
+  camera: THREE.Camera,
+  scene: THREE.Scene,
+): () => void {
+  let cancelled = false;
+  group.visible = false;
+  gl.compileAsync(group, camera, scene)
+    .catch(() => undefined)
+    .then(() => {
+      if (cancelled) return;
+      group.visible = true;
+      invalidateSunShadows();
+    });
+  return () => {
+    cancelled = true;
+  };
+}
+
 interface StructuresProps {
   items: readonly Structure[];
 }
@@ -636,16 +661,19 @@ export function Structures({ items }: StructuresProps) {
     return { group, meshes };
   }, [items]);
 
+  const { gl, camera, scene } = useThree();
+
   useEffect(() => {
-    invalidateSunShadows();
+    const cancel = revealWhenCompiled(built.group, gl, camera, scene);
     return () => {
+      cancel();
       for (const mesh of built.meshes) {
         mesh.geometry.dispose();
         mesh.dispose();
       }
       invalidateSunShadows();
     };
-  }, [built]);
+  }, [built, gl, camera, scene]);
 
   useFrame(() => {
     const { uniforms } = structureMaterial();

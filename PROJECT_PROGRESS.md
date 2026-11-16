@@ -30,11 +30,11 @@ Taken from the brief and treated as fixed unless Subash changes them:
 | 05 | Six realistic geographical environments | Complete |
 | 06 | Career storytelling and milestone integration | Complete |
 | 07 | Complete portfolio sections | Complete |
-| 08 | Performance and accessibility optimization | In progress |
-| 09 | SEO and deployment readiness | Not started |
+| 08 | Performance and accessibility optimization | Complete |
+| 09 | SEO and deployment readiness | Next |
 | 10 | Final QA and release | Not started |
 
-**Current phase:** 08 — Performance and accessibility optimization.
+**Current phase:** 09 — SEO and deployment readiness.
 
 ## Architecture and technical decisions
 
@@ -65,6 +65,10 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Headline decisions:
 24. Sun shadows for the custom terrain and building shaders come from two depth maps rendered from the sun (detailed around the aircraft, coarse out to the mountains), compared in the shader. They are redrawn only when the aircraft has moved a good part of a map's width, the sun has turned or scenery has changed. Software renderers never get them, and any device that cannot hold about 40 fps with them on drops them for the rest of the visit.
 25. Every moving part of the aircraft hangs from its own mesh-less pivot node. Mesh quantization folds a dequantizing offset into the transform of the node that holds a mesh, which would otherwise move a part's pivot off its hinge.
 26. Buildings are assembled from ten instanced unit solids (box, gable, pyramid, dome, sphere, cone, taper, cooling tower, arch, cylinder) through a small "site" helper, so a building is described once in its own frame and stood anywhere. Features are placed whole or not at all if any part would stand in water.
+27. Graphics profiles (`src/flight/quality.ts`): HIGH, MEDIUM and LOW, chosen from device signals and stepped down (never up) by a frame-time governor. The scene reads `getQuality()` each frame; React hears only about the rare change of profile.
+28. The live flight is chosen in the head script only with hardware-accelerated WebGL 2 (`failIfMajorPerformanceCaveat`); without it the static experience is served, with no layout shift.
+29. Large shaders compile in the background (`KHR_parallel_shader_compile` through `compileAsync`), and the terrain and buildings are shown only once compiled; the painted poster stays up until the ground is ready. Every other program is precompiled at startup, so nothing compiles mid-flight.
+30. The terrain shader calls each costly helper (cars, car parks, tree crowns, street rows, the street itself) from one place: layout code records what lies under the pixel and main() draws it once. The Direct3D compiler copies a helper into the shader at every call site; this took the shader from 21 s to 8 s to compile on Windows.
 10. Milestone summaries are optional: when the brief says nothing beyond a milestone's title, the card shows the title alone rather than padded copy.
 
 ## Phase summaries
@@ -329,6 +333,35 @@ Subash supplied two portraits: an illustrated one (headphones, paint splashes) a
 - Tests: unit (image, caption, fallback without IntersectionObserver or matchMedia) and end-to-end (held back below the fold, revealed on scroll, image actually loads; shown at once with reduced motion).
 - For Phase 09: this image can be the `image` of the Person JSON-LD and a basis for the Open Graph image.
 
+### Phase 08 — Performance and accessibility optimization (complete)
+
+**Implemented:**
+
+- **Graphics profiles** HIGH, MEDIUM and LOW (pixel ratio, sun shadows, terrain detail and build budget, light glows, rooftop detail). Software rendering, save-data and very small devices start on LOW; phones, small screens and modest devices on MEDIUM; the rest on HIGH. A governor steps down if real frame times average over 25 ms. `?quality=high|medium|low` forces one; the choice is recorded on `<html data-flight-quality>`. This is the lighter mobile scene the brief asks for.
+- **No hardware acceleration, no 3D:** the head script probes for hardware-accelerated WebGL 2 and serves the static experience otherwise (a software-rendered flight runs at a few frames a second).
+- **Stalls removed:** districts are laid out a few milliseconds per frame and cached; all materials (including the hidden cloud deck and the shadow pass's depth programs) are precompiled; the terrain and building shaders compile in the background and are shown only when ready. A full flight now has no shader compiles after startup and one long task of about 60 ms (previously 290–350 ms stalls).
+- **Windows shader compile:** the terrain shader took 21 s to compile on Direct3D (Chrome and Edge on Windows), freezing the page. Restructured (decisions 29–30) to 8 s, and that 8 s now runs in the background with the page fully responsive; Chrome caches compiled shaders, so return visits are fast.
+- **Accessibility:** axe-core WCAG 2.2 AA audits added to the end-to-end suite for the static page, the open mobile menu and the live flight (opening and a chapter). One violation found and fixed: header link contrast over light sections (header now 90 % opaque, about 6.6:1).
+- **Portrait clipping** fixed (orbit and corners kept inside their column) with a regression check.
+
+**Verification (2026-11-16):**
+
+| Check | Result |
+| --- | --- |
+| `npm run lint`, `npm run typecheck` | Pass |
+| `npm run test` | Pass, 122 of 122 (new: profiles and governor, head-script mode choice, portrait) |
+| `npm run test:e2e` | Pass, 83 passed, 1 skipped by design (new: axe audits, chosen profile, portrait overhang) |
+| Frame pacing, HIGH with shadows (Radeon 860M, 1440 × 900, 30 s scroll) | Median 17 ms, p95 17–18 ms in every tenth of the flight; one long task of about 60 ms |
+| Terrain shader compile (Direct3D 11) | 21 s → 8 s, now off the main thread |
+| Lighthouse desktop (local production build) | Performance 82, Accessibility 100, Best Practices 100, SEO 100; LCP 0.8 s, TBT 390 ms, CLS 0 |
+| Lighthouse mobile (simulated slow 4G, 4× CPU) | Performance 60, Accessibility 100, Best Practices 100, SEO 100; LCP 3.8 s, TBT 2.3 s, CLS 0 |
+| Lighthouse mobile, static experience | Performance 93 |
+
+**Limitations:**
+
+- Mobile Lighthouse performance (60) is below the 90 target. The remaining blocking time under 4× CPU throttling is React hydration of the long page (about 0.9 s), the scroll director's setup (about 1.1 s) and the 3D bootstrap (about 0.3 s). Options for Phase 10: start the 3D and the director after the first interaction on touch devices, or split the director's setup across frames.
+- On a first visit with Chrome or Edge on Windows the 3D ground appears about 8 s after load (the poster shows meanwhile); later visits use Chrome's shader cache. Splitting the terrain shader into region variants would shorten this further.
+
 ## Known issues
 
 - **Playwright's bundled Chromium cannot run on this machine.** Windows reports "An Application Control policy has blocked this file" for the unsigned `chrome-headless-shell.exe`. The policy was left untouched. Tests use the installed, signed Google Chrome through `channel: "chrome"`; the blocked download was removed with `npx playwright uninstall`.
@@ -361,4 +394,4 @@ These block publishing the affected content, not the build. Until answered the f
 
 ## Next planned activities
 
-Phase 08: adaptive HIGH, MEDIUM and LOW graphics profiles measured from real rendering; terrain tiles and structure plans off the main thread (removing the hitch measured in Phase 05); a lighter mobile scene; Lighthouse and accessibility audits with fixes.
+Phase 09: page metadata, canonical URL and Open Graph/X cards from `NEXT_PUBLIC_SITE_URL`, Person/WebSite/ProfilePage JSON-LD (using the portrait), sitemap and robots, favicon and theme colour, a production-environment check that refuses to deploy without a real domain, and deployment documentation.

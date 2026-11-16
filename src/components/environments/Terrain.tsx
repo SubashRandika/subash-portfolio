@@ -1,6 +1,6 @@
 "use client";
 
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import {
@@ -22,7 +22,13 @@ import {
 } from "@/components/flight/sunShadow";
 import { flightFrame } from "@/flight/frame";
 import { getQuality } from "@/flight/quality";
-import { CITY_AXIS, CITY_GRID, TERRAIN_CONSTANTS, TERRAIN_GLSL } from "@/flight/terrain";
+import {
+  CITY_AXIS,
+  CITY_GRID,
+  TERRAIN_CONSTANTS,
+  TERRAIN_GLSL,
+  TERRAIN_LOOP_LIMIT,
+} from "@/flight/terrain";
 import { TILE_VERTICES, buildTile, tileIndices } from "@/flight/terrainTile";
 
 // ---------------------------------------------------------------------------
@@ -68,6 +74,29 @@ const fragmentShader = /* glsl */ `
   // and the shader would otherwise spend its time on cars and tree crowns
   // nobody can see.
   float gPixel;
+
+  // Deferred detail. Cars, car parks and tree crowns are costly to compile,
+  // and the Direct3D compiler (Chrome and Edge on Windows) copies a helper
+  // into the shader once for every place it is called. So the code that lays
+  // out roads, streets and blocks only records what lies under the pixel, and
+  // main() draws each kind of detail with a single call at the end.
+  // The vehicle lane: offset from its centre, distance along it, lane id,
+  // weight; and its share of occupied slots and slot length.
+  vec4 gLane;
+  vec2 gLaneSlots;
+  // The car park: position within its rows, seed, weight.
+  vec4 gPark;
+
+  void requestLane(float s, float t, float id, float density, float spacing, float weight) {
+    if (weight <= 0.0 || abs(s) > 1.4) return;
+    gLane = vec4(s, t, id, weight);
+    gLaneSlots = vec2(density, spacing);
+  }
+
+  void requestPark(vec2 q, float seed, float weight) {
+    if (weight <= 0.0) return;
+    gPark = vec4(q, seed, weight);
+  }
   const vec3 ASPHALT = vec3(0.05, 0.052, 0.056);
 
   // 1 inside [lo, hi], antialiased over aa.
@@ -122,18 +151,19 @@ const fragmentShader = /* glsl */ `
     vec2 cell = floor(g);
     float best = 9.0;
     vec2 bestOffset = vec2(0.0);
-    for (int j = -1; j <= 1; j++) {
-      for (int i = -1; i <= 1; i++) {
-        vec2 c = cell + vec2(float(i), float(j));
-        ivec2 ic = ivec2(c);
-        vec2 centre = c + 0.2 + 0.6 * vec2(tHash(ic), tHash(ic + ivec2(17, 3)));
-        float radius = 0.42 + 0.3 * tHash(ic + ivec2(5, 29));
-        vec2 offset = (g - centre) / radius;
-        float dist = dot(offset, offset);
-        if (dist < best) {
-          best = dist;
-          bestOffset = offset;
-        }
+    // The 3 × 3 neighbouring cells, as one loop the compiler cannot unroll
+    // (see uLoopLimit).
+    for (int k = 0; k < uLoopLimit; k++) {
+      if (k >= 9) break;
+      vec2 c = cell + vec2(float(k - (k / 3) * 3 - 1), float(k / 3 - 1));
+      ivec2 ic = ivec2(c);
+      vec2 centre = c + 0.2 + 0.6 * vec2(tHash(ic), tHash(ic + ivec2(17, 3)));
+      float radius = 0.42 + 0.3 * tHash(ic + ivec2(5, 29));
+      vec2 offset = (g - centre) / radius;
+      float dist = dot(offset, offset);
+      if (dist < best) {
+        best = dist;
+        bestOffset = offset;
       }
     }
     lean = bestOffset * (1.0 - smoothstep(0.85, 1.0, best));
@@ -192,7 +222,7 @@ const fragmentShader = /* glsl */ `
 
   // A country road: s is the distance from its centreline, t the distance
   // along it, hw the half-width of the carriageway. Returns colour and cover.
-  vec4 countryRoad(float s, float t, float hw, float aa, float fine) {
+  vec4 countryRoad(float s, float t, float hw, float aa, float fine, float weight) {
     float a = abs(s);
     float cover = 1.0 - smoothstep(hw + 1.4 - aa, hw + 1.4 + aa, a);
     if (cover <= 0.0) return vec4(0.0);
@@ -204,15 +234,13 @@ const fragmentShader = /* glsl */ `
     float paintVisible = 1.0 - smoothstep(0.8, 2.6, aa);
     float lines = band(a, hw - 0.6, hw - 0.4, aa) + band(a, 0.0, 0.1, aa) * step(0.4, fract(t / 12.0));
     color = mix(color, PAINT, clamp(lines, 0.0, 1.0) * paintVisible);
-    vec3 paint;
     float dir = s > 0.0 ? 1.0 : -1.0;
-    float car = vehicles(a - hw * 0.5, t + dir * uTime * 19.0, 3.0 + dir, 0.1, 90.0, aa, paint);
-    color = mix(color, paint, car);
+    requestLane(a - hw * 0.5, t + dir * uTime * 19.0, 3.0 + dir, 0.1, 90.0, cover * weight);
     return vec4(color, cover);
   }
 
   // A dual carriageway with a planted central reservation.
-  vec4 trunkRoad(float s, float t, float aa, float fine) {
+  vec4 trunkRoad(float s, float t, float aa, float fine, float weight) {
     float a = abs(s);
     float hw = 11.0;
     float cover = 1.0 - smoothstep(hw + 2.0 - aa, hw + 2.0 + aa, a);
@@ -226,11 +254,10 @@ const fragmentShader = /* glsl */ `
       + band(a, 6.05, 6.2, aa) * step(0.5, fract(t / 14.0));
     color = mix(color, PAINT, clamp(lines, 0.0, 1.0) * paintVisible);
     float dir = s > 0.0 ? 1.0 : -1.0;
-    vec3 paint;
-    float car = vehicles(a - 4.0, t + dir * uTime * 27.0, 10.0 + dir, 0.34, 46.0, aa, paint);
-    color = mix(color, paint, car);
-    car = vehicles(a - 8.2, t + dir * uTime * 22.0, 20.0 + dir, 0.42, 58.0, aa, paint);
-    color = mix(color, paint, car);
+    // Two lanes each way: the one under the pixel.
+    bool inner = a < 6.1;
+    requestLane(a - (inner ? 4.0 : 8.2), t + dir * uTime * (inner ? 27.0 : 22.0), (inner ? 10.0 : 20.0) + dir,
+      inner ? 0.34 : 0.42, inner ? 46.0 : 58.0, cover * weight);
     return vec4(color, cover);
   }
 
@@ -238,7 +265,8 @@ const fragmentShader = /* glsl */ `
   // along: distance along it (continuous through the grid); inBlock: the same
   // measured from the start of this block; width: kerb to kerb half-width;
   // crossing: width of the street it meets at each end of the block.
-  vec4 cityStreet(float across, float along, float inBlock, float hw, float crossing, float aa, float fine) {
+  vec4 cityStreet(float across, float along, float inBlock, float hw, float crossing, float aa, float fine,
+    float weight) {
     float a = abs(across);
     float cover = 1.0 - smoothstep(hw - aa, hw + aa, a);
     if (cover <= 0.0) return vec4(0.0);
@@ -270,21 +298,21 @@ const fragmentShader = /* glsl */ `
       color = mix(color, vec3(0.07, 0.1, 0.04), median);
       color = mix(color, vec3(0.03, 0.06, 0.025) * (1.0 + 0.5 * dot(lean, uSunDirection.xz)), tree * clearOfJunction);
     }
-    // Traffic, and cars parked at the kerb on the smaller streets.
+    // Traffic, and cars parked at the kerb on the smaller streets: the lane
+    // under the pixel.
     float dir = across > 0.0 ? 1.0 : -1.0;
-    vec3 paint;
     if (avenue) {
-      float car = vehicles(a - 2.9, along + dir * uTime * 13.0, 30.0 + dir, 0.34, 24.0, aa, paint);
-      color = mix(color, paint, car * clearOfJunction);
-      car = vehicles(a - 6.3, along + dir * uTime * 11.0, 40.0 + dir, 0.4, 21.0, aa, paint);
-      color = mix(color, paint, car * clearOfJunction);
-      car = vehicles(a - 9.6, along + dir * uTime * 9.0, 50.0 + dir, 0.3, 27.0, aa, paint);
-      color = mix(color, paint, car * clearOfJunction);
+      float k = a < 4.6 ? 0.0 : a < 7.95 ? 1.0 : 2.0;
+      float centre = k < 0.5 ? 2.9 : k < 1.5 ? 6.3 : 9.6;
+      float speed = k < 0.5 ? 13.0 : k < 1.5 ? 11.0 : 9.0;
+      requestLane(a - centre, along + dir * uTime * speed, 30.0 + 10.0 * k + dir,
+        k < 0.5 ? 0.34 : k < 1.5 ? 0.4 : 0.3, k < 0.5 ? 24.0 : k < 1.5 ? 21.0 : 27.0,
+        cover * clearOfJunction * weight);
     } else {
-      float car = vehicles(a - 2.3, along + dir * uTime * 9.0, 60.0 + dir, 0.2, 30.0, aa, paint);
-      color = mix(color, paint, car * clearOfJunction);
-      car = vehicles(a - 5.8, along, 70.0 + dir, 0.62, 6.2, aa, paint);
-      color = mix(color, paint, car * band(inBlock, crossing + 9.0, B - 9.0, aa));
+      bool parked = a > 4.05;
+      requestLane(a - (parked ? 5.8 : 2.3), along + (parked ? 0.0 : dir * uTime * 9.0), (parked ? 70.0 : 60.0) + dir,
+        parked ? 0.62 : 0.2, parked ? 6.2 : 30.0,
+        cover * weight * (parked ? band(inBlock, crossing + 9.0, B - 9.0, aa) : clearOfJunction));
     }
     return vec4(color, cover);
   }
@@ -331,6 +359,9 @@ const fragmentShader = /* glsl */ `
     // Metres covered by one pixel, for antialiasing linear features.
     float aa = max(max(fwidth(p.x), fwidth(p.y)), 0.02);
     gPixel = aa;
+    gLane = vec4(0.0);
+    gLaneSlots = vec2(0.0, 1.0);
+    gPark = vec4(0.0);
     vec2 sunAcross = normalize(uSunDirection.xz + vec2(1e-5));
 
     float broad = tFbm(p / 1800.0, 3);
@@ -396,7 +427,8 @@ const fragmentShader = /* glsl */ `
           float house = 0.0;
           float shade = 0.0;
           // The house on this plot, and the shadow of the one up-sun of it.
-          for (int k = 0; k < 2; k++) {
+          for (int k = 0; k < uLoopLimit; k++) {
+            if (k >= 2) break;
             vec2 q = p + (k == 1 ? sunAcross * (5.5 * shadowReach) : vec2(0.0));
             vec2 lot = floor(q / 18.0);
             vec2 inLot = q - lot * 18.0;
@@ -462,18 +494,19 @@ const fragmentShader = /* glsl */ `
     vec3 asphalt = ASPHALT * (0.9 + 0.2 * fine);
     vec4 road = vec4(0.0);
     if (w[1] > 0.001) {
-      vec4 r = countryRoad(lateral - tValleyRiver(d) - 120.0, d, 3.6, aa, fine);
+      vec4 r = countryRoad(lateral - tValleyRiver(d) - 120.0, d, 3.6, aa, fine, w[1]);
       road = mix(road, r, r.a * w[1]);
     }
     if (w[2] > 0.001) {
-      vec4 r = trunkRoad(lateral - 300.0, d, aa, fine);
+      vec4 r = trunkRoad(lateral - 300.0, d, aa, fine, w[2]);
       road = mix(road, r, r.a * w[2]);
     }
     if (w[3] > 0.001) {
       float field = tFbm(p / 5000.0 + 70.0, 3);
       float gradient = max(fwidth(field) / aa, 1e-7);
-      vec4 r = countryRoad((field - 0.5) / gradient, p.x + p.y, 3.4, aa, fine);
-      road = mix(road, r, r.a * w[3] * (1.0 - smoothstep(0.2, 0.3, slope)));
+      float weight = w[3] * (1.0 - smoothstep(0.2, 0.3, slope));
+      vec4 r = countryRoad((field - 0.5) / gradient, p.x + p.y, 3.4, aa, fine, weight);
+      road = mix(road, r, r.a * weight);
     }
 
     // ---- Coast: beach, airfield -------------------------------------------
@@ -488,7 +521,7 @@ const fragmentShader = /* glsl */ `
       vec3 sand = mix(vec3(0.3, 0.27, 0.21), vec3(0.5, 0.45, 0.34), smoothstep(6.0, 22.0, inland + 8.0 * mid));
       albedo = mix(albedo, sand * (0.9 + 0.2 * fine), beach * w[0] * (1.0 - airfield));
       sea = w[0] * (1.0 - smoothstep(-6.0, 6.0, inland)) * (1.0 - airfield);
-      vec4 r = countryRoad(inland - 380.0, d, 3.6, aa, fine);
+      vec4 r = countryRoad(inland - 380.0, d, 3.6, aa, fine, w[0] * (1.0 - airfield));
       road = mix(road, r, r.a * w[0] * (1.0 - airfield));
 
       if (airfield > 0.001) {
@@ -522,7 +555,7 @@ const fragmentShader = /* glsl */ `
         albedo = mix(albedo, pavement, paved * airfield);
         // Car park beyond the terminal.
         float parking = band(p.x, 706.0, 800.0, aa) * band(p.y, -1640.0, -1220.0, aa);
-        if (parking > 0.0) albedo = mix(albedo, carPark(p.yx - vec2(-1640.0, 706.0), aa, fine, 0.3), parking * airfield);
+        requestPark(p.yx - vec2(-1640.0, 706.0), 0.3, parking * airfield);
       }
     }
 
@@ -544,7 +577,7 @@ const fragmentShader = /* glsl */ `
         if (industrialKind < 1.5) {
           // Staff car park beside the offices.
           float parking = band(site.x, span * 0.64, span * 0.99, aa) * band(site.y, span * 0.25, span * 0.37, aa);
-          if (parking > 0.0) ground = mix(ground, carPark(site - vec2(span * 0.64, span * 0.25), aa, fine, 0.6), parking);
+          requestPark(site - vec2(span * 0.64, span * 0.25), 0.6, parking * w[2]);
         } else if (industrialKind < 2.5) {
           // Painted lanes of the container stack.
           float lanes = (1.0 - band(fract((site.y - span * 0.48 + 5.5) / 11.0), 0.02, 0.98, aa / 11.0))
@@ -612,6 +645,11 @@ const fragmentShader = /* glsl */ `
       vec2 lot = local - vec2(streetX, streetY) - ${n(SIDEWALK)} - lotSize * 0.5;
       float inLot = band(lot.x, -lotSize.x * 0.5, lotSize.x * 0.5, aa) * band(lot.y, -lotSize.y * 0.5, lotSize.y * 0.5, aa);
       float seed = tHash(ic + ivec2(7, 91));
+      // Each kind of block chooses where its trees grow; one crown search
+      // after the branches draws them.
+      vec2 crownShift = vec2(0.0);
+      float crownSpacing = 9.0;
+      float crownMask = 0.0;
 
       if (park) {
         // Lawns, winding paths, a pond, and trees thickening toward the edges.
@@ -621,9 +659,9 @@ const fragmentShader = /* glsl */ `
         green = mix(green, vec3(0.34, 0.31, 0.25), path * resolved);
         vec2 pondAt = (vec2(seed, tHash(ic + ivec2(2, 17))) - 0.5) * 40.0;
         float pond = 1.0 - smoothstep(13.0, 14.0 + aa, length((lot - pondAt) * vec2(1.0, 1.5)) + 5.0 * tNoise(g / 11.0));
-        vec2 lean;
-        float crown = canopy(g + 3.0, 8.5, lean) * smoothstep(0.42, 0.62, tNoise(g / 30.0 + 7.0)) * (1.0 - pond);
-        green = mix(green, vec3(0.03, 0.058, 0.024) * (1.0 + 0.6 * dot(lean, sunAcross)), crown * resolved);
+        crownShift = vec2(3.0);
+        crownSpacing = 8.5;
+        crownMask = smoothstep(0.42, 0.62, tNoise(g / 30.0 + 7.0)) * (1.0 - pond);
         green = mix(green, vec3(0.02, 0.045, 0.05), pond);
         blockColor = mix(pavement, green, inLot);
       } else if (suburb) {
@@ -632,7 +670,8 @@ const fragmentShader = /* glsl */ `
         vec3 roofColor = vec3(0.0);
         float house = 0.0;
         float shade = 0.0;
-        for (int k = 0; k < 2; k++) {
+        for (int k = 0; k < uLoopLimit; k++) {
+          if (k >= 2) break;
           vec2 q = local + (k == 1 ? vec2(cc * sunAcross.x - ss * sunAcross.y, ss * sunAcross.x + cc * sunAcross.y) * (5.5 * shadowReach) : vec2(0.0));
           vec2 plot = floor(q / 16.0);
           vec2 inPlot = q - plot * 16.0;
@@ -663,20 +702,20 @@ const fragmentShader = /* glsl */ `
         vec2 slab = abs(fract(lot / 3.6) - 0.5) * 3.6;
         vec3 plaza = vec3(0.24, 0.235, 0.225) * (0.9 + 0.2 * tNoise(g / 5.0));
         plaza *= 1.0 - 0.16 * (1.0 - smoothstep(0.05, 0.05 + aa, min(slab.x, slab.y))) * (1.0 - smoothstep(0.3, 1.2, aa));
-        vec2 lean;
-        float crown = canopy(g + 11.0, 11.0, lean) * step(0.6, tNoise(g / 19.0 + 3.0));
-        plaza = mix(plaza, vec3(0.03, 0.058, 0.024) * (1.0 + 0.6 * dot(lean, sunAcross)), crown * resolved);
+        crownShift = vec2(11.0);
+        crownSpacing = 11.0;
+        crownMask = step(0.6, tNoise(g / 19.0 + 3.0));
         blockColor = mix(pavement, plaza, inLot);
       } else {
         float type = tCityBlockType(ic);
         vec3 inside = pavement * 0.92;
-        vec2 lean;
         if (type < 0.5) {
           // Separate buildings: service yards, a few planted corners.
           float yard = step(0.55, tNoise(lot / 26.0 + seed * 9.0));
           inside = mix(inside, lawn, yard * 0.85);
-          float crown = canopy(g + 5.0, 9.0, lean) * yard;
-          inside = mix(inside, vec3(0.03, 0.058, 0.024) * (1.0 + 0.6 * dot(lean, sunAcross)), crown * resolved);
+          crownShift = vec2(5.0);
+          crownSpacing = 9.0;
+          crownMask = yard;
         } else if (type < 1.5) {
           // Courtyard inside a perimeter block: lawn, crossing paths, trees.
           float court = band(lot.x, -lotSize.x * 0.5 + 17.0, lotSize.x * 0.5 - 17.0, aa)
@@ -685,62 +724,97 @@ const fragmentShader = /* glsl */ `
           float path = max(1.0 - smoothstep(1.1, 1.1 + aa, abs(lot.x + lot.y * (seed - 0.5))),
             1.0 - smoothstep(1.1, 1.1 + aa, abs(lot.y - lot.x * (seed - 0.5))));
           green = mix(green, vec3(0.33, 0.3, 0.25), path * resolved);
-          float crown = canopy(g + 7.0, 7.5, lean) * step(0.45, tNoise(g / 13.0 + seed * 30.0));
-          green = mix(green, vec3(0.03, 0.058, 0.024) * (1.0 + 0.6 * dot(lean, sunAcross)), crown * resolved);
+          crownShift = vec2(7.0);
+          crownSpacing = 7.5;
+          crownMask = step(0.45, tNoise(g / 13.0 + seed * 30.0)) * court;
           inside = mix(inside, green, court);
         } else if (type < 2.5) {
           // Slabs in open ground: lawns, paths between entrances, car parking.
           vec3 green = lawn * (0.94 + 0.12 * tNoise(g / 9.0));
           float path = 1.0 - smoothstep(1.0, 1.0 + aa, abs(fract((lot.x - lot.y) / 44.0) - 0.5) * 44.0);
           green = mix(green, vec3(0.3, 0.28, 0.24), path * resolved);
-          float crown = canopy(g + 9.0, 9.5, lean) * step(0.5, tNoise(g / 21.0 + seed * 11.0));
-          green = mix(green, vec3(0.03, 0.058, 0.024) * (1.0 + 0.6 * dot(lean, sunAcross)), crown * resolved);
+          crownShift = vec2(9.0);
+          crownSpacing = 9.5;
+          crownMask = step(0.5, tNoise(g / 21.0 + seed * 11.0));
           float parking = band(lot.x, -lotSize.x * 0.5 + 2.0, lotSize.x * 0.5 - 2.0, aa)
             * band(lot.y, lotSize.y * 0.5 - 17.5, lotSize.y * 0.5 - 1.0, aa) * step(0.5, seed);
+          crownMask *= 1.0 - parking;
           inside = green;
-          if (parking > 0.0) inside = mix(inside, carPark(lot + lotSize * 0.5 - vec2(2.0, lotSize.y - 17.5), aa, fine, seed), parking);
+          requestPark(lot + lotSize * 0.5 - vec2(2.0, lotSize.y - 17.5), seed, parking * inLot * urban);
         } else {
           // Retail: the car park in front of the store.
           float parking = band(lot.x, -lotSize.x * 0.5 + 3.0, lotSize.x * 0.5 - 3.0, aa)
             * band(lot.y, 4.0, lotSize.y * 0.5 - 2.0, aa);
           inside = asphalt * 1.3;
-          if (parking > 0.0) inside = mix(inside, carPark(lot - vec2(-lotSize.x * 0.5 + 3.0, 4.0), aa, fine, seed), parking);
+          requestPark(lot - vec2(-lotSize.x * 0.5 + 3.0, 4.0), seed, parking * inLot * urban);
         }
         blockColor = mix(pavement, inside, inLot);
       }
 
-      // Street trees in the footway, clear of the junctions.
-      {
+      // Trees in the block, from the crown search the block type set up.
+      if (crownMask > 0.0 && resolved > 0.0) {
         vec2 lean;
-        float clearX = band(local.y, streetY + 9.0, B - 4.0, aa);
-        float clearY = band(local.x, streetX + 9.0, B - 4.0, aa);
-        float treeX = (rowTree(vec2(local.x - streetX - 1.6, g.y), 12.0, aa, lean)
-          + rowTree(vec2(local.x - B + 1.6, g.y + 5.0), 12.0, aa, lean)) * clearX;
-        float treeY = (rowTree(vec2(local.y - streetY - 1.6, g.x + 3.0), 12.0, aa, lean)
-          + rowTree(vec2(local.y - B + 1.6, g.x + 8.0), 12.0, aa, lean)) * clearY;
-        float tree = clamp(treeX + treeY, 0.0, 1.0) * (suburb ? 0.0 : 1.0);
+        float crown = canopy(g + crownShift, crownSpacing, lean) * crownMask * inLot;
+        blockColor = mix(blockColor, vec3(0.03, 0.058, 0.024) * (1.0 + 0.6 * dot(lean, sunAcross)), crown * resolved);
+      }
+
+      // Street trees in the footway, clear of the junctions: only the row
+      // nearest the pixel can reach it.
+      if (!suburb) {
+        vec2 lean;
+        float x1 = local.x - streetX - 1.6;
+        float x2 = local.x - B + 1.6;
+        float y1 = local.y - streetY - 1.6;
+        float y2 = local.y - B + 1.6;
+        float ox = abs(x1) < abs(x2) ? x1 : x2;
+        float oy = abs(y1) < abs(y2) ? y1 : y2;
+        bool alongX = abs(ox) < abs(oy);
+        vec2 q = alongX
+          ? vec2(ox, g.y + (abs(x1) < abs(x2) ? 0.0 : 5.0))
+          : vec2(oy, g.x + (abs(y1) < abs(y2) ? 3.0 : 8.0));
+        float clear = alongX ? band(local.y, streetY + 9.0, B - 4.0, aa) : band(local.x, streetX + 9.0, B - 4.0, aa);
+        float tree = rowTree(q, 12.0, aa, lean) * clear;
         blockColor = mix(blockColor, vec3(0.032, 0.062, 0.026), tree * resolved);
       }
 
       // Carriageways: one street along each low edge of the block cell.
       float kerbX = streetX > 30.0 ? 4.0 : 3.0;
       float kerbY = streetY > 30.0 ? 4.0 : 3.0;
-      vec4 alongY = cityStreet(local.x - streetX * 0.5, g.y, local.y, streetX * 0.5 - kerbX, streetY, aa, fine);
-      vec4 alongX = cityStreet(local.y - streetY * 0.5, g.x, local.x, streetY * 0.5 - kerbY, streetX, aa, fine);
+      // How far inside each carriageway the pixel is (negative inside).
+      float insideY = abs(local.x - streetX * 0.5) - (streetX * 0.5 - kerbX);
+      float insideX = abs(local.y - streetY * 0.5) - (streetY * 0.5 - kerbY);
+      bool onY = insideY < insideX;
+      vec4 street = cityStreet(
+        onY ? local.x - streetX * 0.5 : local.y - streetY * 0.5,
+        onY ? g.y : g.x,
+        onY ? local.y : local.x,
+        onY ? streetX * 0.5 - kerbX : streetY * 0.5 - kerbY,
+        onY ? streetY : streetX,
+        aa, fine, urban);
       vec3 cityColor = blockColor;
       // Kerb stones.
       float kerb = max(band(abs(local.x - streetX * 0.5), streetX * 0.5 - kerbX, streetX * 0.5 - kerbX + 0.3, aa),
         band(abs(local.y - streetY * 0.5), streetY * 0.5 - kerbY, streetY * 0.5 - kerbY + 0.3, aa));
       cityColor = mix(cityColor, vec3(0.3, 0.3, 0.29), kerb * (1.0 - smoothstep(0.3, 1.2, aa)));
-      cityColor = mix(cityColor, alongY.rgb, alongY.a);
-      cityColor = mix(cityColor, alongX.rgb, alongX.a);
+      cityColor = mix(cityColor, street.rgb, street.a);
       // The junction itself is plain asphalt.
-      cityColor = mix(cityColor, asphalt, alongY.a * alongX.a);
+      float junction = (1.0 - smoothstep(-aa, aa, insideY)) * (1.0 - smoothstep(-aa, aa, insideX));
+      cityColor = mix(cityColor, asphalt, junction);
       albedo = mix(albedo, cityColor, urban);
       forest *= 1.0 - urban;
     }
 
+    // The car park under the pixel, if any.
+    if (gPark.w > 0.0) albedo = mix(albedo, carPark(gPark.xy, aa, fine, gPark.z), gPark.w);
+
     albedo = mix(albedo, road.rgb, road.a);
+
+    // The vehicle in the lane under the pixel, if any.
+    if (gLane.w > 0.0) {
+      vec3 paint;
+      float car = vehicles(gLane.x, gLane.y, gLane.z, gLaneSlots.x, gLaneSlots.y, aa, paint);
+      albedo = mix(albedo, paint, car * gLane.w);
+    }
 
     // ---- Water ---------------------------------------------------------------
     // Distance from each watercourse's centreline, less its half-width:
@@ -860,7 +934,10 @@ const BASE_LEVEL = 3;
 /** Tiles kept in memory before the least recently used are released. */
 const CACHE_LIMIT = 520;
 
-type TerrainUniforms = LightingUniforms & { uTime: THREE.IUniform<number> };
+type TerrainUniforms = LightingUniforms & {
+  uTime: THREE.IUniform<number>;
+  uLoopLimit: THREE.IUniform<number>;
+};
 
 interface Tile {
   key: number;
@@ -1062,7 +1139,11 @@ interface TerrainResources {
 }
 
 function createTerrainResources(): TerrainResources {
-  const uniforms: TerrainUniforms = { ...createLightingUniforms(), uTime: { value: 0 } };
+  const uniforms: TerrainUniforms = {
+    ...createLightingUniforms(),
+    uTime: { value: 0 },
+    uLoopLimit: { value: TERRAIN_LOOP_LIMIT },
+  };
   const material = new THREE.ShaderMaterial({
     uniforms: { ...(uniforms as unknown as Record<string, THREE.IUniform>), ...shadowUniforms },
     vertexShader,
@@ -1106,18 +1187,57 @@ export const TERRAIN_TILE_VERTICES = TILE_VERTICES;
  * the camera, built on demand within a small per-frame budget, and released
  * when they have not been needed for a while.
  */
+/**
+ * Whether the terrain's shader has finished compiling and the ground is
+ * being drawn. The scene is not called ready (and the painted poster stays
+ * up) until it is.
+ */
+export const terrainStatus = { ready: false };
+
+/**
+ * Compiles the terrain shader in the background and only then shows the
+ * ground. The terrain shader is large: on Direct3D (Chrome and Edge on
+ * Windows) it takes seconds to compile, and drawing with it before it is
+ * ready would freeze the page for all of that time. With parallel shader
+ * compilation the page stays responsive meanwhile. Returns a cancel function.
+ */
+function showWhenCompiled(
+  state: TerrainState,
+  gl: THREE.WebGLRenderer,
+  camera: THREE.Camera,
+  scene: THREE.Scene,
+): () => void {
+  let cancelled = false;
+  state.group.visible = false;
+  gl.compileAsync(state.group, camera, scene)
+    .catch(() => undefined)
+    .then(() => {
+      if (cancelled) return;
+      state.group.visible = true;
+      terrainStatus.ready = true;
+      invalidateSunShadows();
+    });
+  return () => {
+    cancelled = true;
+    terrainStatus.ready = false;
+  };
+}
+
 export function Terrain() {
   const resources = useMemo(() => createTerrainResources(), []);
   const stateRef = useRef<TerrainState | null>(null);
+  const { gl, camera, scene } = useThree();
 
   useEffect(() => {
     const state = createTerrainState(resources);
     stateRef.current = state;
+    const cancel = showWhenCompiled(state, gl, camera, scene);
     return () => {
+      cancel();
       stateRef.current = null;
       disposeTerrain(state);
     };
-  }, [resources]);
+  }, [resources, gl, camera, scene]);
 
   useFrame(({ camera }) => {
     if (stateRef.current) updateTerrain(stateRef.current, camera);

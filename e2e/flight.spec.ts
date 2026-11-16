@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { type Page, expect, test } from "@playwright/test";
 
 /** Scrolls so the flight section is at the given progress (0–1). */
@@ -29,6 +30,24 @@ test.describe("live flight", () => {
     });
     // A graphics profile is chosen from the device and recorded on the page.
     await expect(page.locator("html")).toHaveAttribute("data-flight-quality", /^(high|medium|low)$/);
+  });
+
+  test("has no automated accessibility violations at the opening or in a chapter", async ({
+    page,
+  }) => {
+    const audit = async () =>
+      (
+        await new AxeBuilder({ page })
+          .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"])
+          .analyze()
+      ).violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(" | ")}`);
+    await expect(page.locator("#chapter-01 [data-flight-part='body']")).toBeHidden({
+      timeout: 30_000,
+    });
+    expect(await audit()).toEqual([]);
+    await scrollToProgress(page, 0.15);
+    await expect(page.locator("[data-hud='percent']")).toHaveText("015", { timeout: 15_000 });
+    expect(await audit()).toEqual([]);
   });
 
   test("keeps the opening text as the first thing a visitor reads", async ({ page }) => {
