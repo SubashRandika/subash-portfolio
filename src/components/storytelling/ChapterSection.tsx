@@ -70,7 +70,8 @@ export function ChapterSection({ chapter, totalChapters, children }: ChapterSect
               ) : null}
             </header>
 
-            <ol className="milestones">
+            {/* Long lists show one strip at a time on most screens (see globals.css). */}
+            <ol className="milestones" data-length={chapter.milestones.length >= 6 ? "long" : "short"}>
               {chapter.milestones.map((milestone, index) => (
                 <MilestoneCard
                   key={milestone.id}

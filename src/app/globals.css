@@ -788,53 +788,43 @@
     overflow: hidden;
   }
 
-  /* Darkens the side of the frame the text sits on, leaving the aircraft clear. */
-  [data-flight="live"] .chapter-panel::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    background: linear-gradient(
-      to right,
-      rgb(5 8 15 / 0.76),
-      rgb(5 8 15 / 0.5) 36%,
-      transparent 62%
-    );
-    /* The narrative paints above the stage, so stop short of the HUD band
-       rather than dimming its readouts. */
-    mask-image: linear-gradient(to bottom, #000 calc(100% - 9rem), transparent calc(100% - 5rem));
-    /* Shown only while this chapter's text is. The flight director fades
-       --scrim with the text, so a panel still sliding into place never
-       drags a hard-edged dark band across the chapter before it. Off by
-       default: GSAP removes the variable rather than writing 0. */
-    opacity: var(--scrim, 0);
-  }
-
   /* Portrait frames: the aircraft flies in the upper part of the frame (see
      PORTRAIT_LIFT in FlightController) and the text sits beneath it. */
   @media (max-aspect-ratio: 1/1) {
     [data-flight="live"] .chapter-panel {
       align-items: flex-end;
     }
+  }
 
-    [data-flight="live"] .chapter-panel::before {
-      background: linear-gradient(
-        to top,
-        rgb(5 8 15 / 0.78),
-        rgb(5 8 15 / 0.55) 45%,
-        transparent 72%
-      );
+  /* Nothing darkens the scene. Each chapter's text sits on its own glass
+     card, sized to the text: a translucent dark fill with the scene blurred
+     behind it, so contrast holds over bright sky and the rest of the frame
+     stays clear. The closing message uses the same card. */
+  [data-flight="live"] :is([data-flight-part="body"], .flight-closing) {
+    max-width: 34rem;
+    padding: 1.75rem 1.75rem 1.5rem;
+    border: 1px solid rgb(255 255 255 / 0.08);
+    border-radius: 6px;
+    background: rgb(7 11 20 / 0.58);
+    backdrop-filter: blur(18px) saturate(1.15);
+    box-shadow: 0 30px 60px -32px rgb(0 0 0 / 0.65);
+  }
+
+  @media (max-width: 40rem) {
+    [data-flight="live"] :is([data-flight-part="body"], .flight-closing) {
+      padding: 1.25rem 1.125rem 1.125rem;
     }
   }
 
-  /* Within the darkened side of the frame (see the scrim above). */
-  [data-flight="live"] .chapter-header {
-    max-width: 32rem;
+  /* Strips inside the card need less of their own fill. */
+  [data-flight="live"] .milestone {
+    background: rgb(255 255 255 / 0.035);
+    backdrop-filter: none;
   }
 
   /* Compact milestone strips in one column. Opening a card shows its detail. */
   [data-flight="live"] .milestones {
-    max-width: 27rem;
+    max-width: none;
     grid-template-columns: minmax(0, 1fr);
     gap: 0.375rem;
     margin-top: 1.25rem;
@@ -897,7 +887,8 @@
 
   /* Where a full list will not fit, milestones share one slot and only the
      current one shows; the HUD waypoints still show how far along it is.
-     filter, not opacity: the director animates opacity for entrances. */
+     filter, not opacity: the director animates the card's opacity. Long
+     lists (six or more) switch to this on screens under 56rem tall. */
   @media (max-width: 40rem), (max-height: 50rem) {
     [data-flight="live"] .milestone {
       grid-area: 1 / 1;
@@ -923,6 +914,31 @@
     }
   }
 
+  @media (max-height: 56rem) {
+    [data-flight="live"] .milestones[data-length="long"] .milestone {
+      grid-area: 1 / 1;
+      filter: opacity(var(--lit, 0));
+    }
+
+    /* Strips stacked under the current one stay out of the way of pointer
+       and keyboard; their titles are still read by screen readers. */
+    [data-flight="live"] .milestones[data-length="long"] .milestone:not([data-current="true"]) {
+      pointer-events: none;
+    }
+
+    [data-flight="live"] .milestones[data-length="long"] .milestone:not([data-current="true"]) .milestone-toggle {
+      visibility: hidden;
+    }
+
+    [data-flight="live"] .milestones[data-length="long"] .milestone[data-current="true"] {
+      z-index: 1;
+    }
+
+    [data-flight="live"] .milestones[data-length="long"] .milestone-body {
+      opacity: 1;
+    }
+  }
+
   [data-flight="live"] .chapter-panel .shell {
     position: relative;
   }
@@ -932,10 +948,7 @@
     position: absolute;
     top: 50%;
     left: 0;
-    max-width: 34rem;
     margin: 0;
-    padding: 0;
-    border: 0;
     translate: 0 -50%;
   }
 

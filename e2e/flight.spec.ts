@@ -127,23 +127,21 @@ test.describe("live flight", () => {
     await expect.poll(lit, { timeout: 15_000 }).toEqual([middle]);
   });
 
-  test("never darkens a chapter with the next chapter's backdrop", async ({ page }) => {
-    // Regression: the next panel slides up from below before its text
-    // appears, and its scrim once drew a hard-edged dark band over the
-    // current chapter.
+  test("lays no backdrop over the scene behind the chapter text", async ({ page }) => {
+    // Regression: a full-frame darkening layer once sat behind every
+    // chapter, and slid in early with the next one as a hard-edged band.
     await expect(page.locator("#chapter-01 [data-flight-part='body']")).toBeHidden({
       timeout: 30_000,
     });
     await scrollToProgress(page, 0.18);
     await expect(page.locator("[data-hud='percent']")).toHaveText("018", { timeout: 15_000 });
-    const scrim = (id: string) =>
-      page.evaluate(
-        (selector) =>
-          Number(getComputedStyle(document.querySelector(selector)!, "::before").opacity),
-        `#${id} .chapter-panel`,
-      );
-    expect(await scrim("chapter-01")).toBeGreaterThan(0.9);
-    expect(await scrim("chapter-02")).toBe(0);
+    const backdrops = await page.evaluate(() =>
+      Array.from(document.querySelectorAll(".chapter-panel")).map((panel) => {
+        const before = getComputedStyle(panel, "::before");
+        return before.content === "none" ? "none" : before.backgroundImage;
+      }),
+    );
+    expect(backdrops.every((value) => value === "none")).toBe(true);
   });
 
   test("opens a milestone to show its detail", async ({ page }) => {

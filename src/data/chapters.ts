@@ -192,16 +192,16 @@ export const chapters: readonly Chapter[] = [
       "Micro-frontends",
       "Design systems",
       "Accessibility",
-      "Internationalization",
-      "Storybook",
       "Automated testing",
     ],
     range: CHAPTER_RANGES[5],
+    // Related items are grouped so the chapter reads as six milestones; each
+    // group's detail lists everything it covers.
     milestones: [
       {
         id: "ifs-cloud-home",
         group: "IFS",
-        title: "IFS Cloud Home widgets",
+        title: "IFS Cloud Home and micro-frontends",
         points: ["IFS Cloud Home widgets", "Micro-frontend architecture", "Angular and React development"],
       },
       {
@@ -211,9 +211,10 @@ export const chapters: readonly Chapter[] = [
         points: ["Granite Angular Component Library", "IFS Design System", "Shared Component Library"],
       },
       {
-        id: "ifs-a11y-i18n",
+        id: "ifs-quality",
         group: "IFS",
-        title: "Accessibility and internationalization",
+        title: "Accessibility, internationalization and testing",
+        points: ["Accessibility and internationalization", "Storybook and automated testing"],
       },
       {
         id: "ifs-dashboard-poc",
@@ -222,33 +223,20 @@ export const chapters: readonly Chapter[] = [
         summary: "A proof of concept for a drag-and-drop dashboard layout.",
       },
       {
-        id: "ifs-storybook-testing",
-        group: "IFS",
-        title: "Storybook and automated testing",
-      },
-      {
         id: "ifs-leadership",
         group: "IFS",
         title: "Technical leadership and mentoring",
         summary: "Technical leadership and mentoring as Technical Lead.",
       },
       {
-        id: "finago-rebranding",
+        id: "finago-flow-nest",
         group: "Finago",
-        title: "Flow and Nest rebranding",
-        summary: "Finago Flow/Nest rebranding and UI improvements.",
-      },
-      {
-        id: "finago-stepper",
-        group: "Finago",
-        title: "Reusable nested stepper",
-      },
-      {
-        id: "finago-wizard",
-        group: "Finago",
-        title: "Customer-creation wizard",
-        summary:
-          "A simplified customer-creation wizard that replaced a complex design and improved the user experience by approximately 50%.",
+        title: "Flow and Nest: rebranding and UX",
+        points: [
+          "Flow/Nest rebranding and UI improvements",
+          "Reusable nested stepper component",
+          "Simplified customer-creation wizard that improved the user experience by approximately 50%",
+        ],
       },
     ],
   },
