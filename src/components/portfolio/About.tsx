@@ -1,5 +1,6 @@
 import { DocSection } from "@/components/ui/DocSection";
 import type { ExperienceEntry, Profile } from "@/types/portfolio";
+import { Portrait } from "./Portrait";
 
 interface AboutProps {
   profile: Profile;
@@ -23,13 +24,16 @@ export function About({ profile, current }: AboutProps) {
 
   return (
     <DocSection id="about" title="About">
-      <div className="max-w-3xl">
-        <p className="type-lead">{lead}</p>
-        {rest.map((paragraph) => (
-          <p key={paragraph} className="mt-5 text-ink-muted">
-            {paragraph}
-          </p>
-        ))}
+      <div className="about-layout">
+        <div className="max-w-3xl">
+          <p className="type-lead">{lead}</p>
+          {rest.map((paragraph) => (
+            <p key={paragraph} className="mt-5 text-ink-muted">
+              {paragraph}
+            </p>
+          ))}
+        </div>
+        <Portrait name={profile.name} title={profile.title} since={profile.careerStartYear} />
       </div>
 
       <dl className="mt-10 grid max-w-3xl gap-x-10 border-t border-line sm:grid-cols-3">

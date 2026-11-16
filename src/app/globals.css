@@ -1413,3 +1413,311 @@
     white-space: nowrap;
   }
 }
+
+/* ==========================================================================
+   About: portrait figure
+   ========================================================================== */
+
+@layer components {
+  .about-layout {
+    display: grid;
+    gap: 2.5rem 3rem;
+    align-items: start;
+    /* The orbit reaches past the plate; never let it widen the page. */
+    overflow-x: clip;
+    overflow-y: visible;
+  }
+
+  @media (min-width: 48rem) {
+    .about-layout {
+      grid-template-columns: minmax(0, 1fr) minmax(15rem, 19rem);
+    }
+  }
+
+  .portrait {
+    --plate-radius: 0.375rem;
+    position: relative;
+    width: min(19rem, 76%);
+    margin: 0;
+    padding: 1.5rem 1.25rem 0;
+    /* On narrow screens the portrait leads the section. */
+    order: -1;
+  }
+
+  @media (min-width: 48rem) {
+    .portrait {
+      width: 100%;
+      order: 0;
+    }
+  }
+
+  .portrait-stage {
+    --tilt-x: 0deg;
+    --tilt-y: 0deg;
+    --shift-x: 0;
+    --shift-y: 0;
+    --sheen-x: 50%;
+    --sheen-y: 30%;
+    position: relative;
+    transform: perspective(56rem) rotateX(var(--tilt-y)) rotateY(var(--tilt-x));
+    transform-style: preserve-3d;
+    transition: transform 520ms var(--ease-settle);
+  }
+
+  .portrait-stage[data-tilting="true"] {
+    transition-duration: 140ms;
+  }
+
+  /* ---- Orbit ------------------------------------------------------------- */
+  .portrait-orbit {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 128%;
+    aspect-ratio: 1;
+    translate: -50% -56%;
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .portrait-orbit-ring {
+    fill: none;
+    stroke: var(--link);
+    stroke-opacity: 0.55;
+    stroke-width: 0.5;
+    stroke-dasharray: 0.9 1.6;
+    stroke-linecap: round;
+  }
+
+  .portrait-orbit-travel {
+    transform-box: view-box;
+    transform-origin: 50% 50%;
+    animation: portrait-orbit 46s linear infinite;
+  }
+
+  .portrait-orbit-travel[data-speed="fast"] {
+    animation-duration: 29s;
+    animation-direction: reverse;
+  }
+
+  .portrait-orbit-dot[data-tone="accent"] {
+    fill: var(--accent);
+    filter: drop-shadow(0 0 1.6px rgb(244 162 97 / 0.75));
+  }
+
+  .portrait-orbit-dot[data-tone="link"] {
+    fill: var(--link);
+  }
+
+  @keyframes portrait-orbit {
+    to {
+      rotate: 360deg;
+    }
+  }
+
+  /* ---- Plate ------------------------------------------------------------- */
+  .portrait-plate {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 4 / 5;
+    border: 1px solid var(--line);
+    border-radius: var(--plate-radius);
+    background: var(--surface-raised);
+    box-shadow:
+      0 1px 0 rgb(255 255 255 / 0.8) inset,
+      0 2.25rem 3.5rem -2rem rgb(12 20 36 / 0.42),
+      0 0.5rem 1.25rem -0.75rem rgb(12 20 36 / 0.2);
+    transform: translateZ(0.01px);
+  }
+
+  .portrait-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 30%;
+    scale: 1.035;
+    translate: calc(var(--shift-x) * -0.4rem) calc(var(--shift-y) * -0.4rem);
+    transition:
+      translate 520ms var(--ease-settle),
+      scale 1.6s var(--ease-settle),
+      filter 1.5s var(--ease-flight) 0.15s;
+  }
+
+  .portrait-stage[data-tilting="true"] .portrait-image {
+    transition-duration: 140ms, 1.6s, 1.5s;
+  }
+
+  /* Soft light that follows the pointer across the print. */
+  .portrait-sheen {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      circle at var(--sheen-x) var(--sheen-y),
+      rgb(255 255 255 / 0.32),
+      rgb(255 255 255 / 0) 55%
+    );
+    mix-blend-mode: soft-light;
+    opacity: 0;
+    transition: opacity 400ms var(--ease-flight);
+    pointer-events: none;
+  }
+
+  .portrait-stage[data-tilting="true"] .portrait-sheen {
+    opacity: 1;
+  }
+
+  /* A single scan line that sweeps the plate as it is revealed. */
+  .portrait-scan {
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent) 22%, var(--accent) 78%, transparent);
+    box-shadow: 0 0 0.9rem 0.15rem rgb(244 162 97 / 0.55);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* ---- Viewfinder corners ------------------------------------------------ */
+  .portrait-corner {
+    position: absolute;
+    width: 1rem;
+    height: 1rem;
+    border-color: var(--accent-ink);
+    border-style: solid;
+    border-width: 0;
+    transition:
+      opacity 600ms var(--ease-settle) 0.9s,
+      translate 800ms var(--ease-settle) 0.9s;
+  }
+
+  .portrait-corner[data-corner="tl"] {
+    top: -0.6rem;
+    left: -0.6rem;
+    border-top-width: 1.5px;
+    border-left-width: 1.5px;
+  }
+
+  .portrait-corner[data-corner="tr"] {
+    top: -0.6rem;
+    right: -0.6rem;
+    border-top-width: 1.5px;
+    border-right-width: 1.5px;
+  }
+
+  .portrait-corner[data-corner="bl"] {
+    bottom: -0.6rem;
+    left: -0.6rem;
+    border-bottom-width: 1.5px;
+    border-left-width: 1.5px;
+  }
+
+  .portrait-corner[data-corner="br"] {
+    right: -0.6rem;
+    bottom: -0.6rem;
+    border-right-width: 1.5px;
+    border-bottom-width: 1.5px;
+  }
+
+  /* ---- Caption ----------------------------------------------------------- */
+  .portrait-caption {
+    display: grid;
+    gap: 0.2rem;
+    margin-top: 1.4rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--line);
+    transition:
+      opacity 700ms var(--ease-settle) 1.05s,
+      translate 700ms var(--ease-settle) 1.05s;
+  }
+
+  /* ---- Entrance ----------------------------------------------------------
+     Before the figure scrolls into view it is held back; once shown, every
+     part settles in on its own timing. Without JavaScript, or with reduced
+     motion, the attribute is never "pending" and the figure is simply there. */
+  .portrait-plate {
+    clip-path: inset(0 0 0 0 round var(--plate-radius));
+    transition: clip-path 1.15s var(--ease-settle);
+  }
+
+  .portrait-orbit-ring {
+    stroke-dashoffset: 0;
+    transition: opacity 1.6s var(--ease-flight) 0.5s;
+  }
+
+  .portrait[data-reveal="pending"] .portrait-plate {
+    clip-path: inset(100% 0 0 0 round var(--plate-radius));
+  }
+
+  .portrait[data-reveal="pending"] .portrait-image {
+    scale: 1.16;
+    filter: grayscale(1) contrast(1.08) blur(6px);
+  }
+
+  .portrait[data-reveal="pending"] .portrait-orbit-ring,
+  .portrait[data-reveal="pending"] .portrait-orbit-dot {
+    opacity: 0;
+  }
+
+  .portrait[data-reveal="pending"] .portrait-corner,
+  .portrait[data-reveal="pending"] .portrait-caption {
+    opacity: 0;
+  }
+
+  .portrait[data-reveal="pending"] .portrait-corner[data-corner="tl"] {
+    translate: -0.75rem -0.75rem;
+  }
+
+  .portrait[data-reveal="pending"] .portrait-corner[data-corner="tr"] {
+    translate: 0.75rem -0.75rem;
+  }
+
+  .portrait[data-reveal="pending"] .portrait-corner[data-corner="bl"] {
+    translate: -0.75rem 0.75rem;
+  }
+
+  .portrait[data-reveal="pending"] .portrait-corner[data-corner="br"] {
+    translate: 0.75rem 0.75rem;
+  }
+
+  .portrait[data-reveal="pending"] .portrait-caption {
+    translate: 0 0.5rem;
+  }
+
+  .portrait-orbit-dot {
+    transition: opacity 900ms var(--ease-flight) 1.2s;
+  }
+
+  .portrait[data-reveal="shown"] .portrait-scan {
+    animation: portrait-scan 1.15s var(--ease-settle) both;
+  }
+
+  @keyframes portrait-scan {
+    0% {
+      top: 100%;
+      opacity: 0;
+    }
+    12% {
+      opacity: 1;
+    }
+    85% {
+      opacity: 1;
+    }
+    100% {
+      top: 0%;
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .portrait-orbit-travel,
+    .portrait[data-reveal="shown"] .portrait-scan {
+      animation: none;
+    }
+
+    .portrait-stage {
+      transform: none;
+    }
+  }
+}

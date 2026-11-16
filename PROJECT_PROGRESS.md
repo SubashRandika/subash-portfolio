@@ -318,6 +318,17 @@ Requested: landing gear that retracts realistically, and terrain, buildings, roa
 | Visual review | Gear at 0, 0.25, 0.5, 0.75 and 1 in the lab; takeoff, every chapter at 1280 × 720 |
 | Frame pacing (AMD Radeon 860M, production build, 30 s scroll) | With shadows off, a steady 17 ms in every tenth of the flight (cool machine). With shadows on, the second half of the flight dropped to 33 ms frames. Later runs were affected by thermal throttling (shadows-off runs also slowed), so no clean on/off comparison was possible; the adaptive fallback covers devices that cannot afford shadows. |
 
+### Portrait in About (2026-11-16)
+
+Subash supplied two portraits: an illustrated one (headphones, paint splashes) and a professional photograph (light blue blazer). The photograph was chosen: it suits the restrained, document-like design system and is what recruiters and clients expect; the illustration's comic style would clash with it.
+
+- `src/assets/subash-rodrigo-portrait.jpg`: head-and-shoulders crop (4:5, 960 × 1200) of the photograph, with the blue decorative arc beside the head painted out from the surrounding background. Served through `next/image` (AVIF/WebP, responsive sizes, blur placeholder).
+- `src/components/portfolio/Portrait.tsx`: a "Fig. 01" figure plate beside the About text (above it on narrow screens). A white plate the photograph's white background melts into, viewfinder corners in the accent colour, and a dashed orbit with two travelling dots circling behind it (a nod to the arc and dots in the original photograph).
+- Entrance on first view: the plate wipes open behind a sweeping scan line, the photograph develops from a soft monochrome into colour, then the orbit, corners and caption settle in. A fine pointer tilts the plate slightly in 3D with a sheen that follows it. No React state is touched per frame.
+- Without JavaScript, with reduced motion, or when already on screen at load, the figure is simply shown. Alt text: "Subash Rodrigo, Lead Software Engineer".
+- Tests: unit (image, caption, fallback without IntersectionObserver or matchMedia) and end-to-end (held back below the fold, revealed on scroll, image actually loads; shown at once with reduced motion).
+- For Phase 09: this image can be the `image` of the Person JSON-LD and a basis for the Open Graph image.
+
 ## Known issues
 
 - **Playwright's bundled Chromium cannot run on this machine.** Windows reports "An Application Control policy has blocked this file" for the unsigned `chrome-headless-shell.exe`. The policy was left untouched. Tests use the installed, signed Google Chrome through `channel: "chrome"`; the blocked download was removed with `npx playwright uninstall`.

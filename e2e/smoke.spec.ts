@@ -144,6 +144,20 @@ test.describe("page foundation (static experience)", () => {
     await expect(education).toContainText("Bachelor of Science in Computer Science (Special)");
     await expect(education).toContainText("University of Kelaniya, Sri Lanka");
   });
+
+  test("reveals the portrait in About when it scrolls into view", async ({ page }) => {
+    const portrait = page.locator(".portrait");
+    // Held back while it is far below the fold...
+    await expect(portrait).toHaveAttribute("data-reveal", "pending");
+    await page.locator("#about").scrollIntoViewIfNeeded();
+    // ...and shown once it arrives.
+    await expect(portrait).toHaveAttribute("data-reveal", "shown");
+    const image = page.getByRole("img", { name: "Subash Rodrigo, Lead Software Engineer" });
+    await expect(image).toBeVisible();
+    await expect
+      .poll(() => image.evaluate((img: HTMLImageElement) => (img.complete ? img.naturalWidth : 0)))
+      .toBeGreaterThan(0);
+  });
 });
 
 test.describe("reduced motion", () => {
@@ -152,5 +166,7 @@ test.describe("reduced motion", () => {
     await page.goto("/");
     await expect(page.locator("html")).toHaveAttribute("data-flight", "static");
     await expect(page.locator(".flight-canvas canvas")).toHaveCount(0);
+    // The portrait is simply there, with no entrance to wait for.
+    await expect(page.locator(".portrait")).toHaveAttribute("data-reveal", "shown");
   });
 });
