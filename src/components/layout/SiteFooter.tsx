@@ -25,7 +25,7 @@ export function SiteFooter({ name, links }: SiteFooterProps) {
                     href={link.href}
                     className="type-label inline-block py-3 text-ink-muted no-underline hover:text-ink"
                     {...(link.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                    {...(link.download ? { download: true } : {})}
+                    {...(link.download ? { download: link.download } : {})}
                   >
                     {link.label}
                     {link.external ? <span className="sr-only"> (opens in a new tab)</span> : null}

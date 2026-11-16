@@ -61,7 +61,7 @@ export const projects: readonly Project[] = [
     contributions: [
       "Rebranding and UI improvements",
       "Reusable nested stepper component",
-      "Customer-creation wizard",
+      "Simplified customer-creation wizard, improving the user experience by approximately 50%",
     ],
     chapter: 5,
   },
@@ -107,15 +107,21 @@ export const projects: readonly Project[] = [
     chapter: 2,
   },
   {
-    id: "wso2-connectors",
-    name: "WSO2 ESB cloud connectors and MyDashboard",
-    client: "Pearson / WSO2",
+    id: "mydashboard",
+    name: "MyDashboard",
+    client: "Pearson",
     via: null,
-    summary: "Enterprise software development at the start of my career.",
-    contributions: [
-      "Close to 200 WSO2 ESB cloud connectors",
-      "Advanced filtering functionality for MyDashboard",
-    ],
+    summary: "UI development for MyDashboard, a Pearson product (2015–2017).",
+    contributions: ["Advanced filtering functionality for MyDashboard"],
+    chapter: 1,
+  },
+  {
+    id: "wso2-connectors",
+    name: "WSO2 ESB cloud connectors",
+    client: "WSO2",
+    via: null,
+    summary: "Enterprise integration work at the start of my career (2013–2015).",
+    contributions: ["Close to 200 WSO2 ESB cloud connectors"],
     chapter: 1,
   },
 ];

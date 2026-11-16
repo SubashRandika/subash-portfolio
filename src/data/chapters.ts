@@ -4,12 +4,10 @@ import type { Chapter } from "@/types/portfolio";
 /**
  * The six career chapters.
  *
- * Every statement here restates a fact from the project brief. Summaries are
- * intentionally plain: nothing is added about scope, team size, outcomes or
- * technology beyond what Subash supplied.
- *
- * Withheld pending confirmation (see PROJECT_PROGRESS.md):
- * - Finago "approximately 50% UX improvement".
+ * Every statement here restates a fact from the project brief, from
+ * Subash's answers, or from the résumé. Summaries are intentionally plain:
+ * nothing is added about scope, team size, outcomes or technology beyond
+ * what was supplied.
  */
 export const chapters: readonly Chapter[] = [
   {
@@ -17,9 +15,10 @@ export const chapters: readonly Chapter[] = [
     id: "chapter-01",
     title: "First Takeoff",
     period: "2013–2017",
-    organisation: "Pearson / WSO2",
+    // Two client engagements, in order: WSO2 (2013–2015), then Pearson (2015–2017).
+    organisation: "WSO2 and Pearson",
     product: null,
-    destination: "Pearson / WSO2",
+    destination: "WSO2 and Pearson",
     environment: "Tropical coastal runway and green countryside",
     narrative: "The beginning of my engineering journey.",
     focus: [
@@ -40,14 +39,16 @@ export const chapters: readonly Chapter[] = [
         summary: "Enterprise software development across the first chapter of my career.",
       },
       {
-        id: "mydashboard-filtering",
-        title: "MyDashboard advanced filtering",
-        summary: "Advanced filtering functionality for MyDashboard.",
-      },
-      {
         id: "wso2-connectors",
+        group: "WSO2 · 2013–2015",
         title: "Close to 200 cloud connectors",
         summary: "Close to 200 WSO2 ESB cloud connectors.",
+      },
+      {
+        id: "mydashboard-filtering",
+        group: "Pearson · 2015–2017",
+        title: "MyDashboard advanced filtering",
+        summary: "Advanced filtering functionality for MyDashboard, a Pearson product.",
       },
     ],
   },
@@ -246,6 +247,8 @@ export const chapters: readonly Chapter[] = [
         id: "finago-wizard",
         group: "Finago",
         title: "Customer-creation wizard",
+        summary:
+          "A simplified customer-creation wizard that replaced a complex design and improved the user experience by approximately 50%.",
       },
     ],
   },

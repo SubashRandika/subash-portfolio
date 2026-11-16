@@ -127,8 +127,15 @@ test.describe("page foundation (static experience)", () => {
       await expect(link).toHaveAttribute("href", href);
       await expect(link).toHaveAttribute("rel", "noopener noreferrer");
     }
+    const resume = contact.getByRole("link", { name: /Résumé/ });
+    await expect(resume).toHaveAttribute("href", "/resume.pdf");
+    await expect(resume).toHaveAttribute("download", "Subash-Rodrigo-Resume.pdf");
+    const pdf = await page.request.get("/resume.pdf");
+    expect(pdf.ok()).toBe(true);
+    expect(pdf.headers()["content-type"]).toContain("application/pdf");
+
     const footer = page.getByRole("navigation", { name: "Contact and profiles" });
-    await expect(footer.getByRole("link")).toHaveText([/Email/, /LinkedIn/, /GitHub/]);
+    await expect(footer.getByRole("link")).toHaveText([/Email/, /LinkedIn/, /GitHub/, /Résumé/]);
   });
 
   test("shows education", async ({ page }) => {

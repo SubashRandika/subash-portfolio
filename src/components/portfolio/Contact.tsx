@@ -15,7 +15,8 @@ interface ContactLink {
   href: string;
   icon: IconName;
   external: boolean;
-  download?: boolean;
+  /** File name for the download, when the link is a download. */
+  download?: string;
 }
 
 /** Builds the list of contact links from the facts that have been supplied. */
@@ -59,7 +60,7 @@ export function contactLinks(links: Profile["links"]): ContactLink[] {
       href: links.resume,
       icon: "download",
       external: false,
-      download: true,
+      download: "Subash-Rodrigo-Resume.pdf",
     });
   }
   return result;
@@ -86,7 +87,7 @@ export function Contact({ profile, links: details }: ContactProps) {
                   href={link.href}
                   className="group flex min-h-16 items-center gap-4 py-4 no-underline"
                   {...(link.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                  {...(link.download ? { download: true } : {})}
+                  {...(link.download ? { download: link.download } : {})}
                 >
                   <Icon name={link.icon} size={22} className="shrink-0 text-ink-muted" />
                   <span className="min-w-0">

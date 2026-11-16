@@ -30,6 +30,9 @@ function EngagementList({ engagements }: { engagements: readonly Engagement[] })
         <li key={engagement.client}>
           <span className="font-bold">{engagement.client}</span>
           {engagement.product ? <span className="text-ink-muted"> — {engagement.product}</span> : null}
+          {engagement.period ? (
+            <span className="type-data ml-2 text-[0.8125rem] text-ink-muted">{engagement.period}</span>
+          ) : null}
           {engagement.role ? (
             <span className="type-small block text-ink-muted">as {engagement.role}</span>
           ) : null}
@@ -78,18 +81,17 @@ export function Experience({ entries }: ExperienceProps) {
                 <Period entry={entry} />
               </td>
               <th scope="row">{entry.role}</th>
-              {entry.employer ? (
-                <>
-                  <td data-label="Employer">{entry.employer}</td>
-                  <td data-label="Client / product">
-                    <EngagementList engagements={entry.engagements} />
-                  </td>
-                </>
-              ) : (
-                <td colSpan={2} data-label="Organisation">
-                  {entry.organisationAsStated}
-                </td>
-              )}
+              <td data-label="Employer">
+                {entry.employer ?? (
+                  <>
+                    <span aria-hidden="true" className="text-ink-muted">—</span>
+                    <span className="sr-only">Not listed</span>
+                  </>
+                )}
+              </td>
+              <td data-label="Client / product">
+                <EngagementList engagements={entry.engagements} />
+              </td>
               <td data-label="Work">
                 <ul className="type-small grid gap-1.5">
                   {entry.highlights.map((highlight) => (

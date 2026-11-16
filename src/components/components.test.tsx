@@ -125,11 +125,14 @@ describe("Experience", () => {
     expect(cells[1]).not.toHaveTextContent("Qmatic");
   });
 
-  it("marks the current role as Present and shows Pearson / WSO2 as stated", () => {
+  it("marks the current role as Present and lists WSO2 and Pearson as clients", () => {
     render(<Experience entries={experience} />);
     const table = screen.getByRole("table", { name: /Work experience/ });
     expect(within(table).getByText("Present")).toBeInTheDocument();
-    expect(within(table).getByText("Pearson / WSO2")).toBeInTheDocument();
+    const row = within(table).getByText("WSO2").closest("tr") as HTMLElement;
+    expect(within(row).getByText("Pearson")).toBeInTheDocument();
+    expect(row).toHaveTextContent("2013–2015");
+    expect(row).toHaveTextContent("2015–2017");
   });
 });
 
@@ -161,7 +164,7 @@ describe("CareerTimeline", () => {
     const figure = screen.getByRole("figure", { name: "Career timeline" });
     const items = within(figure).getAllByRole("listitem");
     expect(items).toHaveLength(5);
-    expect(items[0]).toHaveTextContent("Pearson / WSO2");
+    expect(items[0]).toHaveTextContent("WSO2, Pearson");
     expect(items[0]).toHaveTextContent("17 Jun 2013");
     expect(items[4]).toHaveTextContent("Present");
     const hrefs = within(figure)

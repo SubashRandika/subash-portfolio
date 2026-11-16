@@ -7,10 +7,10 @@ import type { ExperienceEntry } from "@/types/portfolio";
  * Paze Industries and Ascentic are employers; Qmatic, Senseforce, Geposit,
  * IFS, Finago and Biosero are client or product engagements.
  *
- * The brief does not say how Pearson and WSO2 relate for 2013–2017, so that
- * entry keeps the pairing as written instead of assigning either one a role.
- * No dates are given for the individual IFS, Finago or Biosero engagements,
- * so none are shown.
+ * In 2013–2017 WSO2 (2013–2015) and Pearson (2015–2017) were clients; the
+ * employer for that period has not been named, so none is shown.
+ * Engagement roles are from the résumé. No dates are given for the
+ * individual IFS, Finago or Biosero engagements, so none are shown.
  */
 export const experience: readonly ExperienceEntry[] = [
   {
@@ -21,8 +21,8 @@ export const experience: readonly ExperienceEntry[] = [
     employer: "Creative Software",
     engagements: [
       { client: "Biosero", role: "Lead Software Engineer" },
-      { client: "IFS" },
-      { client: "Finago" },
+      { client: "IFS", role: "Senior Lead Front-End Engineer" },
+      { client: "Finago", role: "Lead Front-End Engineer" },
     ],
     highlights: [
       "Biosero: Green Button Go Scheduler, a laboratory scheduling platform for optimizing devices, instruments and workcells.",
@@ -32,7 +32,7 @@ export const experience: readonly ExperienceEntry[] = [
       "IFS: accessibility, internationalization, Storybook and automated testing.",
       "IFS: drag-and-drop dashboard layout proof of concept.",
       "IFS: technical leadership and mentoring.",
-      "Finago: Flow/Nest rebranding and UI improvements, a reusable nested stepper component and a customer-creation wizard.",
+      "Finago: Flow/Nest rebranding and UI improvements, a reusable nested stepper component, and a simplified customer-creation wizard that improved the user experience by approximately 50%.",
       "Biosero: technical leadership, architectural decisions, mentoring engineers, and leading and collaborating with an international development team.",
     ],
     chapters: [5, 6],
@@ -43,7 +43,7 @@ export const experience: readonly ExperienceEntry[] = [
     end: "2022-03-14",
     role: "Associate Technical Lead",
     employer: "Ascentic",
-    engagements: [{ client: "Geposit", product: "Atlas 2.0" }],
+    engagements: [{ client: "Geposit", product: "Atlas 2.0", role: "Front-End Developer" }],
     highlights: [
       "Large-scale dataset import/export wizard handling more than 500,000 records.",
       "Interactive 3D markers.",
@@ -58,7 +58,13 @@ export const experience: readonly ExperienceEntry[] = [
     end: "2021-12-31",
     role: "Senior Software Engineer",
     employer: "Paze Industries",
-    engagements: [{ client: "Senseforce GmbH", product: "Workheld Sense" }],
+    engagements: [
+      {
+        client: "Senseforce GmbH",
+        product: "Workheld Sense",
+        role: "Senior Software Engineer (Front-End)",
+      },
+    ],
     highlights: [
       "Dashboard development and widgets.",
       "Script and Dataset functionality.",
@@ -73,7 +79,7 @@ export const experience: readonly ExperienceEntry[] = [
     end: "2021-09-30",
     role: "Associate Technical Lead",
     employer: "Creative Software",
-    engagements: [{ client: "Qmatic AB" }],
+    engagements: [{ client: "Qmatic AB", role: "Software Engineer (Full-Stack)" }],
     highlights: [
       "Technical leadership responsibilities.",
       "URL-shortener microservice.",
@@ -89,12 +95,14 @@ export const experience: readonly ExperienceEntry[] = [
     end: "2017-04-14",
     role: "Software Engineer",
     employer: null,
-    organisationAsStated: "Pearson / WSO2",
-    engagements: [],
+    engagements: [
+      { client: "WSO2", period: "2013–2015" },
+      { client: "Pearson", period: "2015–2017" },
+    ],
     highlights: [
       "Enterprise software development.",
-      "MyDashboard advanced filtering functionality.",
-      "Close to 200 WSO2 ESB cloud connectors.",
+      "WSO2: close to 200 WSO2 ESB cloud connectors.",
+      "Pearson: advanced filtering functionality for MyDashboard.",
     ],
     chapters: [1],
   },

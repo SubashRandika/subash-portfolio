@@ -22,7 +22,7 @@ describe("chapters", () => {
 
   it("uses the chapter titles and organisations from the brief", () => {
     expect(chapters.map((c) => [c.title, c.organisation])).toEqual([
-      ["First Takeoff", "Pearson / WSO2"],
+      ["First Takeoff", "WSO2 and Pearson"],
       ["Building Momentum", "Creative Software / Qmatic AB"],
       ["A New Horizon", "Paze Industries / Senseforce GmbH"],
       ["Mapping New Possibilities", "Ascentic / Geposit"],
@@ -73,26 +73,33 @@ describe("experience", () => {
     ]);
   });
 
-  it("shows Pearson / WSO2 exactly as stated while their relationship is unconfirmed", () => {
+  it("shows WSO2 and Pearson as clients and names no employer for 2013–2017", () => {
     const first = experience[experience.length - 1];
     expect(first?.employer).toBeNull();
-    expect(first?.organisationAsStated).toBe("Pearson / WSO2");
+    expect(first?.engagements).toEqual([
+      { client: "WSO2", period: "2013–2015" },
+      { client: "Pearson", period: "2015–2017" },
+    ]);
   });
 
-  it("does not invent dates for individual client engagements", () => {
+  it("dates only the engagements Subash dated", () => {
     for (const entry of experience) {
       for (const engagement of entry.engagements) {
-        for (const key of Object.keys(engagement)) {
-          expect(["client", "product", "role"]).toContain(key);
-        }
+        const dated = engagement.client === "WSO2" || engagement.client === "Pearson";
+        expect(engagement.period !== undefined).toBe(dated);
       }
     }
   });
 });
 
 describe("content integrity", () => {
-  it("withholds the unverified Finago UX figure", () => {
-    expect(allText()).not.toMatch(/50\s?%/);
+  it("ties the confirmed Finago UX figure to the customer-creation wizard", () => {
+    const mentions = allText().match(/[^.]*50\s?%[^.]*/g) ?? [];
+    expect(mentions.length).toBeGreaterThan(0);
+    for (const mention of mentions) {
+      expect(mention).toMatch(/approximately 50%/);
+      expect(mention).toMatch(/customer-creation wizard/);
+    }
   });
 
   it("publishes only the contact details and education Subash supplied", () => {
@@ -100,8 +107,7 @@ describe("content integrity", () => {
       linkedin: "https://www.linkedin.com/in/subash-rodrigo/",
       github: "https://github.com/SubashRandika",
       email: "subash.rodrigo@gmail.com",
-      // Not supplied yet: never invented.
-      resume: null,
+      resume: "/resume.pdf",
     });
     expect(profile.education).toEqual([
       {

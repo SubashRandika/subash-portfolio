@@ -57,6 +57,8 @@ export interface Engagement {
   product?: string;
   /** Role on this engagement when it differs from the employment role. */
   role?: string;
+  /** Years of this engagement, only where Subash has stated them. */
+  period?: string;
 }
 
 export interface ExperienceEntry {
@@ -66,17 +68,10 @@ export interface ExperienceEntry {
   /** ISO date, or `null` when the employment is current. */
   end: string | null;
   role: string;
-  /**
-   * The employing company, or `null` when the brief does not separate
-   * employer from client for this period.
-   */
+  /** The employing company, or `null` where it has not been named. */
   employer: string | null;
   /** Client and product engagements delivered during this employment. */
   engagements: readonly Engagement[];
-  /**
-   * Organisations as written in the brief, used when `employer` is `null`.
-   */
-  organisationAsStated?: string;
   highlights: readonly string[];
   /** Flight chapters that tell this period's story. */
   chapters: readonly ChapterNumber[];

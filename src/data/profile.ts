@@ -23,8 +23,7 @@ export const profile: Profile = {
     linkedin: "https://www.linkedin.com/in/subash-rodrigo/",
     github: "https://github.com/SubashRandika",
     email: "subash.rodrigo@gmail.com",
-    // Pending: the résumé PDF (to be placed in public/ as /resume.pdf).
-    resume: null,
+    resume: "/resume.pdf",
   },
   education: [
     {

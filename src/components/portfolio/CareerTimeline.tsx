@@ -70,13 +70,15 @@ export function CareerTimeline({ entries }: CareerTimelineProps) {
       <ol className="timeline-rows">
         {rows.map(({ entry, left, width, open }) => {
           const style = { "--left": left, "--width": width } as CSSProperties;
-          const organisation = entry.employer ?? entry.organisationAsStated ?? "";
           const clients = entry.engagements.map((e) => e.client).join(", ");
+          // Where no employer is named, the clients lead the row.
+          const organisation = entry.employer ?? clients;
+          const others = entry.employer ? clients : "";
           return (
             <li key={entry.id} className="timeline-row">
               <div className="timeline-label">
                 <span className="font-bold">{organisation}</span>
-                {clients ? <span className="text-ink-muted"> · {clients}</span> : null}
+                {others ? <span className="text-ink-muted"> · {others}</span> : null}
                 <span className="type-small block text-ink-muted">
                   {entry.role}
                   <span aria-hidden="true"> · </span>

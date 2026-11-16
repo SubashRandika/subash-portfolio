@@ -28,7 +28,7 @@ Taken from the brief and treated as fixed unless Subash changes them:
 | 04 | Master scroll timeline | Complete |
 | 05 | Six realistic geographical environments | Complete |
 | 06 | Career storytelling and milestone integration | Complete |
-| 07 | Complete portfolio sections | Complete (résumé PDF awaiting Subash) |
+| 07 | Complete portfolio sections | Complete |
 | 08 | Performance and accessibility optimization | In progress |
 | 09 | SEO and deployment readiness | Not started |
 | 10 | Final QA and release | Not started |
@@ -293,11 +293,11 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Headline decisions:
 These block publishing the affected content, not the build. Until answered the fields stay empty and are not rendered.
 
 1. ~~**Contact links.**~~ Answered 2026-11-16: email, LinkedIn and GitHub supplied and published.
-2. **Résumé.** The PDF to offer for download.
+2. ~~**Résumé.**~~ Answered 2026-11-16: `public/resume.pdf` supplied; offered as "Subash-Rodrigo-Resume.pdf" from the contact section and footer. Note: it includes a phone number and home town, which are therefore public.
 3. ~~**Education.**~~ Answered 2026-11-16: BSc in Computer Science (Special), University of Kelaniya, Sri Lanka, graduated 2013.
-4. **Displayed title.** The brief uses "Senior Lead Software Engineer", "Lead Software Engineer" and "Technical Lead". Which one is the headline title? Working assumption: "Lead Software Engineer", matching the requested page title.
-5. **Pearson / WSO2 (2013–2017).** Were these two successive employers, or one employer and one client or product? Until clarified the site shows the pairing exactly as written in the brief.
-6. **Finago "approximately 50% UX improvement".** Is this figure verified and approved for publication, and what did it measure? It is withheld until confirmed.
+4. ~~**Displayed title.**~~ Answered 2026-11-16: "Lead Software Engineer" confirmed.
+5. ~~**Pearson / WSO2 (2013–2017).**~~ Answered 2026-11-16: two client engagements, WSO2 2013–2015 then Pearson 2015–2017. MyDashboard is a Pearson product (résumé). Shown as clients with their years. *Optional follow-up:* the employer for 2013–2017 is not named in the brief or the résumé, so the logbook leaves it blank.
+6. ~~**Finago "approximately 50% UX improvement".**~~ Answered 2026-11-16: confirmed. Per the résumé it came from the simplified customer-creation wizard, so it is published there.
 7. **Optional.** Biosero engagement start date, location or time zone to display, and whether to state availability for new work.
 
 ## Next planned activities
