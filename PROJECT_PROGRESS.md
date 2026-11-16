@@ -31,10 +31,10 @@ Taken from the brief and treated as fixed unless Subash changes them:
 | 06 | Career storytelling and milestone integration | Complete |
 | 07 | Complete portfolio sections | Complete |
 | 08 | Performance and accessibility optimization | Complete |
-| 09 | SEO and deployment readiness | Next |
-| 10 | Final QA and release | Not started |
+| 09 | SEO and deployment readiness | Complete |
+| 10 | Final QA and release | Next |
 
-**Current phase:** 09 — SEO and deployment readiness.
+**Current phase:** 10 — Final QA and release.
 
 ## Architecture and technical decisions
 
@@ -362,6 +362,30 @@ Subash supplied two portraits: an illustrated one (headphones, paint splashes) a
 - Mobile Lighthouse performance (60) is below the 90 target. The remaining blocking time under 4× CPU throttling is React hydration of the long page (about 0.9 s), the scroll director's setup (about 1.1 s) and the 3D bootstrap (about 0.3 s). Options for Phase 10: start the 3D and the director after the first interaction on touch devices, or split the director's setup across frames.
 - On a first visit with Chrome or Edge on Windows the 3D ground appears about 8 s after load (the poster shows meanwhile); later visits use Chrome's shader cache. Splitting the terrain shader into region variants would shorten this further.
 
+### Phase 09 — SEO and deployment readiness (complete)
+
+**Implemented:**
+
+- **Metadata** (`src/lib/seo.ts`): the brief's title and description, `metadataBase` from `NEXT_PUBLIC_SITE_URL`, canonical URL, Open Graph (`profile`, first and last name, 1200 × 630 image) and X `summary_large_image` card, author and application name, theme colour.
+- **Structured data:** Person, WebSite and ProfilePage linked by `@id`, built only from the page's own content: name, title, summary, portrait, current employer (Creative Software), education (University of Kelaniya), expertise, and the published email, LinkedIn and GitHub. Inline script text is escaped so it cannot close its tag.
+- **Preview safety:** until `NEXT_PUBLIC_SITE_URL` is a real https domain the page is `noindex, nofollow`, publishes no canonical URL, and `robots.txt` disallows everything. On the real domain `robots.txt` allows crawling (except `/lab/` and `/styleguide`) and names the sitemap.
+- `robots.txt`, `sitemap.xml` and `manifest.webmanifest` as Next.js metadata routes.
+- **Brand assets** (`npm run build:brand`): an SVG site icon (a rising trajectory over a dawn horizon, no lettering), `apple-icon.png`, a multi-size `favicon.ico` replacing the template one, the portrait at a stable URL for structured data, and a sharing image rendered in Chrome with the site's own typefaces.
+- **Production guard** (`src/lib/deploy-check.ts`, `next.config.ts`): a production deployment (`VERCEL_ENV=production` or `DEPLOY_ENV=production`) refuses to build without a valid https domain and a way to get in touch, and lists what is missing. `npm run check:deploy` runs it locally.
+- **Deployment guide:** [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) (environment variables, Vercel and Node.js hosting, post-deployment checks, regenerating assets).
+- Found during the phase: the portrait's "held back" state faded out over 0.7 s after load, so an audit could catch semi-transparent text. Hiding is now instant; only the reveal animates.
+
+**Verification (2026-11-16):**
+
+| Check | Result |
+| --- | --- |
+| `npm run lint`, `npm run typecheck` | Pass |
+| `npm run test` | Pass, 134 of 134 (new: metadata, structured data, deployment guard) |
+| `npm run test:e2e` | Pass, 86 passed, 7 skipped by design (new: head metadata, JSON-LD, robots, sitemap, manifest, icons) |
+| Production guard | A production build without `NEXT_PUBLIC_SITE_URL` stops with "Production build refused" |
+
+**Outstanding before going live (needs Subash):** the production domain. Everything else for deployment is in place.
+
 ## Known issues
 
 - **Playwright's bundled Chromium cannot run on this machine.** Windows reports "An Application Control policy has blocked this file" for the unsigned `chrome-headless-shell.exe`. The policy was left untouched. Tests use the installed, signed Google Chrome through `channel: "chrome"`; the blocked download was removed with `npx playwright uninstall`.
@@ -391,7 +415,8 @@ These block publishing the affected content, not the build. Until answered the f
 5. ~~**Pearson / WSO2 (2013–2017).**~~ Answered 2026-11-16: two employments. Virtusa (17 Jun 2013–2015) for client WSO2, then JKCS (2015–14 Apr 2017) for client Pearson (MyDashboard). The month of the 2015 move was not given, so it is shown as the year only.
 6. ~~**Finago "approximately 50% UX improvement".**~~ Answered 2026-11-16: confirmed. Per the résumé it came from the simplified customer-creation wizard, so it is published there.
 7. **Optional.** Biosero engagement start date, location or time zone to display, and whether to state availability for new work.
+8. **Production domain.** Needed to deploy: set `NEXT_PUBLIC_SITE_URL` (see docs/DEPLOYMENT.md). Until then builds are safe previews that ask not to be indexed.
 
 ## Next planned activities
 
-Phase 09: page metadata, canonical URL and Open Graph/X cards from `NEXT_PUBLIC_SITE_URL`, Person/WebSite/ProfilePage JSON-LD (using the portrait), sitemap and robots, favicon and theme colour, a production-environment check that refuses to deploy without a real domain, and deployment documentation.
+Phase 10: final QA across desktop, tablet and mobile; full accessibility, SEO and performance audits; another look at mobile Lighthouse performance (deferring the 3D and the scroll director on touch devices); `npm audit` and dependency review (including the unused `motion` package); the final implementation report.

@@ -44,6 +44,9 @@ test.describe("live flight", () => {
     await expect(page.locator("#chapter-01 [data-flight-part='body']")).toBeHidden({
       timeout: 30_000,
     });
+    // Audit the opening once its entrance has finished, not part-way through a fade.
+    await expect(page.locator("[data-opening='identity']")).toHaveCSS("opacity", "1", { timeout: 15_000 });
+    await expect(page.locator("[data-opening='hint']")).toHaveCSS("opacity", "1", { timeout: 15_000 });
     expect(await audit()).toEqual([]);
     await scrollToProgress(page, 0.15);
     await expect(page.locator("[data-hud='percent']")).toHaveText("015", { timeout: 15_000 });

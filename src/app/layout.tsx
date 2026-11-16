@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { profile } from "@/data/profile";
 import { siteContact } from "@/lib/siteContact";
 import { FLIGHT_MODE_SCRIPT } from "@/lib/flight-mode-script";
+import { buildMetadata } from "@/lib/seo";
 import "./globals.css";
 
 // Titles: wide, engineered capitals in the aerospace instrument tradition.
@@ -32,11 +33,7 @@ const b612Mono = B612_Mono({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "Subash Rodrigo | Lead Software Engineer | React, Angular & Full-Stack",
-  description:
-    "Subash Rodrigo is a Lead Software Engineer with 13+ years of experience building high-performance web applications, enterprise software, React, Angular, SaaS platforms and scalable digital experiences.",
-};
+export const metadata: Metadata = buildMetadata();
 
 export const viewport: Viewport = {
   themeColor: "#070b14",

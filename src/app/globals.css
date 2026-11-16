@@ -1685,6 +1685,18 @@
     translate: 0 0.5rem;
   }
 
+  /* Held back instantly: only the reveal is animated, never the hiding. */
+  .portrait[data-reveal="pending"] :is(
+      .portrait-plate,
+      .portrait-image,
+      .portrait-orbit-ring,
+      .portrait-orbit-dot,
+      .portrait-corner,
+      .portrait-caption
+    ) {
+    transition: none;
+  }
+
   .portrait-orbit-dot {
     transition: opacity 900ms var(--ease-flight) 1.2s;
   }

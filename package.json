@@ -12,7 +12,9 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "verify": "npm run lint && npm run typecheck && npm run test && npm run build",
-    "build:aircraft": "node scripts/build-aircraft.mjs"
+    "build:aircraft": "node scripts/build-aircraft.mjs",
+    "build:brand": "node scripts/build-brand-assets.mjs",
+    "check:deploy": "node scripts/check-deploy.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

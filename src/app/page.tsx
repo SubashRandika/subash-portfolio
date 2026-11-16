@@ -10,6 +10,7 @@ import { experience } from "@/data/experience";
 import { profile } from "@/data/profile";
 import { projects } from "@/data/projects";
 import { skillGroups } from "@/data/skills";
+import { buildJsonLd, jsonLdScript } from "@/lib/seo";
 import { siteContact } from "@/lib/siteContact";
 
 export default function Home() {
@@ -17,6 +18,11 @@ export default function Home() {
 
   return (
     <main id="main" className="flex-1">
+      <script
+        type="application/ld+json"
+        // Structured data for search engines, built from the same content.
+        dangerouslySetInnerHTML={{ __html: jsonLdScript(buildJsonLd()) }}
+      />
       <FlightSection profile={profile} chapters={chapters} />
 
       <div data-theme="day">
