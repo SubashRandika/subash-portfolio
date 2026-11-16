@@ -389,7 +389,7 @@ Subash supplied two portraits: an illustrated one (headphones, paint splashes) a
 ## Known issues
 
 - **Playwright's bundled Chromium cannot run on this machine.** Windows reports "An Application Control policy has blocked this file" for the unsigned `chrome-headless-shell.exe`. The policy was left untouched. Tests use the installed, signed Google Chrome through `channel: "chrome"`; the blocked download was removed with `npx playwright uninstall`.
-- **`npm audit` reports 8 moderate advisories**, all inside the ESLint toolchain pulled in by `eslint-config-next`. They are development-only and are not shipped. To be re-checked in Phase 10.
+- **`npm audit` reports 8 moderate advisories**, all inside the ESLint toolchain pulled in by `eslint-config-next`. They are development-only and are not shipped. Re-checked in Phase 10: still development-only (`minimatch` in the ESLint toolchain); `npm audit --omit=dev` reports 0 vulnerabilities in shipped dependencies.
 - **Blender is not installed**, so asset preparation is done in code.
 - **The dev server's file watcher sometimes misses stylesheet writes** on this machine (seen with Turbopack on Windows). Re-saving `src/app/globals.css` triggers the rebuild. Production builds are unaffected.
 - **Browser automation only renders frames when a screenshot forces one**, because the automation window is occluded and `requestAnimationFrame` is throttled. Visual checks therefore take a priming screenshot first.
@@ -402,7 +402,8 @@ Subash supplied two portraits: an illustrated one (headphones, paint splashes) a
 
 ## Technical debt
 
-- `motion` (Framer Motion) is installed but not yet used; Phase 02 transitions are plain CSS. It will be used for discrete UI transitions or removed in Phase 10.
+- ~~`motion` installed but unused.~~ Removed in Phase 10: every UI transition is plain CSS.
+- Mobile Lighthouse performance (lab) is 60, below the 90 target; see Phase 10 limitations.
 
 ## Outstanding questions for Subash
 
