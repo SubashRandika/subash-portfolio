@@ -11,6 +11,7 @@ import type { Metadata } from "next";
 import { experience } from "@/data/experience";
 import { profile } from "@/data/profile";
 import { skillGroups } from "@/data/skills";
+import { technologies } from "@/data/technologies";
 import type { ContactDetails } from "./contact";
 import { type SiteUrlResolution, site } from "./site";
 import { siteContact } from "./siteContact";
@@ -95,7 +96,10 @@ export function buildJsonLd(
   const id = (fragment: string) => `${home}#${fragment}`;
   const current = experience.find((entry) => entry.end === null);
   const sameAs = [links.linkedin, links.github].filter((url): url is string => Boolean(url));
-  const expertise = skillGroups.flatMap((group) => group.skills);
+  const expertise = [
+    ...technologies.map((tech) => tech.name),
+    ...skillGroups.flatMap((group) => group.skills),
+  ];
 
   const person: JsonLd = {
     "@type": "Person",

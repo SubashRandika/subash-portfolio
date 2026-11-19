@@ -386,6 +386,15 @@ Subash supplied two portraits: an illustrated one (headphones, paint splashes) a
 
 **Outstanding before going live (needs Subash):** the production domain. Everything else for deployment is in place.
 
+### Technology table in Technical expertise (2026-11-19)
+
+Requested by Subash: present the technologies from his résumé creatively, using Devicon icons.
+
+- **Content** (`src/data/technologies.ts`): the 64 technologies from the résumé's Competencies & Skills, in five families that follow its own headings (languages and markup; frontend; backend and data; testing, build and DevOps; tools and AI). No proficiency levels or years, because the résumé gives none. `core` marks the primary expertise named in the brief (TypeScript, JavaScript, React, Next.js, Angular). Practices are kept apart in `src/data/skills.ts`: Microservices and REST APIs moved into Architecture, and a new "Ways of working" group holds Agile (Scrum), Kanban, code review and technical interviewing (the last two from the résumé's IFS bullets). Storybook moved from Quality into the table.
+- **Design** (`TechTable.tsx`): a periodic table. Each tile carries a number, a two-letter symbol, the Devicon logo and the name, coloured by family. The core stack has two-by-two tiles. The legend is a set of toggle buttons (`aria-pressed`, announced politely) that brings one family forward. Tiles cascade in on first view; hiding is instant, only the reveal animates; nothing moves with reduced motion.
+- **Icons:** 56 Devicon 2.18.0 icons (MIT) copied into `public/tech/` by `scripts/copy-tech-icons.mjs`, with the licence beside them. Only the icons used are copied, so the 140 MB package is not a dependency. The script prefers the coloured variant, falls back to the plain one for heavy illustrations, adds the SVG namespace where Devicon omits it (GitHub Copilot's icon did not render as an image without it) and refuses files with active content. Technologies Devicon has no icon for (TanStack, Druid, Superset, Pentaho BI, WSO2 ESB, React Testing Library, TestNG, Google Gemini) show their symbol instead.
+- Structured data (`knowsAbout`) now lists the technologies and practices.
+
 ## Known issues
 
 - **Playwright's bundled Chromium cannot run on this machine.** Windows reports "An Application Control policy has blocked this file" for the unsigned `chrome-headless-shell.exe`. The policy was left untouched. Tests use the installed, signed Google Chrome through `channel: "chrome"`; the blocked download was removed with `npx playwright uninstall`.

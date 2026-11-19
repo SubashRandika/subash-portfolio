@@ -1733,3 +1733,285 @@
     }
   }
 }
+
+/* ==========================================================================
+   Technical expertise: the periodic table of technologies
+   ========================================================================== */
+
+@layer components {
+  .tech-table {
+    --tile: 6.5rem;
+  }
+
+  /* Each family: an accent for bars and swatches, a darker ink for text
+     that must pass AA on white. */
+  .tech-table [data-family="languages"] {
+    --family: #e08a3c;
+    --family-ink: #8f530f;
+  }
+  .tech-table [data-family="frontend"] {
+    --family: #3d82e0;
+    --family-ink: #1554b8;
+  }
+  .tech-table [data-family="backend"] {
+    --family: #23a08a;
+    --family-ink: #0f6b5c;
+  }
+  .tech-table [data-family="delivery"] {
+    --family: #9466d0;
+    --family-ink: #6b3fa0;
+  }
+  .tech-table [data-family="tools"] {
+    --family: #7b8799;
+    --family-ink: #485568;
+  }
+  .tech-table [data-family="all"] {
+    --family: var(--ink);
+    --family-ink: var(--ink);
+  }
+
+  /* ---- Legend and filter ------------------------------------------------- */
+  .tech-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .tech-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--line-strong);
+    border-radius: 2px;
+    background: transparent;
+    color: var(--ink);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition:
+      background-color 160ms var(--ease-flight),
+      border-color 160ms var(--ease-flight);
+  }
+
+  .tech-legend-item:hover {
+    border-color: var(--family-ink);
+  }
+
+  .tech-legend-item[aria-pressed="true"] {
+    border-color: var(--family-ink);
+    background: var(--surface-raised);
+    box-shadow: inset 0 -2px 0 var(--family);
+  }
+
+  .tech-legend-swatch {
+    width: 0.7rem;
+    height: 0.7rem;
+    border-radius: 1px;
+    background: var(--family);
+  }
+
+  .tech-legend-item[data-family="all"] .tech-legend-swatch {
+    background: conic-gradient(#e08a3c 0 20%, #3d82e0 0 40%, #23a08a 0 60%, #9466d0 0 80%, #7b8799 0);
+  }
+
+  .tech-legend-count {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--ink-muted);
+  }
+
+  /* ---- Grid --------------------------------------------------------------- */
+  .tech-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(var(--tile), 1fr));
+    grid-auto-rows: var(--tile);
+    grid-auto-flow: row dense;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (max-width: 26rem) {
+    .tech-table {
+      --tile: 5.4rem;
+    }
+  }
+
+  .tech-tile {
+    position: relative;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    justify-items: center;
+    align-items: center;
+    padding: 0.4rem 0.45rem 0.5rem;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--surface-raised);
+    box-shadow: inset 0 3px 0 var(--family);
+    transition:
+      transform 220ms var(--ease-settle),
+      box-shadow 220ms var(--ease-settle),
+      opacity 260ms var(--ease-flight),
+      filter 260ms var(--ease-flight);
+  }
+
+  .tech-tile:hover {
+    transform: translateY(-3px);
+    box-shadow:
+      inset 0 3px 0 var(--family),
+      0 0.9rem 1.6rem -1rem rgb(12 20 36 / 0.45);
+  }
+
+  /* Number top left, symbol top right, as on a periodic table. */
+  .tech-number,
+  .tech-symbol {
+    position: absolute;
+    top: 0.45rem;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 1;
+  }
+
+  .tech-number {
+    left: 0.5rem;
+    color: var(--ink-muted);
+  }
+
+  .tech-symbol {
+    right: 0.5rem;
+    font-weight: 700;
+    color: var(--family-ink);
+  }
+
+  .tech-icon {
+    grid-row: 2;
+    width: 44%;
+    max-width: 3rem;
+    height: auto;
+    aspect-ratio: 1;
+    object-fit: contain;
+    transition: transform 260ms var(--ease-settle);
+  }
+
+  .tech-tile:hover .tech-icon {
+    transform: scale(1.08);
+  }
+
+  /* Devicon has no icon for these: the symbol takes its place. */
+  .tech-icon-symbol {
+    display: grid;
+    place-items: center;
+    width: auto;
+    aspect-ratio: auto;
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    color: var(--family-ink);
+  }
+
+  .tech-name {
+    grid-row: 3;
+    max-width: 100%;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+  }
+
+  /* ---- The core stack: large tiles -------------------------------------- */
+  .tech-tile[data-core] {
+    grid-column: span 2;
+    grid-row: span 2;
+    padding: 0.8rem;
+    background:
+      radial-gradient(120% 90% at 50% 0%, color-mix(in oklab, var(--family) 13%, transparent), transparent 70%),
+      var(--surface-raised);
+    box-shadow: inset 0 4px 0 var(--family);
+  }
+
+  .tech-tile[data-core] .tech-number,
+  .tech-tile[data-core] .tech-symbol {
+    top: 0.8rem;
+    font-size: 0.8125rem;
+  }
+
+  .tech-tile[data-core] .tech-number {
+    left: 0.85rem;
+  }
+
+  .tech-tile[data-core] .tech-symbol {
+    right: 0.85rem;
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 400;
+  }
+
+  .tech-tile[data-core] .tech-icon {
+    width: 40%;
+    max-width: 5rem;
+  }
+
+  .tech-tile[data-core] .tech-name {
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .tech-core {
+    position: absolute;
+    bottom: 0.8rem;
+    left: 0.85rem;
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--family-ink);
+  }
+
+  .tech-tile[data-core] .tech-name {
+    margin-bottom: 1.1rem;
+  }
+
+  /* ---- Filter: bring one family forward ----------------------------------- */
+  .tech-tile[data-dimmed] {
+    opacity: 0.22;
+    filter: grayscale(1);
+  }
+
+  /* ---- Entrance: a cascade on first view ---------------------------------
+     Hidden instantly while held back; only the reveal is animated. */
+  .tech-table[data-reveal="pending"] .tech-tile {
+    opacity: 0;
+    transform: translateY(0.75rem) scale(0.96);
+    transition: none;
+  }
+
+  .tech-table[data-reveal="shown"] .tech-tile {
+    animation: tech-tile-in 520ms var(--ease-settle) backwards;
+    animation-delay: var(--delay, 0ms);
+  }
+
+  @keyframes tech-tile-in {
+    from {
+      opacity: 0;
+      transform: translateY(0.75rem) scale(0.96);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tech-table[data-reveal="shown"] .tech-tile {
+      animation: none;
+    }
+
+    .tech-tile:hover,
+    .tech-tile:hover .tech-icon {
+      transform: none;
+    }
+  }
+}

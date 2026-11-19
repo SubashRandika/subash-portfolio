@@ -5,10 +5,11 @@ import { experience } from "./experience";
 import { profile } from "./profile";
 import { projects } from "./projects";
 import { skillGroups } from "./skills";
+import { TECH_FAMILIES, technologies } from "./technologies";
 
 /** Every string in the content layer, for whole-content assertions. */
 function allText(): string {
-  return JSON.stringify({ chapters, experience, profile, projects, skillGroups });
+  return JSON.stringify({ chapters, experience, profile, projects, skillGroups, technologies });
 }
 
 describe("chapters", () => {
@@ -139,5 +140,36 @@ describe("content integrity", () => {
     const all = skillGroups.flatMap((g) => g.skills);
     expect(new Set(all).size).toBe(all.length);
     for (const group of skillGroups) expect(group.skills.length).toBeGreaterThan(0);
+  });
+});
+
+describe("technologies", () => {
+  it("lists each technology once, with a unique two-character symbol", () => {
+    const ids = technologies.map((tech) => tech.id);
+    const symbols = technologies.map((tech) => tech.symbol);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(new Set(symbols).size).toBe(symbols.length);
+    for (const symbol of symbols) expect(symbol).toHaveLength(2);
+  });
+
+  it("keeps every family populated and lists practices separately from tools", () => {
+    for (const family of TECH_FAMILIES) {
+      expect(technologies.some((tech) => tech.family === family.id), family.id).toBe(true);
+    }
+    const names = new Set(technologies.map((tech) => tech.name));
+    for (const skill of skillGroups.flatMap((g) => g.skills)) expect(names.has(skill), skill).toBe(false);
+  });
+
+  it("marks the brief's primary expertise as the core stack", () => {
+    expect(technologies.filter((tech) => tech.core).map((tech) => tech.name).sort()).toEqual(
+      ["Angular", "JavaScript", "Next.js", "React", "TypeScript"].sort(),
+    );
+  });
+
+  it("has an icon file for every technology that names one", async () => {
+    const { existsSync } = await import("node:fs");
+    for (const tech of technologies) {
+      if (tech.icon) expect(existsSync(`public/tech/${tech.icon}.svg`), tech.icon).toBe(true);
+    }
   });
 });

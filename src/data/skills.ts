@@ -1,18 +1,10 @@
 import type { SkillGroup } from "@/types/portfolio";
 
 /**
- * Technical expertise.
- *
- * Limited to the expertise and technologies named in the brief. Nothing is
- * inferred (for example, no backend languages or cloud providers are listed
- * because none were stated).
+ * Practices: how Subash works, as opposed to the tools he works with (those
+ * are in technologies.ts). From the brief and the résumé; nothing inferred.
  */
 export const skillGroups: readonly SkillGroup[] = [
-  {
-    id: "languages-frameworks",
-    title: "Languages and frameworks",
-    skills: ["TypeScript", "JavaScript", "React", "Next.js", "Angular"],
-  },
   {
     id: "architecture",
     title: "Architecture",
@@ -24,6 +16,8 @@ export const skillGroups: readonly SkillGroup[] = [
       "Enterprise applications",
       "SaaS platforms",
       "Full-stack application development",
+      "Microservices",
+      "REST APIs",
     ],
   },
   {
@@ -34,7 +28,6 @@ export const skillGroups: readonly SkillGroup[] = [
       "Internationalization",
       "Automated testing",
       "Unit testing and code coverage",
-      "Storybook",
       "Performance optimization",
     ],
   },
@@ -49,8 +42,8 @@ export const skillGroups: readonly SkillGroup[] = [
     ],
   },
   {
-    id: "platforms",
-    title: "Also worked with",
-    skills: ["Firebase Authentication", "Pentaho BI", "WSO2 ESB", "Microservices"],
+    id: "ways-of-working",
+    title: "Ways of working",
+    skills: ["Agile (Scrum)", "Kanban", "Code review", "Technical interviewing"],
   },
 ];

@@ -10,6 +10,7 @@ import { experience } from "@/data/experience";
 import { profile } from "@/data/profile";
 import { projects } from "@/data/projects";
 import { skillGroups } from "@/data/skills";
+import { technologies } from "@/data/technologies";
 import { buildJsonLd, jsonLdScript } from "@/lib/seo";
 import { siteContact } from "@/lib/siteContact";
 
@@ -28,7 +29,7 @@ export default function Home() {
       <div data-theme="day">
         <div className="shell">
           <About profile={profile} current={currentRole} />
-          <Skills groups={skillGroups} />
+          <Skills technologies={technologies} groups={skillGroups} />
           <Projects projects={projects} />
           <Experience entries={experience} />
           <Education entries={profile.education} />

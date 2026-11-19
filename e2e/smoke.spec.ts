@@ -145,6 +145,39 @@ test.describe("page foundation (static experience)", () => {
     await expect(education).toContainText("University of Kelaniya, Sri Lanka");
   });
 
+  test("shows the technologies as a table, with icons and a family filter", async ({ page }) => {
+    const table = page.locator(".tech-table");
+    await expect(table).toHaveAttribute("data-reveal", "pending");
+    await page.locator("#expertise").scrollIntoViewIfNeeded();
+    await expect(table).toHaveAttribute("data-reveal", "shown");
+
+    const tiles = page.getByRole("list", { name: "Technologies" }).getByRole("listitem");
+    await expect(tiles).toHaveCount(64);
+    await expect(tiles.filter({ hasText: "TypeScript" })).toHaveAttribute("data-core", "true");
+    // Every icon loads.
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          [...document.querySelectorAll<HTMLImageElement>("img.tech-icon")].filter(
+            (img) => !(img.complete && img.naturalWidth > 0),
+          ).length,
+        ),
+      )
+      .toBe(0);
+
+    // The legend filters by family, from the keyboard too.
+    const frontend = page.getByRole("button", { name: /^Frontend/ });
+    await frontend.focus();
+    await page.keyboard.press("Enter");
+    await expect(frontend).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator(".tech-tile[data-dimmed]")).toHaveCount(64 - 13);
+    await expect(tiles.filter({ hasText: "React" }).first()).not.toHaveAttribute("data-dimmed", "true");
+    // Pressing it again shows everything.
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("button", { name: /^All/ })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.locator(".tech-tile[data-dimmed]")).toHaveCount(0);
+  });
+
   test("reveals the portrait in About when it scrolls into view", async ({ page }) => {
     const portrait = page.locator(".portrait");
     // Held back while it is far below the fold...

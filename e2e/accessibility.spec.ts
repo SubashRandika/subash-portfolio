@@ -18,6 +18,19 @@ test.describe("accessibility (WCAG 2.2 AA, automated checks)", () => {
     // Reveal the portrait so it is audited as a visitor sees it.
     await page.locator("#about").scrollIntoViewIfNeeded();
     await expect(page.locator(".portrait")).toHaveAttribute("data-reveal", "shown");
+    // ...and the technology table, once its cascade has finished.
+    await page.locator("#expertise").scrollIntoViewIfNeeded();
+    await expect(page.locator(".tech-table")).toHaveAttribute("data-reveal", "shown");
+    // (Only the table's own animations: the portrait's orbit turns forever.)
+    await page.waitForFunction(() =>
+      document
+        .getAnimations()
+        .filter((animation) => {
+          const target = (animation.effect as KeyframeEffect | null)?.target;
+          return target instanceof Element && target.closest(".tech-table");
+        })
+        .every((animation) => animation.playState !== "running"),
+    );
     expect(await audit(page)).toEqual([]);
   });
 

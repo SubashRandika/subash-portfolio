@@ -22,6 +22,7 @@ Cinematic 3D personal portfolio of Subash Rodrigo. Visitors follow an executive 
 | `npm run check:deploy` | Production build with the deployment checks (needs `NEXT_PUBLIC_SITE_URL`) |
 | `npm run build:aircraft` | Regenerate the aircraft model |
 | `npm run build:brand` | Regenerate icons, portrait copy and sharing image (after `npm run build`) |
+| `node scripts/copy-tech-icons.mjs <devicon package>` | Recopy the technology icons from an unpacked `devicon` package |
 
 ## Configuration
 
