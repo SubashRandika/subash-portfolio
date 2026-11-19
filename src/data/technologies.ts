@@ -5,9 +5,10 @@
  * No proficiency levels or years are given here because the résumé gives
  * none. `core` marks the primary expertise named in the project brief.
  *
- * Icons are Devicon (https://devicon.dev, MIT licence), copied into
- * public/tech/ by scripts/copy-tech-icons.mjs. `icon` is the Devicon name, or
- * null where Devicon has no icon; those tiles show their symbol alone.
+ * Icons are Devicon (https://devicon.dev, MIT licence), or Simple Icons
+ * (https://simpleicons.org, CC0) where Devicon has none, copied into
+ * public/tech/ by scripts/copy-tech-icons.mjs. `icon` is the icon's name, or
+ * null where neither has one; those tiles show their symbol alone.
  */
 
 export type TechFamily = "languages" | "frontend" | "backend" | "delivery" | "tools";
@@ -31,7 +32,7 @@ export interface Technology {
   /** Two-letter symbol, as on a periodic table. */
   symbol: string;
   family: TechFamily;
-  /** Devicon name, or null where Devicon has no icon. */
+  /** Icon name (public/tech/<icon>.svg), or null where there is none. */
   icon: string | null;
   /** Primary expertise named in the brief. */
   core?: boolean;
@@ -62,12 +63,12 @@ export const technologies: readonly Technology[] = [
   t("frontend", "nextjs", "Next.js", "Nx", "nextjs", true),
   t("frontend", "blazor", "Blazor", "Bz", "blazor"),
   t("frontend", "redux", "Redux Toolkit", "Rx", "redux"),
-  t("frontend", "tanstack", "TanStack Query / Table", "Tq", null),
+  t("frontend", "tanstack", "TanStack Query / Table", "Tq", "reactquery"),
   t("frontend", "zustand", "Zustand", "Zu", "zustand"),
   t("frontend", "storybook", "Storybook", "Sb", "storybook"),
   t("frontend", "shadcn", "shadcn/ui", "Sh", "shadcn"),
   t("frontend", "tailwind", "Tailwind CSS", "Tw", "tailwindcss"),
-  t("frontend", "material", "Material CDK / UI", "Ma", "angularmaterial"),
+  t("frontend", "materialui", "Material UI", "Mu", "materialui"),
   t("frontend", "antdesign", "Ant Design", "Ad", "antdesign"),
   t("frontend", "bootstrap", "Bootstrap", "Bs", "bootstrap"),
 
@@ -82,20 +83,16 @@ export const technologies: readonly Technology[] = [
   t("backend", "postgresql", "PostgreSQL", "Pg", "postgresql"),
   t("backend", "oracle", "Oracle", "Or", "oracle"),
   t("backend", "sqlserver", "MS SQL Server", "Ms", "microsoftsqlserver"),
-  t("backend", "druid", "Druid", "Dr", null),
-  t("backend", "superset", "Superset", "Su", null),
+  t("backend", "superset", "Superset", "Su", "apachesuperset"),
   t("backend", "elasticsearch", "Elasticsearch", "El", "elasticsearch"),
   t("backend", "tomcat", "Apache Tomcat", "Tc", "tomcat"),
-  t("backend", "pentaho", "Pentaho BI", "Pt", null),
-  t("backend", "wso2esb", "WSO2 ESB", "Wo", null),
 
   // Testing, build and DevOps
   t("delivery", "vitest", "Vitest", "Vt", "vitest"),
   t("delivery", "jest", "Jest", "Je", "jest"),
-  t("delivery", "rtl", "React Testing Library", "Rt", null),
+  t("delivery", "testinglibrary", "Testing Library", "Tl", "testinglibrary"),
   t("delivery", "cypress", "Cypress", "Cy", "cypressio"),
   t("delivery", "junit", "JUnit", "Ju", "junit"),
-  t("delivery", "testng", "TestNG", "Tn", null),
   t("delivery", "vite", "Vite", "Vi", "vitejs"),
   t("delivery", "webpack", "Webpack", "Wp", "webpack"),
   t("delivery", "maven", "Maven", "Mv", "maven"),
@@ -117,7 +114,7 @@ export const technologies: readonly Technology[] = [
   t("tools", "intellij", "IntelliJ IDEA", "Ij", "intellij"),
   t("tools", "webstorm", "WebStorm", "Ws", "webstorm"),
   t("tools", "copilot", "GitHub Copilot", "Cp", "githubcopilot"),
-  t("tools", "gemini", "Google Gemini", "Gm", null),
+  t("tools", "gemini", "Google Gemini", "Gm", "googlegemini"),
   t("tools", "claudecode", "Claude Code", "Cl", "claudecode"),
   t("tools", "cursor", "Cursor", "Cu", "cursor"),
 ];

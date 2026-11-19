@@ -1900,7 +1900,7 @@
     transform: scale(1.08);
   }
 
-  /* Devicon has no icon for these: the symbol takes its place. */
+  /* No icon exists for these: the symbol takes its place. */
   .tech-icon-symbol {
     display: grid;
     place-items: center;

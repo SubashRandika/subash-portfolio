@@ -152,7 +152,7 @@ test.describe("page foundation (static experience)", () => {
     await expect(table).toHaveAttribute("data-reveal", "shown");
 
     const tiles = page.getByRole("list", { name: "Technologies" }).getByRole("listitem");
-    await expect(tiles).toHaveCount(64);
+    await expect(tiles).toHaveCount(60);
     await expect(tiles.filter({ hasText: "TypeScript" })).toHaveAttribute("data-core", "true");
     // Every icon loads.
     await expect
@@ -170,7 +170,7 @@ test.describe("page foundation (static experience)", () => {
     await frontend.focus();
     await page.keyboard.press("Enter");
     await expect(frontend).toHaveAttribute("aria-pressed", "true");
-    await expect(page.locator(".tech-tile[data-dimmed]")).toHaveCount(64 - 13);
+    await expect(page.locator(".tech-tile[data-dimmed]")).toHaveCount(60 - 13);
     await expect(tiles.filter({ hasText: "React" }).first()).not.toHaveAttribute("data-dimmed", "true");
     // Pressing it again shows everything.
     await page.keyboard.press("Enter");
