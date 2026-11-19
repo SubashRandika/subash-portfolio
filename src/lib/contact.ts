@@ -52,6 +52,9 @@ export function validGitHub(value: string): string | null {
   return url && url.pathname.length > 1 ? url.toString() : null;
 }
 
+/** The name the résumé is saved under when downloaded. */
+export const RESUME_FILE_NAME = "Subash-Rodrigo-Resume.pdf";
+
 /** A PDF in public/ ("/resume.pdf") or on an https URL. */
 export function validResume(value: string): string | null {
   const trimmed = value.trim();

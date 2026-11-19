@@ -8,6 +8,7 @@ const paths = {
   plus: <path d="M12 5v14M5 12h14" />,
   close: <path d="m6 6 12 12M18 6 6 18" />,
   download: <path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14" />,
+  check: <path d="m5 12.5 4.5 4.5L19 7.5" />,
   mail: (
     <>
       <rect x="3.5" y="5.5" width="17" height="13" rx="1.5" />

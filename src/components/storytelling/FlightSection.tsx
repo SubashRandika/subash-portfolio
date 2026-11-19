@@ -1,5 +1,6 @@
 import { FlightStage } from "@/components/flight/FlightStage";
 import { ButtonLink } from "@/components/ui/Button";
+import type { ResumeFile } from "@/lib/resume";
 import type { Chapter, Profile } from "@/types/portfolio";
 import { ChapterNavigation } from "./ChapterNavigation";
 import { ChapterSection } from "./ChapterSection";
@@ -9,6 +10,8 @@ import { Opening } from "./Opening";
 interface FlightSectionProps {
   profile: Profile;
   chapters: readonly Chapter[];
+  /** The résumé, offered in the opening; null when none is published. */
+  resume?: ResumeFile | null;
 }
 
 /**
@@ -17,7 +20,7 @@ interface FlightSectionProps {
  * All of the narrative is server-rendered HTML in document order. The stage
  * (3D canvas and HUD) only becomes visible in live mode.
  */
-export function FlightSection({ profile, chapters }: FlightSectionProps) {
+export function FlightSection({ profile, chapters, resume = null }: FlightSectionProps) {
   const [closingLead, closingFollow] = profile.closingMessage;
   const lastChapter = chapters[chapters.length - 1];
 
@@ -36,7 +39,7 @@ export function FlightSection({ profile, chapters }: FlightSectionProps) {
       </div>
 
       <div className="flight-narrative">
-        <Opening profile={profile} />
+        <Opening profile={profile} resume={resume} />
 
         <div className="flight-intro shell pt-14 pb-4">
           <h2 id="flight-heading" className="type-display-md">

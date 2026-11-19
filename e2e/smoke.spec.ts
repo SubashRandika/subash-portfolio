@@ -131,6 +131,10 @@ test.describe("page foundation (static experience)", () => {
     const resume = contact.getByRole("link", { name: /Résumé/ });
     await expect(resume).toHaveAttribute("href", "/resume.pdf");
     await expect(resume).toHaveAttribute("download", "Subash-Rodrigo-Resume.pdf");
+    // The opening offers the same file, with its length and size.
+    const hero = page.locator("#takeoff").getByRole("link", { name: /Download résumé, PDF, \d+ pages?, \d+ KB/ });
+    await expect(hero).toHaveAttribute("href", "/resume.pdf");
+    await expect(hero).toHaveAttribute("download", "Subash-Rodrigo-Resume.pdf");
     const pdf = await page.request.get("/resume.pdf");
     expect(pdf.ok()).toBe(true);
     expect(pdf.headers()["content-type"]).toContain("application/pdf");

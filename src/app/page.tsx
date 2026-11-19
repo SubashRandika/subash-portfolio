@@ -11,6 +11,7 @@ import { profile } from "@/data/profile";
 import { projects } from "@/data/projects";
 import { skillGroups } from "@/data/skills";
 import { technologies } from "@/data/technologies";
+import { describeResume } from "@/lib/resume";
 import { buildJsonLd, jsonLdScript } from "@/lib/seo";
 import { siteContact } from "@/lib/siteContact";
 
@@ -24,7 +25,7 @@ export default function Home() {
         // Structured data for search engines, built from the same content.
         dangerouslySetInnerHTML={{ __html: jsonLdScript(buildJsonLd()) }}
       />
-      <FlightSection profile={profile} chapters={chapters} />
+      <FlightSection profile={profile} chapters={chapters} resume={describeResume(siteContact.links.resume)} />
 
       <div data-theme="day">
         <div className="shell">

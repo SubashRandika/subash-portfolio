@@ -1,5 +1,6 @@
 import { Icon, type IconName } from "@/components/ui/Icon";
 import type { Profile } from "@/types/portfolio";
+import { RESUME_FILE_NAME } from "@/lib/contact";
 
 interface ContactProps {
   profile: Profile;
@@ -60,7 +61,7 @@ export function contactLinks(links: Profile["links"]): ContactLink[] {
       href: links.resume,
       icon: "download",
       external: false,
-      download: "Subash-Rodrigo-Resume.pdf",
+      download: RESUME_FILE_NAME,
     });
   }
   return result;

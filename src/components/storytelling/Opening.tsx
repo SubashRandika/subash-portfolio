@@ -1,10 +1,13 @@
 import type { CSSProperties } from "react";
 import { ButtonLink } from "@/components/ui/Button";
 import { spanOf } from "@/flight/timeline";
+import type { ResumeFile } from "@/lib/resume";
 import type { Profile } from "@/types/portfolio";
+import { ResumeDownload } from "./ResumeDownload";
 
 interface OpeningProps {
   profile: Profile;
+  resume?: ResumeFile | null;
 }
 
 /**
@@ -12,7 +15,7 @@ interface OpeningProps {
  * title. This is server-rendered text, so it is the page's largest paint and
  * is readable before any 3D loads.
  */
-export function Opening({ profile }: OpeningProps) {
+export function Opening({ profile, resume = null }: OpeningProps) {
   const style = { "--span": spanOf(0) } as CSSProperties;
   const [taglineLead, taglineFollow] = profile.tagline;
 
@@ -32,7 +35,7 @@ export function Opening({ profile }: OpeningProps) {
           </p>
 
           <div
-            className="mt-10 border-t border-line-strong pt-6 sm:flex sm:items-end sm:justify-between sm:gap-10"
+            className="opening-identity mt-10 border-t border-line-strong pt-6"
             data-opening="identity"
           >
             <h1>
@@ -45,10 +48,11 @@ export function Opening({ profile }: OpeningProps) {
               </span>
             </h1>
 
-            <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 sm:mt-0">
+            <div className="opening-actions">
               <ButtonLink href="#chapter-01" icon="arrow-down">
                 Begin the journey
               </ButtonLink>
+              {resume ? <ResumeDownload file={resume} /> : null}
               <ButtonLink href="#about" variant="quiet">
                 Skip to portfolio
               </ButtonLink>
