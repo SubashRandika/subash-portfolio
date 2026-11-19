@@ -403,6 +403,14 @@ Requested by Subash: present the technologies from his résumé creatively, usin
 - The file read is marked `turbopackIgnore`: the page is prerendered, so the server never needs the PDF and the whole project is not traced into the output.
 - Tests: `src/lib/resume.test.ts` (page count, size format, hosted and missing files), `ResumeDownload.test.tsx` (name, download attribute, confirmation and reset, hosted variant) and a hero check in `e2e/smoke.spec.ts`. Unit 145 of 145, end-to-end 89 passed and 7 skipped.
 
+### Opening sky and a lighter menu (2026-11-19)
+
+- **Menu:** "Career Journey" removed from the top menu at Subash's request. "Begin the journey", directly below it in the opening, goes to the same place, and the HUD's chapter rail still reaches every chapter. (This departs from the brief's navigation list by his decision.)
+- **Cirrus** (`shaders/cirrus.glsl.ts`, drawn by `Sky.tsx`): thin high cloud in the sky dome. Four-octave value noise projected onto a high deck, so wisps foreshorten toward the horizon, streaked along the wind and drifting slowly; the finer octaves move on their own so wisps change shape too. Lit from below by the dawn glow and by the sun once it is up. Cover is a new keyframed `cirrus` field in `atmosphere.ts`: 0.8 before dawn, 0.3 at midday, 0.55 in the golden hour.
+- **Stars** (`Stars.tsx`): replace the one-pixel stars that were in the sky shader. 1,100 seeded points (identical on every visit), additive sprites with a sharp core, a soft halo and, for the brightest, hairline spikes; colours by temperature, a steep magnitude curve (most are faint), and scintillation that is stronger and faster near the horizon. They fade into the glow low over the sun, hide behind the cirrus and inside cloud, and are not drawn once the sky is light. First version was 2,600 stars; Subash found it too busy, so the field was thinned to 1,100 with the faint ones dimmer.
+- Reduced-motion visitors get the static page, so the drift and twinkle never reach them.
+- Tests: cirrus cover per look (`atmosphere.test.ts`), star field determinism, placement and magnitude spread (`Stars.test.ts`); menu expectation updated. Unit 148 of 148, end-to-end 89 passed and 7 skipped.
+
 ## Known issues
 
 - **Playwright's bundled Chromium cannot run on this machine.** Windows reports "An Application Control policy has blocked this file" for the unsigned `chrome-headless-shell.exe`. The policy was left untouched. Tests use the installed, signed Google Chrome through `channel: "chrome"`; the blocked download was removed with `npx playwright uninstall`.

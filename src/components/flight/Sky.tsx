@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import type { Atmosphere } from "@/flight/atmosphere";
 import { flightFrame } from "@/flight/frame";
+import { CIRRUS_GLSL } from "./shaders/cirrus.glsl";
 import { OUTPUT_CHUNKS } from "./shaders/lighting.glsl";
 
 const vertexShader = /* glsl */ `
@@ -27,16 +28,13 @@ const fragmentShader = /* glsl */ `
   uniform float uSunIntensity;
   uniform vec3 uSunDirection;
   uniform vec3 uGround;
-  uniform float uStars;
+  uniform float uCirrus;
+  uniform float uTime;
   uniform vec3 uFogColor;
   uniform float uVeil;
   varying vec3 vDirection;
 
-  float hash31(vec3 p) {
-    p = fract(p * 0.1031);
-    p += dot(p, p.zyx + 31.32);
-    return fract((p.x + p.y) * p.z);
-  }
+  ${CIRRUS_GLSL}
 
   void main() {
     vec3 dir = normalize(vDirection);
@@ -62,14 +60,14 @@ const fragmentShader = /* glsl */ `
     float disc = smoothstep(0.99992, 0.99997, mu) * smoothstep(-0.012, 0.004, height);
     color += uSunColor * disc * (2.0 + uSunIntensity * 6.0);
 
-    // Stars before dawn, fading toward the horizon.
-    if (uStars > 0.001 && height > 0.0) {
-      vec3 cell = dir * 300.0;
-      vec3 id = floor(cell);
-      float seed = hash31(id);
-      float point = smoothstep(0.42, 0.0, length(fract(cell) - 0.5));
-      float star = step(0.9972, seed) * point * (0.35 + 0.65 * fract(seed * 173.3));
-      color += vec3(0.85, 0.9, 1.0) * star * uStars * smoothstep(0.03, 0.3, height) * 1.6;
+    // High cirrus, lit from below by the glow on the sun's side of the sky
+    // and by the sun itself once it is up. (Stars are drawn by Stars.tsx.)
+    float cirrus = cirrusDensity(dir, uTime, uCirrus);
+    if (cirrus > 0.0) {
+      vec3 lit = uHorizon * 1.2
+        + uGlow * uGlowStrength * (0.22 + 0.95 * pow(bearing, 2.0)) * (1.0 - up * 0.55)
+        + uSunColor * uSunIntensity * (0.12 + 0.5 * pow(mu, 6.0));
+      color = mix(color, lit, cirrus * 0.62);
     }
 
     // Below the horizon: haze fading into ground tone (only seen in reflections).
@@ -95,7 +93,8 @@ interface SkyUniforms {
   uSunIntensity: THREE.IUniform<number>;
   uSunDirection: THREE.IUniform<THREE.Vector3>;
   uGround: THREE.IUniform<THREE.Color>;
-  uStars: THREE.IUniform<number>;
+  uCirrus: THREE.IUniform<number>;
+  uTime: THREE.IUniform<number>;
   uFogColor: THREE.IUniform<THREE.Color>;
   uVeil: THREE.IUniform<number>;
 }
@@ -112,7 +111,7 @@ function updateSky(uniforms: SkyUniforms, atmosphere: Atmosphere): void {
   uniforms.uGround.value
     .setRGB(...atmosphere.ambientGround)
     .lerp(_fog.setRGB(...atmosphere.fogColor), 0.55);
-  uniforms.uStars.value = atmosphere.stars;
+  uniforms.uCirrus.value = atmosphere.cirrus;
   uniforms.uFogColor.value.setRGB(...atmosphere.fogColor);
   uniforms.uVeil.value = atmosphere.veil;
 }
@@ -160,7 +159,7 @@ interface SkyProps {
 const CAPTURE_INTERVAL = 10;
 
 /**
- * The sky dome, sun and stars, plus the environment map the aircraft's paint
+ * The sky dome, sun and drifting cirrus, plus the environment map the aircraft's paint
  * reflects. The reflection is re-captured from the same shader whenever the
  * light has changed, so reflections always match the sky on screen.
  */
@@ -179,7 +178,8 @@ export function Sky({ radius = 50_000, reflectionSize = 128 }: SkyProps) {
       uSunIntensity: { value: 0 },
       uSunDirection: { value: new THREE.Vector3(0, 1, 0) },
       uGround: { value: new THREE.Color() },
-      uStars: { value: 0 },
+      uCirrus: { value: 0 },
+      uTime: { value: 0 },
       uFogColor: { value: new THREE.Color() },
       uVeil: { value: 0 },
     };
@@ -237,6 +237,7 @@ export function Sky({ radius = 50_000, reflectionSize = 128 }: SkyProps) {
     const res = resources.current;
     if (!res) return;
     updateSky(res.uniforms, flightFrame.atmosphere);
+    res.uniforms.uTime.value = flightFrame.time;
 
     // Keep the dome centred on the camera so it never shows parallax.
     if (meshRef.current) meshRef.current.position.copy(state.camera.position);

@@ -51,6 +51,8 @@ interface Look {
   exposure: number;
   /** Star visibility, 0–1. */
   stars: number;
+  /** Cover of the thin, high cirrus drawn into the sky dome, 0–1. */
+  cirrus: number;
   /** Brightness of runway and aircraft light glows, 0–1. */
   lamps: number;
 }
@@ -74,6 +76,7 @@ const LOOKS: readonly Look[] = [
     fogDensity: 0.00046,
     exposure: 1.15,
     stars: 0.85,
+    cirrus: 0.8,
     lamps: 1,
   },
   {
@@ -94,6 +97,7 @@ const LOOKS: readonly Look[] = [
     fogDensity: 0.0004,
     exposure: 1.1,
     stars: 0.45,
+    cirrus: 0.75,
     lamps: 1,
   },
   {
@@ -114,6 +118,7 @@ const LOOKS: readonly Look[] = [
     fogDensity: 0.00024,
     exposure: 1.02,
     stars: 0,
+    cirrus: 0.65,
     lamps: 0.85,
   },
   {
@@ -134,6 +139,7 @@ const LOOKS: readonly Look[] = [
     fogDensity: 0.00012,
     exposure: 1,
     stars: 0,
+    cirrus: 0.5,
     lamps: 0.45,
   },
   {
@@ -154,6 +160,7 @@ const LOOKS: readonly Look[] = [
     fogDensity: 0.00007,
     exposure: 1,
     stars: 0,
+    cirrus: 0.4,
     lamps: 0.2,
   },
   {
@@ -174,6 +181,7 @@ const LOOKS: readonly Look[] = [
     fogDensity: 0.000065,
     exposure: 1,
     stars: 0,
+    cirrus: 0.3,
     lamps: 0.12,
   },
   {
@@ -194,6 +202,7 @@ const LOOKS: readonly Look[] = [
     fogDensity: 0.000065,
     exposure: 1,
     stars: 0,
+    cirrus: 0.35,
     lamps: 0.12,
   },
   {
@@ -214,6 +223,7 @@ const LOOKS: readonly Look[] = [
     fogDensity: 0.00006,
     exposure: 1,
     stars: 0,
+    cirrus: 0.55,
     lamps: 0.4,
   },
   {
@@ -234,6 +244,7 @@ const LOOKS: readonly Look[] = [
     fogDensity: 0.00006,
     exposure: 1,
     stars: 0,
+    cirrus: 0.45,
     lamps: 0.55,
   },
 ];
@@ -256,6 +267,8 @@ export interface Atmosphere {
   fogDensity: number;
   exposure: number;
   stars: number;
+  /** Cover of high cirrus in the sky dome, 0–1. */
+  cirrus: number;
   lamps: number;
   /**
    * How much the sky is hidden by cloud around the camera, 0–1. Always 0
@@ -281,6 +294,7 @@ export function createAtmosphere(): Atmosphere {
     fogDensity: 0,
     exposure: 1,
     stars: 0,
+    cirrus: 0,
     lamps: 0,
     veil: 0,
   };
@@ -315,6 +329,7 @@ const SCALARS = {
   fogDensity: scalarTrack("fogDensity"),
   exposure: scalarTrack("exposure"),
   stars: scalarTrack("stars"),
+  cirrus: scalarTrack("cirrus"),
   lamps: scalarTrack("lamps"),
 };
 
@@ -357,6 +372,7 @@ export function atmosphereAt(progress: number, out: Atmosphere): Atmosphere {
   out.fogDensity = SCALARS.fogDensity(p);
   out.exposure = SCALARS.exposure(p);
   out.stars = SCALARS.stars(p);
+  out.cirrus = SCALARS.cirrus(p);
   out.lamps = SCALARS.lamps(p);
   out.veil = 0;
   return out;

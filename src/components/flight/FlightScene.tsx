@@ -13,6 +13,7 @@ import { FlightController } from "./FlightController";
 import { QualityGovernor } from "./QualityGovernor";
 import { SceneLighting } from "./SceneLighting";
 import { Sky } from "./Sky";
+import { Stars } from "./Stars";
 import { SunShadows } from "./SunShadows";
 
 interface FlightSceneProps {
@@ -70,6 +71,7 @@ export function FlightScene({ onReady, still = false }: FlightSceneProps) {
       <QualityGovernor />
       <FlightController rigRef={rigRef} aircraftState={aircraftState} still={still} />
       <Sky />
+      <Stars />
       <SceneLighting />
       <SunShadows />
       <Environments />

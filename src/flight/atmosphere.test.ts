@@ -20,6 +20,15 @@ describe("atmosphere", () => {
     expect(lookNameAt(0)).toBe("pre-dawn");
   });
 
+  it("keeps a light cirrus throughout, most of it at dawn", () => {
+    const cover = samples.map((p) => atmosphereAt(p, createAtmosphere()).cirrus);
+    for (const value of cover) {
+      expect(value).toBeGreaterThan(0);
+      expect(value).toBeLessThanOrEqual(1);
+    }
+    expect(atmosphereAt(0, createAtmosphere()).cirrus).toBeGreaterThan(atmosphereAt(0.5, createAtmosphere()).cirrus);
+  });
+
   it("reaches full daylight mid-flight and a low sun at the end", () => {
     const day = atmosphereAt(0.5, createAtmosphere());
     expect(day.sunElevation).toBeGreaterThan(30);
