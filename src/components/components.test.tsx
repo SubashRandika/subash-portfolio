@@ -220,7 +220,7 @@ describe("Contact", () => {
     const none = { email: null, linkedin: null, github: null, resume: null };
     render(<Contact profile={profile} links={none} />);
     expect(screen.getByRole("heading", { name: "The journey continues." })).toBeInTheDocument();
-    expect(screen.getByText("The next chapter could be ours.")).toBeInTheDocument();
+    expect(screen.getByText("Your next project could be our next chapter.")).toBeInTheDocument();
     expect(screen.queryAllByRole("link")).toHaveLength(0);
   });
 
