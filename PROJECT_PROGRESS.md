@@ -411,6 +411,13 @@ Requested by Subash: present the technologies from his résumé creatively, usin
 - Reduced-motion visitors get the static page, so the drift and twinkle never reach them.
 - Tests: cirrus cover per look (`atmosphere.test.ts`), star field determinism, placement and magnitude spread (`Stars.test.ts`); menu expectation updated. Unit 148 of 148, end-to-end 89 passed and 7 skipped.
 
+### Opening text: legibility and entrance (2026-11-19)
+
+- Requested by Subash: the hero text did not catch the eye. The headline sat on the busiest part of the scene, so the opening copy now carries its own soft shade (a radial and a bottom gradient behind the text column, full-bleed, fading with the copy as the takeoff begins) and a text shadow. The name is larger (up to 2.625rem, one line) and the role line brighter; the actions sit on their own row below the name at every width.
+- Entrance (CSS only, about two seconds, once; settled state for reduced motion): the tagline's words come into focus in turn (blur, rise and fade from 12% opacity, so the headline still paints at once and remains the LCP element); a band of dawn light passes across the words; "2013" is set bold and underlined as the line rises; the rule above the name draws in from an accent end with a spark running along it; the name rises out of a mask; the role and the three actions follow; the scroll cue's light slides down its track three times and stops.
+- The tagline is split into one span per word with the spaces kept as text, so it reads and is found exactly as written. Measured LCP locally 0.5–0.7 s.
+- The accessibility audit now waits for the entrance to settle before checking contrast. Unit 148 of 148, end-to-end 89 passed and 7 skipped.
+
 ## Known issues
 
 - **Playwright's bundled Chromium cannot run on this machine.** Windows reports "An Application Control policy has blocked this file" for the unsigned `chrome-headless-shell.exe`. The policy was left untouched. Tests use the installed, signed Google Chrome through `channel: "chrome"`; the blocked download was removed with `npx playwright uninstall`.

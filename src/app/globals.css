@@ -967,26 +967,8 @@
     opacity: 1;
   }
 
-  /* Staged entrance for the opening: tagline first, then the rest. The
-     tagline itself is never hidden, so it paints immediately. */
-  @keyframes opening-rise {
-    from {
-      opacity: 0;
-      transform: translateY(0.75rem);
-    }
-  }
-
-  [data-flight="live"] [data-opening="follow"] {
-    animation: opening-rise 900ms 450ms var(--ease-settle) both;
-  }
-
-  [data-flight="live"] [data-opening="identity"] {
-    animation: opening-rise 900ms 1050ms var(--ease-settle) both;
-  }
-
-  [data-flight="live"] [data-opening="hint"] {
-    animation: opening-rise 900ms 1800ms var(--ease-settle) both;
-  }
+  /* The opening's entrance lives with its other styles, under "Opening:
+     legibility and entrance" below. */
 }
 
 /* ==========================================================================
@@ -2037,19 +2019,9 @@
     gap: 0.75rem 1.25rem;
   }
 
-  /* Name on the left, actions on the right, once there is room for both. */
-  @media (min-width: 80rem) {
-    .opening-identity {
-      grid-template-columns: auto auto;
-      align-items: end;
-      justify-content: space-between;
-      gap: 2.5rem;
-    }
-
-    .opening-actions {
-      flex-wrap: nowrap;
-    }
-  }
+  /* The name gets the full width; the actions sit in their own row below
+     it (the content column is never wide enough for both side by side at
+     the name's size). */
 
   .resume-card {
     --paper: var(--color-pearl-100);
@@ -2328,6 +2300,273 @@
     .resume-card .resume-facts {
       animation: none !important;
       transform: none !important;
+    }
+  }
+}
+
+/* ==========================================================================
+   Opening: legibility and entrance
+
+   The headline sits on the busiest part of the scene (runway lights, the
+   terminal, the ridge line), so the copy carries its own soft shade that
+   fades with it as the takeoff begins.
+
+   Entrance, about two seconds and only once: the tagline's words come into
+   focus one after another, like a camera finding its subject, then a band
+   of dawn light passes across them; the year is underlined; the rule draws
+   in like a horizon with a spark running along it; the name rises into
+   place and the actions follow. The tagline is never fully transparent, so
+   it still paints at once (it is the largest paint). Reduced motion gets
+   the settled state.
+   ========================================================================== */
+
+@layer components {
+  .opening {
+    /* The shade below reaches the screen edges; never let it scroll. */
+    overflow-x: clip;
+  }
+
+  .opening-copy {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .opening-copy::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset-block: 0;
+    inset-inline: calc(50% - 50vw);
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 62% 70% at 14% 62%, rgb(3 5 10 / 0.58), rgb(3 5 10 / 0.3) 52%, transparent 78%),
+      linear-gradient(to top, rgb(3 5 10 / 0.5), transparent 45%);
+  }
+
+  .hero-tagline {
+    text-shadow: 0 0.05em 0.7em rgb(3 5 10 / 0.6);
+  }
+
+  .hero-word {
+    display: inline-block;
+  }
+
+  .hero-follow {
+    text-shadow: 0 0.05em 0.6em rgb(3 5 10 / 0.7);
+  }
+
+  .hero-year {
+    position: relative;
+    display: inline-block;
+    font-weight: 700;
+  }
+
+  .hero-year::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0.05em;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--accent);
+    transform-origin: left center;
+  }
+
+  .opening-identity {
+    position: relative;
+  }
+
+  /* The rule above the name, with a spark of dawn light at its leading end. */
+  .opening-identity::before,
+  .opening-identity::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 1px;
+    pointer-events: none;
+  }
+
+  .opening-identity::before {
+    right: 0;
+    background: linear-gradient(90deg, var(--accent) 0, var(--line-strong) 9rem, var(--line-strong));
+    transform-origin: left center;
+  }
+
+  .opening-identity::after {
+    width: 7rem;
+    top: -1px;
+    height: 3px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, transparent, rgb(255 214 176 / 0.9), transparent);
+    filter: blur(1px);
+    opacity: 0;
+  }
+
+  .hero-name-clip {
+    display: block;
+    overflow: hidden;
+    /* Room for the glyphs' edges inside the mask. */
+    padding-block: 0.06em;
+  }
+
+  .hero-name {
+    display: block;
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 0.95rem + 2.2vw, 2.625rem);
+    line-height: 1.15;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    text-shadow: 0 0.05em 0.6em rgb(3 5 10 / 0.6);
+  }
+
+  .hero-role {
+    color: color-mix(in oklab, var(--ink) 78%, var(--ink-muted));
+    text-shadow: 0 0.05em 0.5em rgb(3 5 10 / 0.8);
+  }
+
+  .hero-action {
+    display: inline-flex;
+    flex: none;
+  }
+
+  [data-flight="live"] .hero-hint {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  /* A short track with a light sliding down it: "keep scrolling". */
+  .hero-hint-track {
+    position: relative;
+    width: 1px;
+    height: 1.5rem;
+    overflow: hidden;
+    background: var(--line-strong);
+  }
+
+  .hero-hint-track::after {
+    content: "";
+    position: absolute;
+    left: -1px;
+    top: 0;
+    width: 3px;
+    height: 0.5rem;
+    border-radius: 2px;
+    background: var(--accent);
+    transform: translateY(-100%);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hero-word {
+      animation:
+        hero-focus 1100ms calc(150ms + var(--i) * 110ms) var(--ease-settle) both,
+        hero-glint 1000ms calc(1500ms + var(--i) * 85ms) var(--ease-flight) both;
+    }
+
+    .hero-follow {
+      animation: hero-rise 900ms 850ms var(--ease-settle) both;
+    }
+
+    .hero-year::after {
+      animation: hero-draw 700ms 1500ms var(--ease-settle) both;
+    }
+
+    .opening-identity::before {
+      animation: hero-draw 1300ms 1050ms var(--ease-settle) both;
+    }
+
+    .opening-identity::after {
+      animation: hero-spark 1300ms 1050ms var(--ease-settle) both;
+    }
+
+    .hero-name {
+      animation: hero-emerge 950ms 1350ms var(--ease-settle) both;
+    }
+
+    .hero-role {
+      animation: hero-rise 800ms 1600ms var(--ease-settle) both;
+    }
+
+    .hero-action {
+      animation: hero-rise 800ms calc(1750ms + var(--i) * 110ms) var(--ease-settle) both;
+    }
+
+    .hero-hint {
+      animation: hero-rise 800ms 2300ms var(--ease-settle) both;
+    }
+
+    /* A few passes, then still: a cue, not a distraction. */
+    .hero-hint-track::after {
+      animation: hero-scroll-cue 2200ms 2800ms var(--ease-flight) 3;
+    }
+  }
+
+  @keyframes hero-focus {
+    from {
+      opacity: 0.12;
+      filter: blur(12px);
+      transform: translateY(0.2em) scale(1.04);
+    }
+  }
+
+  @keyframes hero-glint {
+    0%,
+    100% {
+      color: var(--ink);
+    }
+    45% {
+      color: #ffdcbc;
+      text-shadow:
+        0 0.05em 0.7em rgb(3 5 10 / 0.6),
+        0 0 0.45em rgb(244 162 97 / 0.55);
+    }
+  }
+
+  @keyframes hero-rise {
+    from {
+      opacity: 0;
+      transform: translateY(0.75rem);
+    }
+  }
+
+  @keyframes hero-draw {
+    from {
+      transform: scaleX(0);
+    }
+  }
+
+  @keyframes hero-spark {
+    0% {
+      opacity: 0;
+      transform: translateX(-7rem);
+    }
+    20% {
+      opacity: 1;
+    }
+    80% {
+      opacity: 0.9;
+    }
+    100% {
+      opacity: 0;
+      transform: translateX(min(60rem, 80vw));
+    }
+  }
+
+  @keyframes hero-emerge {
+    from {
+      transform: translateY(105%);
+    }
+  }
+
+  @keyframes hero-scroll-cue {
+    0% {
+      transform: translateY(-100%);
+    }
+    70%,
+    100% {
+      transform: translateY(300%);
     }
   }
 }

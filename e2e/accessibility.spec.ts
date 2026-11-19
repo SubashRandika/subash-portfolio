@@ -15,6 +15,17 @@ async function audit(page: Page) {
 test.describe("accessibility (WCAG 2.2 AA, automated checks)", () => {
   test("the static page has no violations", async ({ page }) => {
     await page.goto("/?flight=static");
+    // Let the opening's entrance settle (its words start blurred and faint);
+    // the scroll cue's short loop is decoration and is not waited for.
+    await page.waitForFunction(() =>
+      document
+        .getAnimations()
+        .filter((animation) => {
+          const target = (animation.effect as KeyframeEffect | null)?.target;
+          return target instanceof Element && target.closest("#takeoff") && !target.closest(".hero-hint");
+        })
+        .every((animation) => animation.playState !== "running"),
+    );
     // Reveal the portrait so it is audited as a visitor sees it.
     await page.locator("#about").scrollIntoViewIfNeeded();
     await expect(page.locator(".portrait")).toHaveAttribute("data-reveal", "shown");
