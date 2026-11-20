@@ -430,6 +430,10 @@ Requested by Subash: present the technologies from his résumé creatively, usin
 - Screenshots were taken at 2× (2880×1800, Sinha Giri's after its loading screen clears) and stored as 2400×1500 WebP in `src/assets/projects/`; served by next/image at quality 90 (`images.qualities` in `next.config.ts`). Layout: one card per row on phones, two from 48rem, three from 80rem (Subash's preference for large screens), inside the text column. The window is only 3D-transformed while tilting, so the screenshot is drawn sharp at rest.
 - Tests: unit (cards, links, alt text, profile link, data) and end-to-end (reveal, screenshots load, a click anywhere on the card hits the demo link while the Source link stays on top); the accessibility audit waits for the cards' entrance. Unit 152 of 152, end-to-end 92 passed and 7 skipped.
 
+### Slimmer work experience (2026-11-20)
+
+- Requested by Subash: the Work column repeated what the career journey and the résumé already say. The table now keeps period, role, employer and client (with the role on each engagement), and a new "In the career journey" column links each row to its chapters (number and title) in place of the bullet list. The section note says what was built is told in the journey. The `highlights` stay in `src/data/experience.ts` as the record of facts but are no longer shown here. About a third of the previous height on desktop. Unit 153 of 153, end-to-end 92 passed and 7 skipped.
+
 ## Known issues
 
 - **Playwright's bundled Chromium cannot run on this machine.** Windows reports "An Application Control policy has blocked this file" for the unsigned `chrome-headless-shell.exe`. The policy was left untouched. Tests use the installed, signed Google Chrome through `channel: "chrome"`; the blocked download was removed with `npx playwright uninstall`.

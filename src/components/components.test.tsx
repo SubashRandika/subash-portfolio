@@ -112,24 +112,24 @@ describe("FlightHUD", () => {
 
 describe("Experience", () => {
   it("keeps employer and client in separate columns", () => {
-    render(<Experience entries={experience} />);
+    render(<Experience entries={experience} chapters={chapters} />);
     const table = screen.getByRole("table", { name: /Work experience/ });
     const headers = within(table)
       .getAllByRole("columnheader")
       .map((h) => h.textContent);
-    expect(headers).toEqual(["Period", "Role", "Employer", "Client / product", "Work"]);
+    expect(headers).toEqual(["Period", "Role", "Employer", "Client / product", "In the career journey"]);
 
     const qmaticRow = within(table).getByText("Qmatic AB").closest("tr");
     expect(qmaticRow).not.toBeNull();
     const cells = within(qmaticRow as HTMLElement).getAllByRole("cell");
-    // cells: period, employer, client, work (role is the row header)
+    // cells: period, employer, client, journey (role is the row header)
     expect(cells[1]).toHaveTextContent("Creative Software");
     expect(cells[2]).toHaveTextContent("Qmatic AB");
     expect(cells[1]).not.toHaveTextContent("Qmatic");
   });
 
   it("marks the current role as Present and shows the 2015 change as a year", () => {
-    render(<Experience entries={experience} />);
+    render(<Experience entries={experience} chapters={chapters} />);
     const table = screen.getByRole("table", { name: /Work experience/ });
     expect(within(table).getByText("Present")).toBeInTheDocument();
     const virtusa = within(table).getByText("Virtusa").closest("tr") as HTMLElement;
@@ -140,6 +140,17 @@ describe("Experience", () => {
     expect(jkcs).toHaveTextContent("Pearson");
     expect(within(virtusa).getByText("2015")).toBeInTheDocument();
     expect(within(jkcs).getByText("2015")).toBeInTheDocument();
+  });
+
+  it("links each row to its chapters instead of repeating the work", () => {
+    render(<Experience entries={experience} chapters={chapters} />);
+    const table = screen.getByRole("table", { name: /Work experience/ });
+    const current = within(table).getByRole("rowheader", { name: "Technical Lead" }).closest("tr") as HTMLElement;
+    const links = within(current).getAllByRole("link");
+    expect(links.map((link) => link.getAttribute("href"))).toEqual(["#chapter-05", "#chapter-06"]);
+    expect(links[0]).toHaveTextContent(`Chapter 05${chapters[4]!.title}`);
+    // The highlights are told in the journey and the résumé, not here.
+    expect(table).not.toHaveTextContent("Green Button Go Scheduler");
   });
 });
 

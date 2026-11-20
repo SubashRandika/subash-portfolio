@@ -36,7 +36,7 @@ export default async function Home() {
           <Skills technologies={technologies} groups={skillGroups} />
           <Projects projects={projects} />
           <OpenSource projects={openSourceProjects} profile={siteContact.links.github} />
-          <Experience entries={experience} />
+          <Experience entries={experience} chapters={chapters} />
           <Education entries={profile.education} />
         </div>
       </div>

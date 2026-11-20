@@ -1,10 +1,12 @@
 import { DocSection } from "@/components/ui/DocSection";
 import { CareerTimeline } from "./CareerTimeline";
-import { formatDate } from "@/lib/utils";
-import type { Engagement, ExperienceEntry } from "@/types/portfolio";
+import { formatDate, pad2 } from "@/lib/utils";
+import type { Chapter, Engagement, ExperienceEntry } from "@/types/portfolio";
 
 interface ExperienceProps {
   entries: readonly ExperienceEntry[];
+  /** The journey's chapters, for the links from each row to its story. */
+  chapters: readonly Pick<Chapter, "number" | "title">[];
 }
 
 function Period({ entry }: { entry: ExperienceEntry }) {
@@ -39,16 +41,44 @@ function EngagementList({ engagements }: { engagements: readonly Engagement[] })
   );
 }
 
+/** Links from a row to the chapters of the career journey that tell it. */
+function ChapterLinks({
+  numbers,
+  chapters,
+}: {
+  numbers: readonly number[];
+  chapters: ExperienceProps["chapters"];
+}) {
+  return (
+    <ul className="grid gap-1.5">
+      {numbers.map((number) => {
+        const chapter = chapters.find((item) => item.number === number);
+        return (
+          <li key={number}>
+            <a href={`#chapter-${pad2(number)}`} className="text-link">
+              <span className="type-data text-[0.8125rem]">Chapter {pad2(number)}</span>
+              {chapter ? <span className="block">{chapter.title}</span> : null}
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 /**
- * Full work experience as a logbook. Employer and client have separate
- * columns so the two are never confused.
+ * Full work experience as a compact logbook: when, what role, for which
+ * employer and which clients. Employer and client have separate columns so
+ * the two are never confused. What was built is told in the career journey
+ * (each row links to its chapters) and in the résumé, so it is not repeated
+ * here.
  */
-export function Experience({ entries }: ExperienceProps) {
+export function Experience({ entries, chapters }: ExperienceProps) {
   return (
     <DocSection
       id="experience"
       title="Work experience"
-      note="Employers and the clients or products I worked on are listed separately."
+      note="Employers and the clients or products I worked on are listed separately. What I built is told in the career journey."
       wide
     >
       <CareerTimeline entries={entries} />
@@ -60,7 +90,7 @@ export function Experience({ entries }: ExperienceProps) {
           <col data-col="role" />
           <col data-col="employer" />
           <col data-col="client" />
-          <col data-col="work" />
+          <col data-col="journey" />
         </colgroup>
         <thead>
           <tr>
@@ -68,7 +98,7 @@ export function Experience({ entries }: ExperienceProps) {
             <th scope="col">Role</th>
             <th scope="col">Employer</th>
             <th scope="col">Client / product</th>
-            <th scope="col">Work</th>
+            <th scope="col">In the career journey</th>
           </tr>
         </thead>
         <tbody>
@@ -89,15 +119,8 @@ export function Experience({ entries }: ExperienceProps) {
               <td data-label="Client / product">
                 <EngagementList engagements={entry.engagements} />
               </td>
-              <td data-label="Work">
-                <ul className="type-small grid gap-1.5">
-                  {entry.highlights.map((highlight) => (
-                    <li key={highlight} className="flex gap-2.5">
-                      <span aria-hidden="true" className="mt-[0.7em] h-px w-3 shrink-0 bg-accent-ink" />
-                      <span>{highlight}</span>
-                    </li>
-                  ))}
-                </ul>
+              <td data-label="In the career journey">
+                <ChapterLinks numbers={entry.chapters} chapters={chapters} />
               </td>
             </tr>
           ))}

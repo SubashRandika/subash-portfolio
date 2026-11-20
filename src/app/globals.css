@@ -504,8 +504,8 @@
       width: 10rem;
     }
 
-    .logbook col[data-col="client"] {
-      width: 14rem;
+    .logbook col[data-col="journey"] {
+      width: 16rem;
     }
   }
 
