@@ -14,6 +14,7 @@ export const primaryNav: readonly NavItem[] = [
   { label: "Home", href: "#top" },
   { label: "Projects", href: "#projects" },
   { label: "Experience", href: "#experience" },
+  { label: "Recommendations", href: "#recommendations" },
   { label: "Education", href: "#education" },
   { label: "About", href: "#about" },
   { label: "Contact", href: "#contact" },

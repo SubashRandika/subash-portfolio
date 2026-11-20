@@ -96,11 +96,13 @@ export function Recommendations({ items, source }: RecommendationsProps) {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
         const slides = track.querySelectorAll<HTMLElement>(".rec-slide");
+        const first = slides[0]?.offsetLeft ?? 0;
         const start = track.scrollLeft;
         let nearest = 0;
         let best = Infinity;
         slides.forEach((slide, index) => {
-          const distance = Math.abs(slide.offsetLeft - track.offsetLeft - start);
+          // Scroll position that brings this slide to the front.
+          const distance = Math.abs(slide.offsetLeft - first - start);
           if (distance < best) {
             best = distance;
             nearest = index;
@@ -121,11 +123,13 @@ export function Recommendations({ items, source }: RecommendationsProps) {
       const track = trackRef.current;
       if (!track) return;
       const target = (index + count) % count;
-      const slide = track.querySelectorAll<HTMLElement>(".rec-slide")[target];
+      const slides = track.querySelectorAll<HTMLElement>(".rec-slide");
+      const slide = slides[target];
       if (!slide) return;
-      // Only the track scrolls; the page stays where it is.
+      // Only the track scrolls; the page stays where it is. Measured from
+      // the first slide, so the track's inset padding is allowed for.
       track.scrollTo?.({
-        left: slide.offsetLeft - track.offsetLeft,
+        left: slide.offsetLeft - slides[0]!.offsetLeft,
         behavior: matches("(prefers-reduced-motion: reduce)") ? "auto" : "smooth",
       });
       setActive(target);

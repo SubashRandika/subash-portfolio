@@ -2935,6 +2935,7 @@
   .rec-carousel {
     --rec-card: 88%;
     --rec-gap: 1rem;
+    --rec-inset: 0.75rem;
     position: relative;
   }
 
@@ -2959,9 +2960,12 @@
     overscroll-behavior-x: contain;
     scroll-snap-type: x mandatory;
     scrollbar-width: none;
-    /* Room for the front card's shadow, which the scroller would clip. */
-    padding-block: 0.75rem 3rem;
-    margin-bottom: -1.75rem;
+    /* Room on every side for the front card's border and shadow, which the
+       scroller would otherwise clip (snapping can land on a fraction of a
+       pixel). The negative margins keep the cards in line with the text. */
+    padding: 0.75rem var(--rec-inset) 3rem;
+    margin: 0 calc(-1 * var(--rec-inset)) -1.75rem;
+    scroll-padding-inline: var(--rec-inset);
   }
 
   .rec-track::-webkit-scrollbar {

@@ -102,6 +102,7 @@ test.describe("page foundation (static experience)", () => {
       "Home",
       "Projects",
       "Experience",
+      "Recommendations",
       "Education",
       "About",
       "Contact",
