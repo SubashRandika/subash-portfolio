@@ -218,7 +218,10 @@ test.describe("page foundation (static experience)", () => {
     const section = page.locator("#recommendations");
     await section.scrollIntoViewIfNeeded();
     const carousel = section.getByRole("region", { name: "Recommendations from LinkedIn" });
-    await expect(carousel.getByRole("group", { name: / of 9: / })).toHaveCount(9);
+    await expect(carousel.locator(".rec-slide")).toHaveCount(9);
+    // Three in view: the focused one in the centre, its neighbours either side.
+    await expect(carousel.locator(".rec-slide[data-active]")).toHaveCount(1);
+    await expect(carousel.locator('.rec-slide:is([data-offset="-1"], [data-offset="1"])')).toHaveCount(2);
     const current = carousel.locator(".rec-dot[aria-current=true]");
     await expect(current).toHaveAttribute("aria-label", "Recommendation 1: Clyde Casiechitty");
 

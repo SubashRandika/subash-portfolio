@@ -2928,59 +2928,87 @@
 }
 
 /* ==========================================================================
-   Recommendations: a carousel of quotes from LinkedIn
+   Recommendations: a looping carousel of quotes from LinkedIn
    ========================================================================== */
 
 @layer components {
+  /* Card width as a share of the row. Phones: one card with the
+     neighbours just peeking in; tablets: a wider peek; desktop: three
+     whole cards, the centre one in focus. */
   .rec-carousel {
-    --rec-card: 88%;
+    --rec-card: 84%;
     --rec-gap: 1rem;
-    --rec-inset: 0.75rem;
+    --rec-side-scale: 0.92;
     position: relative;
   }
 
   @media (min-width: 48rem) {
     .rec-carousel {
-      --rec-card: 74%;
-      --rec-gap: 1.5rem;
+      --rec-card: 58%;
+      --rec-gap: 1.25rem;
     }
   }
 
-  @media (min-width: 80rem) {
+  @media (min-width: 64rem) {
     .rec-carousel {
-      --rec-card: 62%;
+      --rec-card: 32%;
+      --rec-gap: 1.5rem;
+      --rec-side-scale: 0.94;
     }
   }
 
-  /* A row of cards that snaps one card at a time; the next one peeks in. */
+  /* All cards share one grid cell, so the row is as tall as the tallest
+     card; each is moved sideways by its distance from the centre. */
   .rec-track {
-    display: flex;
-    gap: var(--rec-gap);
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
-    /* Room on every side for the front card's border and shadow, which the
-       scroller would otherwise clip (snapping can land on a fraction of a
-       pixel). The negative margins keep the cards in line with the text. */
-    padding: 0.75rem var(--rec-inset) 3rem;
-    margin: 0 calc(-1 * var(--rec-inset)) -1.75rem;
-    scroll-padding-inline: var(--rec-inset);
-  }
-
-  .rec-track::-webkit-scrollbar {
-    display: none;
+    display: grid;
+    grid-template-areas: "stack";
+    justify-items: center;
+    padding-block: 0.75rem 2.25rem;
+    overflow-x: clip;
+    touch-action: pan-y;
   }
 
   .rec-slide {
-    flex: 0 0 var(--rec-card);
-    scroll-snap-align: start;
+    grid-area: stack;
+    width: var(--rec-card);
     min-width: 0;
+    transform: translateX(calc(var(--o) * (100% + var(--rec-gap)))) scale(var(--rec-side-scale));
+    transition:
+      transform 700ms var(--ease-settle),
+      opacity 500ms var(--ease-settle),
+      visibility 0s linear 700ms;
   }
 
-  /* Room after the last card so it, too, can come to the front. */
-  .rec-spacer {
-    flex: 0 0 calc(100% - var(--rec-card) - var(--rec-gap));
+  .rec-slide[data-active] {
+    z-index: 1;
+    transform: translateX(0) scale(1);
+  }
+
+  .rec-slide[data-offset="-1"],
+  .rec-slide[data-offset="1"] {
+    cursor: pointer;
+    opacity: 0.5;
+  }
+
+  .rec-slide[data-offset="-1"]:hover,
+  .rec-slide[data-offset="1"]:hover {
+    opacity: 0.75;
+  }
+
+  /* Further out: off to the side and hidden, ready to slide in. */
+  .rec-slide[data-offset="-2"],
+  .rec-slide[data-offset="2"] {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .rec-slide:is([data-active], [data-offset="-1"], [data-offset="1"]) {
+    visibility: visible;
+    transition:
+      transform 700ms var(--ease-settle),
+      opacity 500ms var(--ease-settle),
+      visibility 0s;
   }
 
   .rec-card {
@@ -2988,27 +3016,25 @@
     display: flex;
     height: 100%;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 1rem;
     margin: 0;
-    padding: clamp(1.5rem, 3.5vw, 2.75rem);
+    padding: clamp(1.25rem, 2.2vw, 1.85rem);
     overflow: hidden;
     border: 1px solid var(--line);
-    border-radius: 1.25rem;
+    border-radius: 1.1rem;
     background: var(--surface-raised);
     box-shadow: 0 1px 2px rgb(9 14 24 / 0.05);
     transition:
-      opacity 600ms var(--ease-settle),
-      transform 600ms var(--ease-settle),
       box-shadow 600ms var(--ease-settle),
       border-color 600ms var(--ease-settle);
   }
 
-  /* A soft dawn glow in the corner of the card in front. */
+  /* A soft dawn glow in the corner of the card in focus. */
   .rec-card::before {
     content: "";
     position: absolute;
-    inset: -40% -30% auto auto;
-    width: 70%;
+    inset: -40% -35% auto auto;
+    width: 80%;
     aspect-ratio: 1;
     border-radius: 50%;
     background: radial-gradient(circle, rgb(244 162 97 / 0.16), transparent 65%);
@@ -3021,25 +3047,20 @@
     border-color: var(--line-strong);
     box-shadow:
       0 1px 2px rgb(9 14 24 / 0.05),
-      0 24px 48px -28px rgb(9 14 24 / 0.35);
+      0 22px 44px -26px rgb(9 14 24 / 0.38);
   }
 
   .rec-slide[data-active] .rec-card::before {
     opacity: 1;
   }
 
-  .rec-slide:not([data-active]) .rec-card {
-    opacity: 0.55;
-    transform: scale(0.97);
-  }
-
   .rec-mark {
     position: absolute;
-    top: clamp(0.25rem, 1vw, 0.75rem);
-    right: clamp(1rem, 2.5vw, 2rem);
+    top: 0.25rem;
+    right: 1rem;
     color: var(--accent);
     font-family: Georgia, "Times New Roman", serif;
-    font-size: clamp(5rem, 9vw, 8rem);
+    font-size: clamp(4rem, 6vw, 5.5rem);
     line-height: 1;
     opacity: 0.35;
   }
@@ -3047,10 +3068,10 @@
   .rec-excerpt {
     position: relative;
     margin: 0;
-    padding-right: clamp(2.5rem, 6vw, 5rem);
+    padding-right: 2.25rem;
     color: var(--ink);
-    font-size: clamp(1.2rem, 0.95rem + 0.9vw, 1.6rem);
-    line-height: 1.45;
+    font-size: clamp(1.05rem, 0.98rem + 0.3vw, 1.2rem);
+    line-height: 1.5;
     text-wrap: pretty;
   }
 
@@ -3070,9 +3091,9 @@
     color: var(--link);
     cursor: pointer;
     font-family: var(--font-mono);
-    font-size: 0.78rem;
+    font-size: 0.72rem;
     font-weight: 700;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.1em;
     list-style: none;
     text-transform: uppercase;
   }
@@ -3084,12 +3105,13 @@
   .rec-full summary::before {
     content: "+";
     display: inline-grid;
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 1.2rem;
+    height: 1.2rem;
+    flex: none;
     place-items: center;
     border: 1px solid currentColor;
     border-radius: 50%;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     line-height: 1;
     transition: transform 300ms var(--ease-settle);
   }
@@ -3109,41 +3131,41 @@
 
   .rec-text {
     display: grid;
-    gap: 0.75rem;
-    margin: 0.75rem 0 0;
-    padding-left: 1rem;
+    gap: 0.65rem;
+    margin: 0.5rem 0 0;
+    padding-left: 0.9rem;
     border-left: 2px solid var(--accent);
     color: var(--ink-muted);
-    font-size: 0.95rem;
+    font-size: 0.9rem;
   }
 
   .rec-person {
     display: flex;
     align-items: center;
-    gap: 0.9rem;
+    gap: 0.8rem;
     margin-top: auto;
-    padding-top: 1.25rem;
+    padding-top: 1rem;
     border-top: 1px solid var(--line);
   }
 
   .rec-monogram {
     display: grid;
-    width: 2.75rem;
-    height: 2.75rem;
+    width: 2.5rem;
+    height: 2.5rem;
     flex: none;
     place-items: center;
     border-radius: 50%;
     background: linear-gradient(135deg, var(--color-dawn-700), var(--color-nav-700));
     color: #fff;
     font-family: var(--font-mono);
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 700;
     letter-spacing: 0.04em;
   }
 
   .rec-who {
     display: grid;
-    gap: 0.1rem;
+    gap: 0.05rem;
     min-width: 0;
   }
 
@@ -3154,21 +3176,16 @@
   .rec-headline,
   .rec-relation {
     color: var(--ink-muted);
-    font-size: 0.85rem;
+    font-size: 0.8rem;
   }
 
-  /* ---- Controls --------------------------------------------------------- */
+  /* ---- Controls: arrows either side of the dots, centred under the card */
   .rec-controls {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 1rem 1.5rem;
-    margin-top: 0.75rem;
-  }
-
-  .rec-arrows {
-    display: flex;
-    gap: 0.5rem;
+    justify-content: center;
+    gap: 0.5rem 0.75rem;
   }
 
   .rec-button {
@@ -3194,6 +3211,10 @@
     transform: scale(0.94);
   }
 
+  .rec-play {
+    margin-left: 0.5rem;
+  }
+
   .rec-button:focus-visible,
   .rec-dot:focus-visible,
   .rec-full summary:focus-visible {
@@ -3203,7 +3224,6 @@
 
   .rec-dots {
     display: flex;
-    flex-wrap: wrap;
     align-items: center;
     gap: 0.125rem;
   }
@@ -3262,9 +3282,10 @@
   }
 
   .rec-count {
-    margin-left: auto;
+    margin-top: 0.25rem;
     color: var(--ink-muted);
-    font-size: 0.85rem;
+    font-size: 0.8rem;
+    text-align: center;
   }
 
   @keyframes rec-advance {
@@ -3273,30 +3294,21 @@
     }
   }
 
-  /* Phones: the dots take their own row; arrows and pause share the row
-     below; the counter gives way. */
+  /* Phones: the dots take their own row above the arrows and pause. */
   @media (max-width: 47.999rem) {
-    .rec-controls {
-      gap: 0.25rem 0.5rem;
-    }
-
     .rec-dots {
       order: -1;
       flex: 1 0 100%;
-      flex-wrap: nowrap;
       justify-content: center;
     }
 
-    .rec-count {
-      display: none;
-    }
-
     .rec-play {
-      margin-left: auto;
+      margin-left: 0;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .rec-slide,
     .rec-card,
     .rec-card::before,
     .rec-dot,
@@ -3304,8 +3316,8 @@
       transition: none;
     }
 
-    .rec-slide:not([data-active]) .rec-card {
-      transform: none;
+    .rec-slide:is([data-active], [data-offset="-1"], [data-offset="1"]) {
+      transition: none;
     }
   }
 }

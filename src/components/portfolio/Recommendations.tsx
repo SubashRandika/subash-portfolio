@@ -6,8 +6,11 @@ import { Icon } from "@/components/ui/Icon";
 import { pad2 } from "@/lib/utils";
 import type { Recommendation } from "@/types/portfolio";
 
-/** How long each recommendation stays in focus before the next, in ms. */
+/** How long each recommendation stays in the centre before the next, in ms. */
 export const ADVANCE_MS = 8000;
+
+/** Horizontal travel, in px, that counts as a swipe. */
+const SWIPE_PX = 40;
 
 function matches(query: string): boolean {
   return typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia(query).matches;
@@ -21,6 +24,15 @@ export function initialsOf(name: string): string {
     .map((part) => part[0]!.toUpperCase())
     .slice(0, 2)
     .join("");
+}
+
+/**
+ * Where a card sits relative to the centre, wrapping round so the row loops:
+ * 0 is the centre, -1 and 1 its neighbours, further out are hidden.
+ */
+export function offsetFrom(index: number, active: number, count: number): number {
+  const half = Math.floor(count / 2);
+  return ((((index - active + half) % count) + count) % count) - half;
 }
 
 /** "2025-02-07" → "February 2025" */
@@ -40,19 +52,20 @@ interface RecommendationsProps {
 }
 
 /**
- * Recommendations from LinkedIn as a carousel: one recommendation in focus,
- * the next peeking in. It moves on by itself (a bar fills on the current
- * dot) and pauses while the pointer or focus is on it, while a full text is
- * open, when it is off screen or the tab is hidden, or when the visitor
- * presses Pause. Arrows, dots, swiping and the scrollbar all move it.
- * Reduced motion: it never moves by itself.
+ * Recommendations from LinkedIn as a looping carousel: three cards in view,
+ * the one in the centre in focus, its neighbours smaller and faded either
+ * side. It moves on by itself (a bar fills the current dot) and pauses while
+ * the pointer or focus is on it, while a full text is open, when it is off
+ * screen or the tab is hidden, or when the visitor presses Pause. Arrows,
+ * dots, swiping and clicking a side card all move it. Reduced motion: it
+ * never moves by itself and cards change without sliding.
  *
- * The track is a plain scroll-snap list, so without JavaScript it is still
- * a row of cards that scrolls sideways.
+ * Only the centre card can be reached by keyboard or screen reader (the
+ * others are inert); the arrows and dots bring any card to the centre.
  */
 export function Recommendations({ items, source }: RecommendationsProps) {
-  const trackRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  const swipeRef = useRef<{ x: number; y: number } | null>(null);
   const [active, setActive] = useState(0);
   const [playing, setPlaying] = useState(true);
   const [reduced, setReduced] = useState(false);
@@ -86,53 +99,16 @@ export function Recommendations({ items, source }: RecommendationsProps) {
     };
   }, []);
 
-  // Keep the current card in step with the track's scroll position, however
-  // it was moved (buttons, swipe, keyboard, scrollbar).
-  useEffect(() => {
-    const track = trackRef.current;
-    if (!track) return;
-    let frame = 0;
-    const onScroll = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        const slides = track.querySelectorAll<HTMLElement>(".rec-slide");
-        const first = slides[0]?.offsetLeft ?? 0;
-        const start = track.scrollLeft;
-        let nearest = 0;
-        let best = Infinity;
-        slides.forEach((slide, index) => {
-          // Scroll position that brings this slide to the front.
-          const distance = Math.abs(slide.offsetLeft - first - start);
-          if (distance < best) {
-            best = distance;
-            nearest = index;
-          }
-        });
-        setActive(nearest);
-      });
-    };
-    track.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      cancelAnimationFrame(frame);
-      track.removeEventListener("scroll", onScroll);
-    };
-  }, []);
-
   const goTo = useCallback(
     (index: number) => {
-      const track = trackRef.current;
-      if (!track) return;
-      const target = (index + count) % count;
-      const slides = track.querySelectorAll<HTMLElement>(".rec-slide");
-      const slide = slides[target];
-      if (!slide) return;
-      // Only the track scrolls; the page stays where it is. Measured from
-      // the first slide, so the track's inset padding is allowed for.
-      track.scrollTo?.({
-        left: slide.offsetLeft - slides[0]!.offsetLeft,
-        behavior: matches("(prefers-reduced-motion: reduce)") ? "auto" : "smooth",
-      });
-      setActive(target);
+      if (count === 0) return;
+      setActive(((index % count) + count) % count);
+      // A full text open on the card leaving the centre no longer holds the
+      // rotation; it closes as the card goes inert.
+      rootRef.current
+        ?.querySelectorAll<HTMLDetailsElement>("details.rec-full[open]")
+        .forEach((details) => (details.open = false));
+      setReading(false);
     },
     [count],
   );
@@ -162,84 +138,92 @@ export function Recommendations({ items, source }: RecommendationsProps) {
         }}
       >
         <div
-          ref={trackRef}
           className="rec-track"
           // Announce changes only when the visitor makes them.
           aria-live={running ? "off" : "polite"}
+          onPointerDown={(event) => {
+            swipeRef.current = { x: event.clientX, y: event.clientY };
+          }}
+          onPointerUp={(event) => {
+            const start = swipeRef.current;
+            swipeRef.current = null;
+            if (!start) return;
+            const dx = event.clientX - start.x;
+            if (Math.abs(dx) >= SWIPE_PX && Math.abs(dx) > Math.abs(event.clientY - start.y)) {
+              goTo(active + (dx < 0 ? 1 : -1));
+            }
+          }}
+          onPointerCancel={() => {
+            swipeRef.current = null;
+          }}
         >
-          {items.map((item, index) => (
-            <div
-              key={item.id}
-              className="rec-slide"
-              role="group"
-              aria-roledescription="slide"
-              aria-label={`${index + 1} of ${count}: ${item.name}`}
-              data-active={index === active ? "true" : undefined}
-              style={{ "--i": index } as CSSProperties}
-            >
-              <figure className="rec-card">
-                <span className="rec-mark" aria-hidden="true">
-                  “
-                </span>
-                <blockquote className="rec-excerpt">
-                  <p>{item.excerpt}</p>
-                </blockquote>
-                <details
-                  className="rec-full"
-                  onToggle={(event) => {
-                    const open = (event.currentTarget as HTMLDetailsElement).open;
-                    const anyOpen =
-                      open || Boolean(trackRef.current?.querySelector("details.rec-full[open]"));
-                    setReading(anyOpen);
-                  }}
-                >
-                  <summary>
-                    <span className="rec-summary-open">Read the full recommendation</span>
-                    <span className="rec-summary-close">Hide the full recommendation</span>
-                  </summary>
-                  <blockquote className="rec-text">
-                    {item.text.map((paragraph) => (
-                      <p key={paragraph}>{paragraph}</p>
-                    ))}
+          {items.map((item, index) => {
+            const offset = offsetFrom(index, active, count);
+            const centre = offset === 0;
+            return (
+              <div
+                key={item.id}
+                className="rec-slide"
+                role="group"
+                aria-roledescription="slide"
+                aria-label={`${index + 1} of ${count}: ${item.name}`}
+                aria-hidden={centre ? undefined : true}
+                data-offset={Math.max(-2, Math.min(2, offset))}
+                data-active={centre ? "true" : undefined}
+                style={{ "--o": offset } as CSSProperties}
+                // A side card comes to the centre when clicked.
+                onClick={centre ? undefined : () => goTo(index)}
+              >
+                <figure className="rec-card" inert={!centre}>
+                  <span className="rec-mark" aria-hidden="true">
+                    “
+                  </span>
+                  <blockquote className="rec-excerpt">
+                    <p>{item.excerpt}</p>
                   </blockquote>
-                </details>
-                <figcaption className="rec-person">
-                  <span className="rec-monogram" aria-hidden="true">
-                    {initialsOf(item.name)}
-                  </span>
-                  <span className="rec-who">
-                    <span className="rec-name">{item.name}</span>
-                    <span className="rec-headline">{item.headline}</span>
-                    <span className="rec-relation">
-                      {item.relationship} · <time dateTime={item.date}>{monthYear(item.date)}</time>
+                  <details
+                    className="rec-full"
+                    onToggle={(event) => {
+                      if (centre) setReading((event.currentTarget as HTMLDetailsElement).open);
+                    }}
+                  >
+                    <summary>
+                      <span className="rec-summary-open">Read the full recommendation</span>
+                      <span className="rec-summary-close">Hide the full recommendation</span>
+                    </summary>
+                    <blockquote className="rec-text">
+                      {item.text.map((paragraph) => (
+                        <p key={paragraph}>{paragraph}</p>
+                      ))}
+                    </blockquote>
+                  </details>
+                  <figcaption className="rec-person">
+                    <span className="rec-monogram" aria-hidden="true">
+                      {initialsOf(item.name)}
                     </span>
-                  </span>
-                </figcaption>
-              </figure>
-            </div>
-          ))}
-          <div className="rec-spacer" aria-hidden="true" />
+                    <span className="rec-who">
+                      <span className="rec-name">{item.name}</span>
+                      <span className="rec-headline">{item.headline}</span>
+                      <span className="rec-relation">
+                        {item.relationship} · <time dateTime={item.date}>{monthYear(item.date)}</time>
+                      </span>
+                    </span>
+                  </figcaption>
+                </figure>
+              </div>
+            );
+          })}
         </div>
 
         <div className="rec-controls">
-          <div className="rec-arrows">
-            <button
-              type="button"
-              className="rec-button"
-              onClick={() => goTo(active - 1)}
-              aria-label="Previous recommendation"
-            >
-              <Icon name="arrow-left" size={18} />
-            </button>
-            <button
-              type="button"
-              className="rec-button"
-              onClick={() => goTo(active + 1)}
-              aria-label="Next recommendation"
-            >
-              <Icon name="arrow-right" size={18} />
-            </button>
-          </div>
+          <button
+            type="button"
+            className="rec-button"
+            onClick={() => goTo(active - 1)}
+            aria-label="Previous recommendation"
+          >
+            <Icon name="arrow-left" size={18} />
+          </button>
 
           <ol className="rec-dots" aria-label="Choose a recommendation">
             {items.map((item, index) => (
@@ -263,9 +247,14 @@ export function Recommendations({ items, source }: RecommendationsProps) {
             ))}
           </ol>
 
-          <p className="rec-count type-data" aria-hidden="true">
-            {pad2(active + 1)} / {pad2(count)}
-          </p>
+          <button
+            type="button"
+            className="rec-button"
+            onClick={() => goTo(active + 1)}
+            aria-label="Next recommendation"
+          >
+            <Icon name="arrow-right" size={18} />
+          </button>
 
           {!reduced ? (
             <button
@@ -278,10 +267,14 @@ export function Recommendations({ items, source }: RecommendationsProps) {
             </button>
           ) : null}
         </div>
+
+        <p className="rec-count type-data" aria-hidden="true">
+          {pad2(active + 1)} / {pad2(count)}
+        </p>
       </div>
 
       {source ? (
-        <p className="type-small mt-8">
+        <p className="type-small mt-8 text-center">
           <a
             href={source}
             target="_blank"
