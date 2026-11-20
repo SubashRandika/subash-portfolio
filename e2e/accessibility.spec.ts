@@ -42,6 +42,19 @@ test.describe("accessibility (WCAG 2.2 AA, automated checks)", () => {
         })
         .every((animation) => animation.playState !== "running"),
     );
+    // ...and the personal projects, once their cards have risen into place
+    // (the "Live" dot pulses for ever and is not waited for).
+    await page.locator("#open-source").scrollIntoViewIfNeeded();
+    await expect(page.locator(".oss-grid")).toHaveAttribute("data-reveal", "shown");
+    await page.waitForFunction(() =>
+      document
+        .getAnimations()
+        .filter((animation) => {
+          const target = (animation.effect as KeyframeEffect | null)?.target;
+          return target instanceof Element && target.closest(".oss-grid") && !target.matches(".oss-live");
+        })
+        .every((animation) => animation.playState !== "running"),
+    );
     expect(await audit(page)).toEqual([]);
   });
 

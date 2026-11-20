@@ -2570,3 +2570,352 @@
     }
   }
 }
+
+/* ==========================================================================
+   Personal projects: browser-window cards for the open-source work
+   ========================================================================== */
+
+@layer components {
+  .oss-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(2.25rem, 4vw, 3rem) clamp(1.5rem, 3vw, 2.5rem);
+  }
+
+  @media (min-width: 48rem) {
+    .oss-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  /* On wide screens the cards reach past the text column (up to 90rem),
+     still clear of the page gutters, so the screenshots read large. */
+  @media (min-width: 80rem) {
+    .oss-grid {
+      --oss-width: min(100vw - 2 * var(--gutter), 90rem);
+      width: var(--oss-width);
+      margin-inline: calc((100% - var(--oss-width)) / 2);
+    }
+  }
+
+  .oss-card {
+    --tilt-x: 0deg;
+    --tilt-y: 0deg;
+    position: relative;
+  }
+
+  .oss-article {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+  }
+
+  /* The window: dark chrome around the screenshot, tilting under the
+     pointer and glowing in the project's own colour when chosen. */
+  .oss-window {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgb(255 255 255 / 0.08);
+    border-radius: 0.875rem;
+    background: #0b1019;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.06),
+      0 22px 44px -24px rgb(9 14 24 / 0.6),
+      0 2px 6px rgb(9 14 24 / 0.16);
+    transition:
+      transform 700ms var(--ease-settle),
+      box-shadow 450ms var(--ease-settle),
+      border-color 450ms var(--ease-settle);
+  }
+
+  /* Tilted only while the pointer is over it: at rest the window stays a
+     flat layer, so the screenshot is drawn pixel-sharp. */
+  .oss-card[data-tilting="true"] .oss-window {
+    transform: perspective(1200px) rotateX(var(--tilt-y)) rotateY(var(--tilt-x));
+    transition:
+      transform 140ms linear,
+      box-shadow 450ms var(--ease-settle),
+      border-color 450ms var(--ease-settle);
+  }
+
+  .oss-card:is(:hover, :focus-within) .oss-window {
+    border-color: color-mix(in srgb, var(--project-accent) 55%, transparent);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.08),
+      0 28px 60px -26px color-mix(in srgb, var(--project-accent) 70%, rgb(9 14 24)),
+      0 2px 6px rgb(9 14 24 / 0.16);
+  }
+
+  .oss-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    height: 2.25rem;
+    padding-inline: 0.85rem;
+    border-bottom: 1px solid rgb(255 255 255 / 0.06);
+    background: #121826;
+    color: #a3b0c2;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+  }
+
+  .oss-dots {
+    display: flex;
+    gap: 0.35rem;
+  }
+
+  .oss-dots span {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: rgb(255 255 255 / 0.16);
+    transition: background-color 450ms var(--ease-settle);
+  }
+
+  .oss-card:is(:hover, :focus-within) .oss-dots span:first-child {
+    background: var(--project-accent);
+  }
+
+  .oss-url {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    max-width: 17rem;
+    margin-inline: auto;
+    padding: 0.2rem 0.75rem;
+    border-radius: 999px;
+    background: rgb(255 255 255 / 0.05);
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .oss-live {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: #bfe8cf;
+    font-size: 0.64rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .oss-live::before {
+    content: "";
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: #3fd68a;
+    box-shadow: 0 0 0 0 rgb(63 214 138 / 0.5);
+  }
+
+  .oss-screen {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 16 / 10;
+    background: #0b1019;
+  }
+
+  .oss-shot {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+    transform-origin: 50% 30%;
+    transition: transform 1600ms var(--ease-settle);
+  }
+
+  .oss-card:is(:hover, :focus-within) .oss-shot {
+    transform: scale(1.035);
+  }
+
+  /* Light on the glass, following the pointer. */
+  .oss-sheen {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      circle at var(--sheen-x, 50%) var(--sheen-y, 0%),
+      rgb(255 255 255 / 0.2),
+      transparent 48%
+    );
+    opacity: 0;
+    mix-blend-mode: screen;
+    transition: opacity 450ms var(--ease-settle);
+    pointer-events: none;
+  }
+
+  .oss-card[data-tilting="true"] .oss-sheen {
+    opacity: 1;
+  }
+
+  .oss-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    padding-top: 1.15rem;
+  }
+
+  .oss-meta {
+    display: flex;
+    gap: 0.75rem;
+    color: var(--ink-muted);
+  }
+
+  .oss-index {
+    color: var(--accent-ink);
+  }
+
+  .oss-title {
+    margin-top: 0.45rem;
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  .oss-link {
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .oss-link:focus-visible {
+    outline: none;
+  }
+
+  /* The demo link covers the whole card, so a click anywhere opens it; its
+     focus ring is drawn round the whole card. */
+  .oss-link::after {
+    content: "";
+    position: absolute;
+    inset: -0.5rem;
+    z-index: 1;
+    border-radius: 1.15rem;
+  }
+
+  .oss-link:focus-visible::after {
+    outline: 2px solid var(--link);
+    outline-offset: 2px;
+  }
+
+  .oss-summary {
+    margin-top: 0.5rem;
+    color: var(--ink-muted);
+  }
+
+  .oss-stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 1rem;
+  }
+
+  .oss-stack li {
+    padding: 0.2rem 0.6rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--ink-muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+  }
+
+  .oss-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem 1.5rem;
+    margin-top: auto;
+    padding-top: 1.25rem;
+  }
+
+  .oss-open,
+  .oss-source {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .oss-open {
+    color: var(--link);
+  }
+
+  .oss-open svg {
+    transition: transform 450ms var(--ease-settle);
+  }
+
+  .oss-card:is(:hover, :focus-within) .oss-open svg {
+    transform: translate(0.2rem, -0.2rem);
+  }
+
+  /* Above the card-wide demo link, so it opens the repository instead. */
+  .oss-source {
+    position: relative;
+    z-index: 2;
+    min-height: 2.75rem;
+    padding-inline: 0.25rem;
+    color: var(--ink-muted);
+    text-decoration: none;
+    transition: color 250ms;
+  }
+
+  .oss-source:hover {
+    color: var(--ink);
+  }
+
+  /* ---- Motion ----------------------------------------------------------- */
+  @media (prefers-reduced-motion: no-preference) {
+    .oss-live::before {
+      animation: oss-pulse 2400ms ease-out infinite;
+    }
+
+    .oss-grid[data-reveal="pending"] .oss-card {
+      opacity: 0;
+    }
+
+    /* Each card rises in turn and its screen switches on: a bright line
+       across the middle that opens to the full picture. */
+    .oss-grid[data-reveal="shown"] .oss-card {
+      animation: oss-rise 900ms var(--ease-settle) calc(var(--i) * 120ms) backwards;
+    }
+
+    .oss-grid[data-reveal="shown"] .oss-screen {
+      animation: oss-power 1000ms var(--ease-settle) calc(var(--i) * 120ms + 250ms) backwards;
+    }
+  }
+
+  @keyframes oss-rise {
+    from {
+      opacity: 0;
+      transform: translateY(2rem);
+    }
+  }
+
+  @keyframes oss-power {
+    0% {
+      clip-path: inset(49.5% 50% 49.5% 50%);
+      filter: brightness(3);
+    }
+    35% {
+      clip-path: inset(49.5% 0 49.5% 0);
+      filter: brightness(3);
+    }
+    100% {
+      clip-path: inset(0);
+      filter: brightness(1);
+    }
+  }
+
+  @keyframes oss-pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgb(63 214 138 / 0.55);
+    }
+    70%,
+    100% {
+      box-shadow: 0 0 0 0.45rem rgb(63 214 138 / 0);
+    }
+  }
+}

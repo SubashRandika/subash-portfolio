@@ -418,6 +418,18 @@ Requested by Subash: present the technologies from his résumé creatively, usin
 - The tagline is split into one span per word with the spaces kept as text, so it reads and is found exactly as written. Measured LCP locally 0.5–0.7 s.
 - The accessibility audit now waits for the entrance to settle before checking contrast. Unit 148 of 148, end-to-end 89 passed and 7 skipped.
 
+### Résumé facts read in a cached function (2026-11-20)
+
+- With `cacheComponents`, reading the résumé PDF synchronously during render was flagged by the dev server ("unstable value while prerendering"). `loadResume` (`src/lib/resume.ts`) now reads it inside `"use cache"` with `cacheLife("max")`; the page stays static.
+
+### Personal projects (2026-11-20)
+
+- Requested by Subash: his pinned GitHub work as an open-source section, each card opening its live demo. New section **Personal projects** (`#open-source`) after Selected projects: `src/components/portfolio/OpenSource.tsx`, data in `src/data/openSource.ts`, type `OpenSourceProject`.
+- Projects, in pinned order: Sinha Giri, Lumora, DreamHaus, MotioCode, AeroShield, and **Crown Clothing in place of Paleo Sphere (Subash's choice)**. Summaries are the repository descriptions (two lightly tidied: a stray underscore and a grammar slip); demo links are each repository's website, or for Crown Clothing the live demo its README links (`crown-clothing-6aaca.web.app`); stacks are read from each `package.json`; years from the creation dates.
+- Each card is a small browser window (address bar with the demo's host and a pulsing "Live" dot) showing a screenshot of the live demo. The whole card is the demo link (opens in a new tab); a separate Source link opens the repository. Entrance: cards rise in turn and each screen switches on like a monitor. A fine pointer tilts the window and moves a sheen across it; the window glows in the project's own colour on hover or focus. All motion is skipped for reduced motion.
+- Screenshots were taken at 2× (2880×1800, Sinha Giri's after its loading screen clears) and stored as 2400×1500 WebP in `src/assets/projects/`; served by next/image at quality 90 (`images.qualities` in `next.config.ts`). On screens 80rem and wider the grid reaches past the text column (up to 90rem) so the cards read larger. The window is only 3D-transformed while tilting, so the screenshot is drawn sharp at rest.
+- Tests: unit (cards, links, alt text, profile link, data) and end-to-end (reveal, screenshots load, a click anywhere on the card hits the demo link while the Source link stays on top); the accessibility audit waits for the cards' entrance. Unit 152 of 152, end-to-end 92 passed and 7 skipped.
+
 ## Known issues
 
 - **Playwright's bundled Chromium cannot run on this machine.** Windows reports "An Application Control policy has blocked this file" for the unsigned `chrome-headless-shell.exe`. The policy was left untouched. Tests use the installed, signed Google Chrome through `channel: "chrome"`; the blocked download was removed with `npx playwright uninstall`.

@@ -39,6 +39,7 @@ test.describe("page foundation (static experience)", () => {
       "about",
       "expertise",
       "projects",
+      "open-source",
       "experience",
       "contact",
     ]) {
@@ -209,6 +210,48 @@ test.describe("page foundation (static experience)", () => {
     });
     expect(overhang.worst).toBeLessThanOrEqual(1);
     expect(overhang.pageRight).toBeGreaterThanOrEqual(0);
+  });
+
+  test("shows the personal projects as cards that open their live demos", async ({ page }) => {
+    const section = page.locator("#open-source");
+    await section.scrollIntoViewIfNeeded();
+    await expect(section.locator(".oss-grid")).toHaveAttribute("data-reveal", "shown");
+    const cards = section.getByRole("article");
+    await expect(cards).toHaveCount(6);
+
+    const demo = section.getByRole("link", { name: "DreamHaus, live demo (opens in a new tab)" });
+    await expect(demo).toHaveAttribute("href", "https://dream-haus.vercel.app");
+    await expect(demo).toHaveAttribute("target", "_blank");
+    await expect(
+      section.getByRole("link", { name: "Source of DreamHaus on GitHub (opens in a new tab)" }),
+    ).toHaveAttribute("href", "https://github.com/SubashRandika/dream-haus");
+
+    // Every screenshot loads.
+    for (const image of await section.locator(".oss-shot").all()) {
+      await image.scrollIntoViewIfNeeded();
+      await expect
+        .poll(() => image.evaluate((img: HTMLImageElement) => (img.complete ? img.naturalWidth : 0)))
+        .toBeGreaterThan(0);
+    }
+
+    // A click anywhere on the card, not only on its title, opens the demo;
+    // the source link above it opens the repository instead.
+    const card = cards.nth(2);
+    await card.scrollIntoViewIfNeeded();
+    const box = await card.locator(".oss-screen").boundingBox();
+    expect(box).not.toBeNull();
+    const topmost = await page.evaluate(
+      ([x, y]) => document.elementFromPoint(x!, y!)?.closest("a")?.getAttribute("href") ?? null,
+      [box!.x + box!.width / 2, box!.y + box!.height / 2],
+    );
+    expect(topmost).toBe("https://dream-haus.vercel.app");
+    const source = card.getByRole("link", { name: /^Source of DreamHaus/ });
+    const sourceBox = await source.boundingBox();
+    const onSource = await page.evaluate(
+      ([x, y]) => document.elementFromPoint(x!, y!)?.closest("a")?.getAttribute("href") ?? null,
+      [sourceBox!.x + sourceBox!.width / 2, sourceBox!.y + sourceBox!.height / 2],
+    );
+    expect(onSource).toBe("https://github.com/SubashRandika/dream-haus");
   });
 });
 

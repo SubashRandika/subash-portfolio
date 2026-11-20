@@ -86,6 +86,27 @@ export interface Project {
   chapter: ChapterNumber;
 }
 
+/** A personal, open-source project pinned on GitHub, with a live demo. */
+export interface OpenSourceProject {
+  /** Repository name, also used for ids and the screenshot file. */
+  repo: string;
+  name: string;
+  /** Repository description, lightly edited for the page. */
+  summary: string;
+  /** Live demo (the repository's website). */
+  demo: string;
+  /** Repository on GitHub. */
+  source: string;
+  /** Year the repository was created. */
+  year: number;
+  /** Main libraries, from the repository's package.json. */
+  stack: readonly string[];
+  /** Alt text for the screenshot of the live demo. */
+  shot: string;
+  /** Brand colour of the demo, used for the card's glow. */
+  accent: string;
+}
+
 export interface SkillGroup {
   id: string;
   title: string;

@@ -16,6 +16,10 @@ if (isProductionDeploy(process.env)) {
 const nextConfig: NextConfig = {
   /* config options here */
   cacheComponents: true,
+  images: {
+    // 75 is the default; 90 keeps text in the project screenshots crisp.
+    qualities: [75, 90],
+  },
   partialPrefetching: true,
   turbopack: {
     rules: {
