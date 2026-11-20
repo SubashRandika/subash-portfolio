@@ -41,6 +41,7 @@ test.describe("page foundation (static experience)", () => {
       "projects",
       "open-source",
       "experience",
+      "recommendations",
       "contact",
     ]) {
       await expect(page.locator(`#${id}`)).toHaveCount(1);
@@ -210,6 +211,34 @@ test.describe("page foundation (static experience)", () => {
     });
     expect(overhang.worst).toBeLessThanOrEqual(1);
     expect(overhang.pageRight).toBeGreaterThanOrEqual(0);
+  });
+
+  test("shows the LinkedIn recommendations as a carousel the visitor can drive", async ({ page }) => {
+    const section = page.locator("#recommendations");
+    await section.scrollIntoViewIfNeeded();
+    const carousel = section.getByRole("region", { name: "Recommendations from LinkedIn" });
+    await expect(carousel.getByRole("group", { name: / of 8: / })).toHaveCount(8);
+    const current = carousel.locator(".rec-dot[aria-current=true]");
+    await expect(current).toHaveAttribute("aria-label", "Recommendation 1: Clyde Casiechitty");
+
+    // Pause first, so the automatic rotation does not race the test.
+    await carousel.getByRole("button", { name: "Pause automatic rotation" }).click();
+    await carousel.getByRole("button", { name: "Next recommendation" }).click();
+    await expect(current).toHaveAttribute("aria-label", "Recommendation 2: Chamil Fonseka");
+    await carousel.getByRole("button", { name: "Recommendation 5: Darshana Ratalakotuwa" }).click();
+    await expect(current).toHaveAttribute("aria-label", "Recommendation 5: Darshana Ratalakotuwa");
+
+    // The full text opens in place.
+    const slide = carousel.getByRole("group", { name: "5 of 8: Darshana Ratalakotuwa" });
+    await slide.getByText("Read the full recommendation").click();
+    await expect(slide.getByText(/migrating our on-premises application/)).toBeVisible();
+
+    // Only the row of cards scrolls; the page does not.
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(0);
+    await expect(section.getByRole("link", { name: /All recommendations on LinkedIn/ })).toHaveAttribute(
+      "href",
+      "https://www.linkedin.com/in/subash-rodrigo/details/recommendations/",
+    );
   });
 
   test("shows the personal projects as cards that open their live demos", async ({ page }) => {

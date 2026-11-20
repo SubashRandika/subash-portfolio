@@ -107,6 +107,22 @@ export interface OpenSourceProject {
   accent: string;
 }
 
+/** A recommendation received on LinkedIn, quoted word for word. */
+export interface Recommendation {
+  id: string;
+  name: string;
+  /** The recommender's role, from their LinkedIn headline. */
+  headline: string;
+  /** LinkedIn's line, such as "Managed Subash directly". */
+  relationship: string;
+  /** ISO date the recommendation was given. */
+  date: string;
+  /** One sentence from the text, shown large. */
+  excerpt: string;
+  /** The full recommendation, one entry per paragraph. */
+  text: readonly string[];
+}
+
 export interface SkillGroup {
   id: string;
   title: string;

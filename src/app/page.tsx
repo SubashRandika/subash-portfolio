@@ -4,6 +4,7 @@ import { Education } from "@/components/portfolio/Education";
 import { Experience } from "@/components/portfolio/Experience";
 import { OpenSource } from "@/components/portfolio/OpenSource";
 import { Projects } from "@/components/portfolio/Projects";
+import { Recommendations } from "@/components/portfolio/Recommendations";
 import { Skills } from "@/components/portfolio/Skills";
 import { FlightSection } from "@/components/storytelling/FlightSection";
 import { chapters } from "@/data/chapters";
@@ -11,6 +12,7 @@ import { experience } from "@/data/experience";
 import { openSourceProjects } from "@/data/openSource";
 import { profile } from "@/data/profile";
 import { projects } from "@/data/projects";
+import { recommendations } from "@/data/recommendations";
 import { skillGroups } from "@/data/skills";
 import { technologies } from "@/data/technologies";
 import { loadResume } from "@/lib/resume";
@@ -37,6 +39,14 @@ export default async function Home() {
           <Projects projects={projects} />
           <OpenSource projects={openSourceProjects} profile={siteContact.links.github} />
           <Experience entries={experience} chapters={chapters} />
+          <Recommendations
+            items={recommendations}
+            source={
+              siteContact.links.linkedin
+                ? `${siteContact.links.linkedin.replace(/\/$/, "")}/details/recommendations/`
+                : null
+            }
+          />
           <Education entries={profile.education} />
         </div>
       </div>
