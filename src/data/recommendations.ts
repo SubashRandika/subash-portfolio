@@ -7,8 +7,8 @@ import type { Recommendation } from "@/types/portfolio";
  * (2026-11-20); `relationship` and `date` are LinkedIn's own lines.
  * `excerpt` is one sentence taken verbatim from the text.
  *
- * Eight of the ten received are shown. Not shown: Sherihan Anver (Virtusa,
- * March 2025) and Rasika Hettige (managed Subash at Virtusa, June 2019).
+ * Nine of the ten received are shown. Not shown: Sherihan Anver (Virtusa,
+ * March 2025).
  * Darshana Ratalakotuwa calls Subash "Randika" (as in his GitHub handle,
  * SubashRandika); quoted as written.
  */
@@ -24,6 +24,19 @@ export const recommendations: readonly Recommendation[] = [
     text: [
       "I had the pleasure of working with Subash, and I can confidently say he is an exceptional frontend developer. His in-depth technical expertise in frontend technologies, combined with outstanding research and problem-solving skills, sets him apart. Subash is always eager to learn and adapt, making him a valuable asset to any team. Beyond his technical skills, his collaborative spirit and willingness to support others make him a great team player.",
       "I highly recommend Subash to any team looking for a skilled and dedicated frontend developer!",
+    ],
+  },
+  {
+    id: "rasika-hettige",
+    name: "Rasika Hettige",
+    headline: "Project Manager at Wiley",
+    relationship: "Managed Subash directly",
+    date: "2019-06-15",
+    excerpt:
+      "He is a self motivated, an enthusiast to learn new technologies and always waiting to grab new opportunities to show his capabilities.",
+    text: [
+      "I worked with Subash at Virtusa in the WSO2 Connector Development project. He is one of the highly technical person who is so committed to work. He is a self motivated, an enthusiast to learn new technologies and always waiting to grab new opportunities to show his capabilities.",
+      "I highly recommend him for any suitable position since is he is very much responsible and a reliable person who always deliver quality output.",
     ],
   },
   {

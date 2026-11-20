@@ -217,19 +217,19 @@ test.describe("page foundation (static experience)", () => {
     const section = page.locator("#recommendations");
     await section.scrollIntoViewIfNeeded();
     const carousel = section.getByRole("region", { name: "Recommendations from LinkedIn" });
-    await expect(carousel.getByRole("group", { name: / of 8: / })).toHaveCount(8);
+    await expect(carousel.getByRole("group", { name: / of 9: / })).toHaveCount(9);
     const current = carousel.locator(".rec-dot[aria-current=true]");
     await expect(current).toHaveAttribute("aria-label", "Recommendation 1: Clyde Casiechitty");
 
     // Pause first, so the automatic rotation does not race the test.
     await carousel.getByRole("button", { name: "Pause automatic rotation" }).click();
     await carousel.getByRole("button", { name: "Next recommendation" }).click();
-    await expect(current).toHaveAttribute("aria-label", "Recommendation 2: Chamil Fonseka");
-    await carousel.getByRole("button", { name: "Recommendation 5: Darshana Ratalakotuwa" }).click();
-    await expect(current).toHaveAttribute("aria-label", "Recommendation 5: Darshana Ratalakotuwa");
+    await expect(current).toHaveAttribute("aria-label", "Recommendation 2: Rasika Hettige");
+    await carousel.getByRole("button", { name: "Recommendation 6: Darshana Ratalakotuwa" }).click();
+    await expect(current).toHaveAttribute("aria-label", "Recommendation 6: Darshana Ratalakotuwa");
 
     // The full text opens in place.
-    const slide = carousel.getByRole("group", { name: "5 of 8: Darshana Ratalakotuwa" });
+    const slide = carousel.getByRole("group", { name: "6 of 9: Darshana Ratalakotuwa" });
     await slide.getByText("Read the full recommendation").click();
     await expect(slide.getByText(/migrating our on-premises application/)).toBeVisible();
 
