@@ -7,6 +7,7 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { cacheLife } from "next/cache";
 
 export interface ResumeFile {
   href: string;
@@ -41,4 +42,16 @@ export function describeResume(href: string | null, publicDir = join(/*turbopack
   } catch {
     return { href, external: false, pages: null, size: null };
   }
+}
+
+/**
+ * describeResume for the page. With cacheComponents, reading a file while
+ * rendering is uncached I/O and fails the prerender; cached, the facts are
+ * read once and become part of the static page.
+ */
+export async function loadResume(href: string | null): Promise<ResumeFile | null> {
+  "use cache";
+  // The file only changes with a deploy, so the page need not revalidate.
+  cacheLife("max");
+  return describeResume(href);
 }
