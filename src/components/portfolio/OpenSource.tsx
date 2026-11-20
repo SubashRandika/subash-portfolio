@@ -165,7 +165,7 @@ export function OpenSource({ projects, profile }: OpenSourceProps) {
                         alt={project.shot}
                         placeholder="blur"
                         quality={90}
-                        sizes="(min-width: 90rem) 44rem, (min-width: 48rem) 48vw, 92vw"
+                        sizes="(min-width: 80rem) 25rem, (min-width: 48rem) 46vw, 92vw"
                         className="oss-shot"
                       />
                     ) : null}

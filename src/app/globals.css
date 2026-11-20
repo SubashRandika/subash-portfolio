@@ -2588,13 +2588,20 @@
     }
   }
 
-  /* On wide screens the cards reach past the text column (up to 90rem),
-     still clear of the page gutters, so the screenshots read large. */
+  /* One card per row on phones, two on tablets and small laptops, three on
+     large screens. */
   @media (min-width: 80rem) {
     .oss-grid {
-      --oss-width: min(100vw - 2 * var(--gutter), 90rem);
-      width: var(--oss-width);
-      margin-inline: calc((100% - var(--oss-width)) / 2);
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      column-gap: 1.75rem;
+    }
+
+    .oss-grid .oss-title {
+      font-size: 1.25rem;
+    }
+
+    .oss-grid .oss-summary {
+      font-size: 0.95rem;
     }
   }
 
