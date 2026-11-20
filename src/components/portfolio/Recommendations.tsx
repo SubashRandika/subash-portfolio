@@ -57,7 +57,9 @@ interface RecommendationsProps {
  * side. It moves on by itself (a bar fills the current dot) and pauses while
  * the pointer or focus is on it, while a full text is open, when it is off
  * screen or the tab is hidden, or when the visitor presses Pause. Arrows,
- * dots, swiping and clicking a side card all move it. Reduced motion: it
+ * dots, swiping and clicking a side card all move it. "Read the full
+ * recommendation" opens the whole text in a reading panel (a dialog) with
+ * previous and next, so the cards never change size. Reduced motion: it
  * never moves by itself and cards change without sliding.
  *
  * Only the centre card can be reached by keyboard or screen reader (the
@@ -71,13 +73,15 @@ export function Recommendations({ items, source }: RecommendationsProps) {
   const [reduced, setReduced] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
-  const [reading, setReading] = useState(false);
+  // The recommendation open in the reading panel, if any.
+  const [reading, setReading] = useState<number | null>(null);
+  const readerRef = useRef<HTMLDialogElement>(null);
   const [visible, setVisible] = useState(false);
   const [tabHidden, setTabHidden] = useState(false);
 
   const count = items.length;
   const autoplay = !reduced && playing;
-  const running = autoplay && !hovered && !focused && !reading && visible && !tabHidden;
+  const running = autoplay && !hovered && !focused && reading === null && visible && !tabHidden;
 
   useEffect(() => {
     // Read once on the client; the server renders as if motion is allowed.
@@ -103,12 +107,31 @@ export function Recommendations({ items, source }: RecommendationsProps) {
     (index: number) => {
       if (count === 0) return;
       setActive(((index % count) + count) % count);
-      // A full text open on the card leaving the centre no longer holds the
-      // rotation; it closes as the card goes inert.
-      rootRef.current
-        ?.querySelectorAll<HTMLDetailsElement>("details.rec-full[open]")
-        .forEach((details) => (details.open = false));
-      setReading(false);
+    },
+    [count],
+  );
+
+  // Open or close the reading panel as `reading` changes. A modal dialog
+  // where the browser supports it (focus is held inside, Esc closes it, the
+  // page behind is inert); a plain open dialog otherwise.
+  useEffect(() => {
+    const dialog = readerRef.current;
+    if (!dialog) return;
+    if (reading !== null && !dialog.open) {
+      if (typeof dialog.showModal === "function") dialog.showModal();
+      else dialog.setAttribute("open", "");
+    } else if (reading === null && dialog.open) {
+      if (typeof dialog.close === "function") dialog.close();
+      else dialog.removeAttribute("open");
+    }
+  }, [reading]);
+
+  /** Reads another recommendation in the panel; the carousel follows. */
+  const readAt = useCallback(
+    (index: number) => {
+      const target = ((index % count) + count) % count;
+      setReading(target);
+      setActive(target);
     },
     [count],
   );
@@ -181,22 +204,15 @@ export function Recommendations({ items, source }: RecommendationsProps) {
                   <blockquote className="rec-excerpt">
                     <p>{item.excerpt}</p>
                   </blockquote>
-                  <details
-                    className="rec-full"
-                    onToggle={(event) => {
-                      if (centre) setReading((event.currentTarget as HTMLDetailsElement).open);
-                    }}
+                  <button
+                    type="button"
+                    className="rec-read"
+                    aria-haspopup="dialog"
+                    onClick={() => setReading(index)}
                   >
-                    <summary>
-                      <span className="rec-summary-open">Read the full recommendation</span>
-                      <span className="rec-summary-close">Hide the full recommendation</span>
-                    </summary>
-                    <blockquote className="rec-text">
-                      {item.text.map((paragraph) => (
-                        <p key={paragraph}>{paragraph}</p>
-                      ))}
-                    </blockquote>
-                  </details>
+                    <span className="rec-read-icon" aria-hidden="true" />
+                    Read the full recommendation
+                  </button>
                   <figcaption className="rec-person">
                     <span className="rec-monogram" aria-hidden="true">
                       {initialsOf(item.name)}
@@ -286,6 +302,83 @@ export function Recommendations({ items, source }: RecommendationsProps) {
           </a>
         </p>
       ) : null}
+      <dialog
+        ref={readerRef}
+        className="rec-reader"
+        aria-labelledby="rec-reader-name"
+        onClose={() => {
+          setReading(null);
+          // Back to the card now in the centre (Previous and Next may have
+          // moved on from the one that opened the panel, which is now inert).
+          requestAnimationFrame(() =>
+            rootRef.current?.querySelector<HTMLElement>(".rec-slide[data-active] .rec-read")?.focus(),
+          );
+        }}
+        // A click on the dimmed backdrop (the dialog itself, outside its
+        // sheet) closes it.
+        onClick={(event) => {
+          if (event.target === event.currentTarget) setReading(null);
+        }}
+      >
+        {reading !== null && items[reading] ? (
+          <article className="rec-sheet">
+            <header className="rec-sheet-head">
+              <span className="rec-monogram" aria-hidden="true">
+                {initialsOf(items[reading].name)}
+              </span>
+              <span className="rec-who">
+                <span id="rec-reader-name" className="rec-name">
+                  {items[reading].name}
+                </span>
+                <span className="rec-headline">{items[reading].headline}</span>
+                <span className="rec-relation">
+                  {items[reading].relationship} ·{" "}
+                  <time dateTime={items[reading].date}>{monthYear(items[reading].date)}</time>
+                </span>
+              </span>
+              <button
+                type="button"
+                className="rec-button rec-sheet-close"
+                onClick={() => setReading(null)}
+                aria-label="Close"
+                autoFocus
+              >
+                <Icon name="close" size={18} />
+              </button>
+            </header>
+
+            <blockquote className="rec-sheet-text" key={items[reading].id}>
+              {items[reading].text.map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+              ))}
+            </blockquote>
+
+            <footer className="rec-sheet-foot">
+              <button
+                type="button"
+                className="rec-sheet-step"
+                onClick={() => readAt(reading - 1)}
+                aria-label={`Previous: ${items[(reading - 1 + count) % count]!.name}`}
+              >
+                <Icon name="arrow-left" size={16} />
+                Previous
+              </button>
+              <span className="rec-count type-data" aria-hidden="true">
+                {pad2(reading + 1)} / {pad2(count)}
+              </span>
+              <button
+                type="button"
+                className="rec-sheet-step"
+                onClick={() => readAt(reading + 1)}
+                aria-label={`Next: ${items[(reading + 1) % count]!.name}`}
+              >
+                Next
+                <Icon name="arrow-right" size={16} />
+              </button>
+            </footer>
+          </article>
+        ) : null}
+      </dialog>
     </DocSection>
   );
 }

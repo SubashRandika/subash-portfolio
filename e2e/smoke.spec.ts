@@ -232,10 +232,28 @@ test.describe("page foundation (static experience)", () => {
     await carousel.getByRole("button", { name: "Recommendation 6: Darshana Ratalakotuwa" }).click();
     await expect(current).toHaveAttribute("aria-label", "Recommendation 6: Darshana Ratalakotuwa");
 
-    // The full text opens in place.
+    // The full text opens in a reading panel; the cards keep their size.
+    const heights = () =>
+      // Layout height, unaffected by the cards' scale as they move.
+      carousel.locator(".rec-card").evaluateAll((cards) => cards.map((card) => (card as HTMLElement).offsetHeight));
+    const before = await heights();
     const slide = carousel.getByRole("group", { name: "6 of 9: Darshana Ratalakotuwa" });
-    await slide.getByText("Read the full recommendation").click();
-    await expect(slide.getByText(/migrating our on-premises application/)).toBeVisible();
+    await slide.getByRole("button", { name: "Read the full recommendation" }).click();
+    const reader = page.getByRole("dialog", { name: "Darshana Ratalakotuwa" });
+    await expect(reader.getByText(/migrating our on-premises application/)).toBeVisible();
+    expect(await heights()).toEqual(before);
+    // Next reads on without closing; the carousel follows.
+    await reader.getByRole("button", { name: "Next: Samudi Hansani" }).click();
+    await expect(page.getByRole("dialog", { name: "Samudi Hansani" })).toBeVisible();
+    await expect(current).toHaveAttribute("aria-label", "Recommendation 7: Samudi Hansani");
+    // Esc closes it and focus returns to the card now in the centre.
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(
+      carousel.getByRole("group", { name: "7 of 9: Samudi Hansani" }).getByRole("button", {
+        name: "Read the full recommendation",
+      }),
+    ).toBeFocused();
 
     // Only the row of cards scrolls; the page does not.
     expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(0);

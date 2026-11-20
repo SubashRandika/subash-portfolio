@@ -22,8 +22,6 @@ describe("Recommendations", () => {
       expect(slide).toHaveTextContent(item.name);
       expect(slide).toHaveTextContent(item.headline);
       expect(slide).toHaveTextContent(item.relationship);
-      // The full text is there, behind "Read the full recommendation".
-      for (const paragraph of item.text) expect(slide).toHaveTextContent(paragraph);
     });
   });
 
@@ -61,6 +59,28 @@ describe("Recommendations", () => {
       "aria-current",
       "true",
     );
+  });
+
+  it("opens the full text in a reading panel, steps through and closes", () => {
+    render(<Recommendations items={recommendations} source={SOURCE} />);
+    expect(screen.queryByRole("dialog")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Read the full recommendation" }));
+    const dialog = screen.getByRole("dialog", { name: recommendations[0]!.name });
+    for (const paragraph of recommendations[0]!.text) expect(dialog).toHaveTextContent(paragraph);
+    // The rotation waits while someone reads.
+    expect(document.querySelector(".rec-carousel")).toHaveAttribute("data-running", "false");
+
+    fireEvent.click(screen.getByRole("button", { name: `Next: ${recommendations[1]!.name}` }));
+    const next = screen.getByRole("dialog", { name: recommendations[1]!.name });
+    expect(next).toHaveTextContent(recommendations[1]!.text[0]!);
+    // The carousel follows.
+    expect(screen.getAllByRole("button", { name: /^Recommendation \d+:/ })[1]).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 
   it("can pause and restart the automatic rotation", () => {
