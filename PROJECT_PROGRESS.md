@@ -32,9 +32,9 @@ Taken from the brief and treated as fixed unless Subash changes them:
 | 07 | Complete portfolio sections | Complete |
 | 08 | Performance and accessibility optimization | Complete |
 | 09 | SEO and deployment readiness | Complete |
-| 10 | Final QA and release | Next |
+| 10 | Final QA and release | Complete |
 
-**Current phase:** 10 — Final QA and release.
+**Current phase:** none. All ten phases are complete; going live needs only the production domain (outstanding question 8).
 
 ## Architecture and technical decisions
 
@@ -478,6 +478,43 @@ Requested by Subash: present the technologies from his résumé creatively, usin
   - Accessibility: the axe audit now runs in both modes.
   - Results: unit 168 of 168; end-to-end 101 passed and 7 skipped.
 
+### Phase 10 — Final QA and release (complete, 2026-11-23)
+
+**Done in this phase:** removed the unused `motion` dependency; re-checked `npm audit`; ran every check below on the final code. One fix: the end-to-end check that every technology icon loads waited only 5 s. Alone the 60 icons load in under a second on every device, but in a full parallel run the test browsers share the CPU and the tablet run sometimes missed it, so it now waits up to 15 s.
+
+**Verification (2026-11-23, production build):**
+
+| Check | Result |
+| --- | --- |
+| `npm run lint`, `npm run typecheck` | Pass |
+| `npm run test` (unit and component) | Pass, 168 of 168 |
+| `npm run test:e2e` (desktop, tablet, mobile; static and live flight; axe WCAG 2.2 AA in both colour modes; SEO routes) | Pass, 101 passed, 7 skipped by design |
+| `npm run build` | Pass, all routes static |
+| `npm run check:deploy` | Without `NEXT_PUBLIC_SITE_URL`: refused, naming the missing variable. With an https domain: builds |
+| `npm audit --omit=dev` | 0 vulnerabilities in shipped dependencies |
+| WebGL unavailable (every `getContext("webgl*")` returns null) | Static experience: all six chapters, heading and contact links shown, no canvas, no console errors |
+| Desktop 1440 × 900, iPad, Pixel 7 (live) | Scene draws on each, no sideways scroll |
+| Lighthouse SEO, built with an https domain | 100 (`index, follow`, canonical, robots, sitemap, Open Graph) |
+| Lighthouse desktop | Performance 86, Accessibility 100, Best Practices 100; LCP 1.3 s, TBT 270 ms, CLS 0 |
+| Lighthouse mobile, simulated throttling | Performance 49; LCP 6.3 s (estimated), TBT 2.1 s, CLS 0 |
+| Lighthouse mobile, real throttling (DevTools, two runs) | Performance 64–65; FCP 2.3–2.5 s, LCP 2.5–2.6 s, TBT 4.3 s, CLS 0 |
+| Lighthouse mobile, static experience | Performance 92 |
+| LCP measured in Chrome (Pixel 7, 4× CPU, slow 4G) | 1.7 s: the opening words, painted when the web font arrives |
+
+**Reading the mobile numbers:**
+
+- The simulated LCP (6.3 s) is Lighthouse's estimate. Measured with real throttling it is 2.5 s, and 1.7 s in Chrome's own LCP entries, which meets the 2.5 s target. CLS is 0 everywhere.
+- What remains is blocking time while the 3D starts on a slow phone (4× CPU). This adds up to about 4 s and breaks down as:
+  - React mounting the scene: about 1.1 s.
+  - The scroll director measuring the long page and building its timeline: about 1.7 s.
+  - three.js: about 0.4 s.
+  - The first rendered frames.
+
+  Hydration before that is short. The static experience scores 92, so the gap is the 3D opening itself.
+- The remaining lever is to start the 3D on touch devices only after the first touch or scroll. Phones would then open on the painted dawn poster (runway, tower, sky; no jet) until the visitor interacts. That changes what phone visitors see first, so it is left for Subash to decide (outstanding question 9) rather than made silently.
+
+**Not verified:** real phones and tablets (emulated in Chrome only), Safari and Firefox (tests run in Chrome), field Core Web Vitals (no deployment yet), and screen readers by ear (covered by axe audits and semantic markup checks, not a manual NVDA or VoiceOver session).
+
 ## Known issues
 
 - **Playwright's bundled Chromium cannot run on this machine.** Windows reports "An Application Control policy has blocked this file" for the unsigned `chrome-headless-shell.exe`. The policy was left untouched. Tests use the installed, signed Google Chrome through `channel: "chrome"`; the blocked download was removed with `npx playwright uninstall`.
@@ -495,7 +532,7 @@ Requested by Subash: present the technologies from his résumé creatively, usin
 ## Technical debt
 
 - ~~`motion` installed but unused.~~ Removed in Phase 10: every UI transition is plain CSS.
-- Mobile Lighthouse performance (lab) is 60, below the 90 target; see Phase 10 limitations.
+- Mobile Lighthouse performance is 49 simulated and 64–65 with real throttling, below the 90 target, because of the 3D startup on slow phones. See Phase 10 and outstanding question 9.
 
 ## Outstanding questions for Subash
 
@@ -509,7 +546,12 @@ These block publishing the affected content, not the build. Until answered the f
 6. ~~**Finago "approximately 50% UX improvement".**~~ Answered 2026-11-16: confirmed. Per the résumé it came from the simplified customer-creation wizard, so it is published there.
 7. **Optional.** Biosero engagement start date, location or time zone to display, and whether to state availability for new work.
 8. **Production domain.** Needed to deploy: set `NEXT_PUBLIC_SITE_URL` (see docs/DEPLOYMENT.md). Until then builds are safe previews that ask not to be indexed.
+9. **Optional, mobile opening.** Should phones show the painted poster (no jet) until the first touch, so the 3D starts only then? This would raise mobile Lighthouse performance a lot, at the cost of the 3D opening on phones. Current behaviour: the 3D starts straight away on every device that can run it.
 
 ## Next planned activities
 
-Phase 10: final QA across desktop, tablet and mobile; full accessibility, SEO and performance audits; another look at mobile Lighthouse performance (deferring the 3D and the scroll director on touch devices); `npm audit` and dependency review (including the unused `motion` package); the final implementation report.
+All ten phases are complete. Remaining:
+
+- Set the production domain and deploy (docs/DEPLOYMENT.md).
+- After going live, check field Core Web Vitals.
+- Act on question 9 if Subash wants the lighter mobile opening.
