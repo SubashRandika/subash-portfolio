@@ -32,7 +32,7 @@ export default async function Home() {
       />
       <FlightSection profile={profile} chapters={chapters} resume={resume} />
 
-      <div data-theme="day">
+      <div data-theme="day" className="documents">
         <div className="shell">
           <About profile={profile} current={currentRole} />
           <Skills technologies={technologies} groups={skillGroups} />

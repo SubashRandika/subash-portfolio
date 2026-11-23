@@ -316,3 +316,32 @@ test.describe("reduced motion", () => {
     await expect(page.locator(".portrait")).toHaveAttribute("data-reveal", "shown");
   });
 });
+
+test.describe("light and dark mode", () => {
+  test("follows the system, switches from the header and remembers the choice", async ({ page }) => {
+    await page.emulateMedia({ colorScheme: "dark" });
+    await page.goto("/?flight=static");
+    const html = page.locator("html");
+    await expect(html).toHaveAttribute("data-mode", "dark");
+
+    const toggle = page.getByRole("switch", { name: "Dark mode" });
+    await expect(toggle).toHaveAttribute("aria-checked", "true");
+    // Fully on screen next to the navigation at every width.
+    const box = await toggle.boundingBox();
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    expect(box!.x + box!.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+
+    const documentsBackground = () =>
+      page.evaluate(() => getComputedStyle(document.querySelector(".documents")!).backgroundColor);
+    expect(await documentsBackground()).toBe("rgb(12, 21, 38)");
+
+    await toggle.click();
+    await expect(html).toHaveAttribute("data-mode", "light");
+    await expect(toggle).toHaveAttribute("aria-checked", "false");
+    await expect.poll(documentsBackground).toBe("rgb(238, 242, 246)");
+
+    // The choice outlasts a reload even though the system still says dark.
+    await page.reload();
+    await expect(html).toHaveAttribute("data-mode", "light");
+  });
+});

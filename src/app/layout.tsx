@@ -4,6 +4,7 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { profile } from "@/data/profile";
 import { siteContact } from "@/lib/siteContact";
+import { COLOR_MODE_SCRIPT } from "@/lib/color-mode";
 import { FLIGHT_MODE_SCRIPT } from "@/lib/flight-mode-script";
 import { buildMetadata } from "@/lib/seo";
 import "./globals.css";
@@ -45,10 +46,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       className={`${michroma.variable} ${b612.variable} ${b612Mono.variable} antialiased`}
-      // The inline script below sets data-flight on this element before hydration.
+      // The inline scripts below set data-flight and data-mode on this element
+      // before hydration.
       suppressHydrationWarning
     >
       <head>
+        <script dangerouslySetInnerHTML={{ __html: COLOR_MODE_SCRIPT }} />
         <script dangerouslySetInnerHTML={{ __html: FLIGHT_MODE_SCRIPT }} />
       </head>
       <body data-theme="night" className="flex min-h-svh flex-col">

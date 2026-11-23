@@ -444,6 +444,40 @@ Requested by Subash: present the technologies from his résumé creatively, usin
 - Full text (Subash: expanding inside a card stretched the other cards with empty space): the in-card `<details>` became a **reading panel**. "Read the full recommendation" opens a native modal `<dialog>`: centred over a dimmed, blurred page on tablets and desktop, a bottom sheet on phones, with the recommender's name, role and relationship, the full text (scrolls inside when long), and Previous / Next to read on without closing (the carousel follows). Esc, the close button or a click outside closes it; focus returns to the card now in the centre; the page behind does not scroll; rotation waits while it is open. Cards never change size (checked by test).
 - Tests: unit (slides, quotes, controls, pause, link, empty state, excerpts are verbatim) and end-to-end (count, buttons, dots, full text, no sideways page scroll). Unit 160 of 160, end-to-end 95 passed and 7 skipped.
 
+### Light and dark mode (2026-11-23)
+
+- Requested by Subash: support light and dark modes, with well-matched dark colours and a creative switch.
+- Scope: the flight, header, contact and footer are dark in both modes. Dark mode changes the portfolio documents (About to Education, the `day` theme) and the style guide.
+- Mechanism: one attribute, `data-mode` on `<html>`. `src/lib/color-mode.ts` holds the head script, which sets it before the first paint so there is no white flash, plus helpers. A visitor's own choice is stored in localStorage (`color-mode`). Without one, the page follows the system setting, including changes made while the page is open. Other open tabs follow too.
+- Dark palette ("moonlit"), in `[data-mode="dark"] [data-theme="day"]`:
+
+  | Token           | Value                                                       |
+  | --------------- | ----------------------------------------------------------- |
+  | Surface         | `#0c1526` (midnight blue, distinct from the flight's black) |
+  | Raised surface  | `#142036`                                                   |
+  | Text            | `#e8ecf2`                                                   |
+  | Muted text      | `#a3b0c4`                                                   |
+  | Amber text      | `#f6b27a`                                                   |
+  | Links and focus | `#8cc8ff`                                                   |
+  - Measured contrast is 7.4:1 or more for every text colour on both surfaces.
+  - The technology families get lighter text colours (7.5:1 or more).
+  - Logos drawn in a single dark colour (Express, shadcn/ui, GitHub, Cursor, Gradle) turn white.
+  - Logos with dark parts (AWS, Swagger, Zustand, Elasticsearch) get a faint light edge.
+  - Shadows and highlights designed for the white page are retuned for the dark one.
+
+- Moonlit documents: a soft moon glow high on the right, a faint warm glow on the left, and a few stars at the top that fade out before the text starts.
+- Switch (`src/components/layout/ThemeToggle.tsx`), in the header next to the menu on every width, drawn as a small window on the sky:
+  - **Day:** a sun beside a passing cloud.
+  - **Switching to dark:** the sun travels across and becomes a crescent moon; the cloud drifts away; stars rise in and twinkle gently.
+  - **Markup:** `role="switch"`, named "Dark mode", 44 px tall.
+- Changeover: the new mode spreads out from the switch as a circle (View Transitions API, 750 ms). It changes instantly with reduced motion or where view transitions are missing.
+- Header: the menu gap is narrower from 1024 to 1280 px so the switch fits.
+- Tests:
+  - Unit: the switch reflects, changes and remembers the mode, and follows outside changes; the head script applies a stored choice.
+  - End-to-end: follows the system, the switch is fully on screen at every size, the colours change, the choice survives a reload.
+  - Accessibility: the axe audit now runs in both modes.
+  - Results: unit 168 of 168; end-to-end 101 passed and 7 skipped.
+
 ## Known issues
 
 - **Playwright's bundled Chromium cannot run on this machine.** Windows reports "An Application Control policy has blocked this file" for the unsigned `chrome-headless-shell.exe`. The policy was left untouched. Tests use the installed, signed Google Chrome through `channel: "chrome"`; the blocked download was removed with `npx playwright uninstall`.

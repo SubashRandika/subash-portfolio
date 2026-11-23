@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Icon } from "@/components/ui/Icon";
 import { primaryNav } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
@@ -56,8 +57,8 @@ export function SiteHeader({ name }: SiteHeaderProps) {
           {name}
         </a>
 
-        <nav aria-label="Primary" className="hidden lg:block">
-          <ul className="flex items-center gap-7">
+        <nav aria-label="Primary" className="ml-auto hidden lg:block">
+          <ul className="flex items-center gap-5 xl:gap-7">
             {primaryNav.map((item) => (
               <li key={item.href}>
                 <a
@@ -71,17 +72,20 @@ export function SiteHeader({ name }: SiteHeaderProps) {
           </ul>
         </nav>
 
-        <button
-          ref={toggleRef}
-          type="button"
-          className="-mr-2 inline-flex size-11 items-center justify-center lg:hidden"
-          aria-expanded={open}
-          aria-controls={menuId}
-          onClick={() => setOpen((value) => !value)}
-        >
-          <Icon name={open ? "close" : "menu"} size={22} />
-          <span className="sr-only">{open ? "Close menu" : "Open menu"}</span>
-        </button>
+        <div className="flex items-center gap-2 lg:-ml-2">
+          <ThemeToggle />
+          <button
+            ref={toggleRef}
+            type="button"
+            className="-mr-2 inline-flex size-11 items-center justify-center lg:hidden"
+            aria-expanded={open}
+            aria-controls={menuId}
+            onClick={() => setOpen((value) => !value)}
+          >
+            <Icon name={open ? "close" : "menu"} size={22} />
+            <span className="sr-only">{open ? "Close menu" : "Open menu"}</span>
+          </button>
+        </div>
       </div>
 
       <nav

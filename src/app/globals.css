@@ -108,6 +108,25 @@
   color-scheme: dark;
 }
 
+/* Dark mode (data-mode="dark" on <html>, chosen by the visitor or the
+   system) turns the day documents into a moonlit night: deep midnight blue
+   rather than the flight's black, moonlight-white text, and the same amber
+   and blue as by day, lifted so they read on the dark. The flight, header
+   and contact sections are dark in both modes. */
+[data-mode="dark"] [data-theme="day"] {
+  --surface: #0c1526;
+  --surface-raised: #142036;
+  --ink: #e8ecf2;
+  --ink-muted: #a3b0c4;
+  --line: rgb(163 176 196 / 0.18);
+  --line-strong: rgb(163 176 196 / 0.45);
+  --accent: var(--color-dawn-400);
+  --accent-ink: #f6b27a;
+  --link: #8cc8ff;
+  --focus: #8cc8ff;
+  color-scheme: dark;
+}
+
 /* ==========================================================================
    Base
    ========================================================================== */
@@ -3509,4 +3528,334 @@
       transition: none;
     }
   }
+}
+
+/* ==========================================================================
+   Light and dark mode: the sky switch, the moonlit documents and the
+   changeover
+   ========================================================================== */
+
+@layer components {
+  /* ---- The switch: a small window on the sky ---------------------------- */
+  .sky-switch {
+    display: inline-grid;
+    height: 2.75rem;
+    min-width: 2.75rem;
+    place-items: center;
+    padding: 0 0.25rem;
+    border: 0;
+    border-radius: 999px;
+    background: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .sky-switch:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 0;
+  }
+
+  .sky-switch-track {
+    position: relative;
+    display: block;
+    width: 3.5rem;
+    height: 1.875rem;
+    overflow: hidden;
+    border: 1px solid rgb(255 255 255 / 0.28);
+    border-radius: 999px;
+    /* Daytime: clear blue overhead, warm toward the horizon. */
+    background: linear-gradient(180deg, #5f9fd8 0%, #9fcbef 62%, #f3cf9f 100%);
+    box-shadow: inset 0 1px 3px rgb(9 14 24 / 0.35);
+    transition: border-color 600ms var(--ease-settle);
+  }
+
+  /* Night fades in over the day as its own layer, since gradients do not
+     animate. */
+  .sky-switch-track::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, #050a18 0%, #101c3c 70%, #23305a 100%);
+    opacity: 0;
+    transition: opacity 700ms var(--ease-settle);
+  }
+
+  .sky-switch-stars {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(1.2px 1.2px at 18% 30%, #fff 60%, transparent),
+      radial-gradient(1px 1px at 34% 66%, #fff 60%, transparent),
+      radial-gradient(1.4px 1.4px at 48% 24%, #fff 60%, transparent),
+      radial-gradient(1px 1px at 11% 72%, #fff 60%, transparent),
+      radial-gradient(1px 1px at 58% 58%, rgb(255 255 255 / 0.8) 60%, transparent),
+      radial-gradient(1px 1px at 27% 48%, rgb(255 255 255 / 0.7) 60%, transparent);
+    opacity: 0;
+    transform: translateY(0.35rem);
+    transition:
+      opacity 600ms var(--ease-settle) 150ms,
+      transform 900ms var(--ease-settle) 150ms;
+  }
+
+  /* A small cloud drifting past the sun. */
+  .sky-switch-cloud {
+    position: absolute;
+    right: 0.45rem;
+    bottom: 0.3rem;
+    width: 1.05rem;
+    height: 0.42rem;
+    border-radius: 999px;
+    background: #fff;
+    opacity: 0.95;
+    transition:
+      transform 700ms var(--ease-settle),
+      opacity 400ms var(--ease-settle);
+  }
+
+  .sky-switch-cloud::before {
+    content: "";
+    position: absolute;
+    left: 0.2rem;
+    bottom: 0.15rem;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: inherit;
+  }
+
+  /* The sun: it travels across and becomes the moon. */
+  .sky-switch-orb {
+    position: absolute;
+    top: 50%;
+    left: 0.22rem;
+    width: 1.3rem;
+    height: 1.3rem;
+    margin-top: -0.65rem;
+    overflow: hidden;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #ffe4ae, #f4a261 72%);
+    box-shadow:
+      0 0 0 3px rgb(255 220 160 / 0.32),
+      0 0 12px 2px rgb(244 162 97 / 0.65);
+    transition:
+      transform 700ms var(--ease-settle),
+      box-shadow 700ms var(--ease-settle);
+  }
+
+  /* Moonlight, faded in over the sun's colour. */
+  .sky-switch-orb::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at 38% 38%, #ffffff, #d7e0ee 75%);
+    opacity: 0;
+    transition: opacity 500ms var(--ease-settle) 100ms;
+  }
+
+  /* The night's shadow slides over the moon and leaves a crescent. */
+  .sky-switch-orb::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: #111d3e;
+    transform: translate(130%, -60%);
+    transition: transform 800ms var(--ease-settle) 120ms;
+  }
+
+  .sky-switch:hover .sky-switch-orb {
+    box-shadow:
+      0 0 0 4px rgb(255 220 160 / 0.4),
+      0 0 16px 3px rgb(244 162 97 / 0.75);
+  }
+
+  /* Night */
+  [data-mode="dark"] .sky-switch-track {
+    border-color: rgb(140 200 255 / 0.3);
+  }
+
+  [data-mode="dark"] .sky-switch-track::before,
+  [data-mode="dark"] .sky-switch-stars,
+  [data-mode="dark"] .sky-switch-orb::before {
+    opacity: 1;
+  }
+
+  [data-mode="dark"] .sky-switch-stars {
+    transform: none;
+  }
+
+  [data-mode="dark"] .sky-switch-cloud {
+    opacity: 0;
+    transform: translateX(1.4rem);
+  }
+
+  [data-mode="dark"] .sky-switch-orb {
+    transform: translateX(1.66rem) rotate(-18deg);
+    box-shadow: 0 0 10px 1px rgb(200 222 255 / 0.4);
+  }
+
+  [data-mode="dark"] .sky-switch-orb::after {
+    transform: translate(36%, -18%);
+  }
+
+  [data-mode="dark"] .sky-switch:hover .sky-switch-orb {
+    box-shadow: 0 0 14px 3px rgb(200 222 255 / 0.55);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    [data-mode="dark"] .sky-switch-stars {
+      animation: sky-twinkle 3.2s ease-in-out 900ms infinite alternate;
+    }
+  }
+
+  @keyframes sky-twinkle {
+    to {
+      opacity: 0.55;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sky-switch-track::before,
+    .sky-switch-stars,
+    .sky-switch-cloud,
+    .sky-switch-orb,
+    .sky-switch-orb::before,
+    .sky-switch-orb::after {
+      transition: none;
+    }
+  }
+
+  /* ---- Moonlit documents -------------------------------------------------- */
+  /* A soft moon glow high on the right and a few stars at the top, fading
+     out before the reading starts in earnest. */
+  [data-mode="dark"] .documents {
+    position: relative;
+    isolation: isolate;
+    background:
+      radial-gradient(56rem 28rem at 88% -8rem, rgb(140 200 255 / 0.1), transparent 70%),
+      radial-gradient(40rem 22rem at 8% -6rem, rgb(244 162 97 / 0.05), transparent 70%),
+      var(--surface);
+  }
+
+  [data-mode="dark"] .documents::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: -1;
+    height: 34rem;
+    background:
+      radial-gradient(1.4px 1.4px at 6% 12%, rgb(255 255 255 / 0.6) 50%, transparent),
+      radial-gradient(1px 1px at 17% 34%, rgb(255 255 255 / 0.45) 50%, transparent),
+      radial-gradient(1.2px 1.2px at 29% 8%, rgb(255 255 255 / 0.5) 50%, transparent),
+      radial-gradient(1px 1px at 41% 22%, rgb(255 255 255 / 0.35) 50%, transparent),
+      radial-gradient(1.6px 1.6px at 53% 6%, rgb(255 255 255 / 0.55) 50%, transparent),
+      radial-gradient(1px 1px at 64% 30%, rgb(255 255 255 / 0.4) 50%, transparent),
+      radial-gradient(1.2px 1.2px at 76% 14%, rgb(255 255 255 / 0.5) 50%, transparent),
+      radial-gradient(1px 1px at 87% 40%, rgb(255 255 255 / 0.35) 50%, transparent),
+      radial-gradient(1.4px 1.4px at 95% 9%, rgb(255 255 255 / 0.55) 50%, transparent),
+      radial-gradient(1px 1px at 36% 46%, rgb(255 255 255 / 0.3) 50%, transparent),
+      radial-gradient(1px 1px at 71% 52%, rgb(255 255 255 / 0.3) 50%, transparent);
+    -webkit-mask-image: linear-gradient(to bottom, #000 30%, transparent);
+    mask-image: linear-gradient(to bottom, #000 30%, transparent);
+    pointer-events: none;
+  }
+
+  /* Shadows and highlights made for a white page, retuned for the night. */
+  [data-mode="dark"] .portrait-plate {
+    box-shadow:
+      0 1px 0 rgb(255 255 255 / 0.07) inset,
+      0 2.25rem 3.5rem -2rem rgb(0 0 0 / 0.7),
+      0 0 0 1px rgb(140 200 255 / 0.06);
+  }
+
+  [data-mode="dark"] .rec-card {
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.04);
+  }
+
+  [data-mode="dark"] .rec-slide[data-active] .rec-card {
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.06),
+      0 22px 44px -24px rgb(0 0 0 / 0.75);
+  }
+
+  [data-mode="dark"] .rec-card::before {
+    background: radial-gradient(circle, rgb(140 200 255 / 0.12), transparent 65%);
+  }
+
+  /* The project windows are dark by day; at night their frame is lifted so
+     they still stand off the page. */
+  [data-mode="dark"] .oss-window {
+    border-color: rgb(163 176 196 / 0.2);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.07),
+      0 22px 44px -24px rgb(0 0 0 / 0.75);
+  }
+
+  [data-mode="dark"] .tech-tile:hover {
+    box-shadow:
+      inset 0 3px 0 var(--family),
+      0 0.9rem 1.6rem -1rem rgb(0 0 0 / 0.8);
+  }
+
+  /* Each technology family's text colour, lifted to read on the night. */
+  [data-mode="dark"] .tech-table [data-family="languages"] {
+    --family-ink: #f0a868;
+  }
+  [data-mode="dark"] .tech-table [data-family="frontend"] {
+    --family: #5b9cf0;
+    --family-ink: #84b4f5;
+  }
+  [data-mode="dark"] .tech-table [data-family="backend"] {
+    --family: #2fbfa4;
+    --family-ink: #5fd1b8;
+  }
+  [data-mode="dark"] .tech-table [data-family="delivery"] {
+    --family: #a77fe0;
+    --family-ink: #c3a1ee;
+  }
+  [data-mode="dark"] .tech-table [data-family="tools"] {
+    --family: #8b97a8;
+    --family-ink: #a9b4c4;
+  }
+  [data-mode="dark"] .tech-table [data-family="all"] {
+    --family: var(--ink);
+    --family-ink: var(--ink);
+  }
+
+  /* Logos drawn in a single dark colour turn moonlight white; logos with
+     dark parts get a faint light edge so those parts still show. */
+  [data-mode="dark"]
+    .tech-icon:is(
+      [src$="/express.svg"],
+      [src$="/shadcn.svg"],
+      [src$="/github.svg"],
+      [src$="/cursor.svg"],
+      [src$="/gradle.svg"]
+    ) {
+    filter: brightness(0) invert(0.92);
+  }
+
+  [data-mode="dark"]
+    .tech-icon:is(
+      [src$="/amazonwebservices.svg"],
+      [src$="/swagger.svg"],
+      [src$="/zustand.svg"],
+      [src$="/elasticsearch.svg"]
+    ) {
+    filter: drop-shadow(0 0 0.6px rgb(232 236 242 / 0.95)) drop-shadow(0 0 3px rgb(232 236 242 / 0.2));
+  }
+}
+
+/* ---- The changeover ------------------------------------------------------ */
+/* The new mode spreads out from the switch as a circle (animated from
+   ThemeToggle); the old one stays still underneath. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-new(root) {
+  z-index: 1;
 }

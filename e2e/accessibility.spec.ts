@@ -12,49 +12,63 @@ async function audit(page: Page) {
   );
 }
 
+/** Loads the static page and waits until every entrance has settled. */
+async function settledStaticPage(page: Page) {
+  await page.goto("/?flight=static");
+  // Let the opening's entrance settle (its words start blurred and faint);
+  // the scroll cue's short loop is decoration and is not waited for.
+  await page.waitForFunction(() =>
+    document
+      .getAnimations()
+      .filter((animation) => {
+        const target = (animation.effect as KeyframeEffect | null)?.target;
+        return target instanceof Element && target.closest("#takeoff") && !target.closest(".hero-hint");
+      })
+      .every((animation) => animation.playState !== "running"),
+  );
+  // Reveal the portrait so it is audited as a visitor sees it.
+  await page.locator("#about").scrollIntoViewIfNeeded();
+  await expect(page.locator(".portrait")).toHaveAttribute("data-reveal", "shown");
+  // ...and the technology table, once its cascade has finished.
+  await page.locator("#expertise").scrollIntoViewIfNeeded();
+  await expect(page.locator(".tech-table")).toHaveAttribute("data-reveal", "shown");
+  // (Only the table's own animations: the portrait's orbit turns forever.)
+  await page.waitForFunction(() =>
+    document
+      .getAnimations()
+      .filter((animation) => {
+        const target = (animation.effect as KeyframeEffect | null)?.target;
+        return target instanceof Element && target.closest(".tech-table");
+      })
+      .every((animation) => animation.playState !== "running"),
+  );
+  // ...and the personal projects, once their cards have risen into place
+  // (the "Live" dot pulses for ever and is not waited for).
+  await page.locator("#open-source").scrollIntoViewIfNeeded();
+  await expect(page.locator(".oss-grid")).toHaveAttribute("data-reveal", "shown");
+  await page.waitForFunction(() =>
+    document
+      .getAnimations()
+      .filter((animation) => {
+        const target = (animation.effect as KeyframeEffect | null)?.target;
+        return target instanceof Element && target.closest(".oss-grid") && !target.matches(".oss-live");
+      })
+      .every((animation) => animation.playState !== "running"),
+  );
+}
+
 test.describe("accessibility (WCAG 2.2 AA, automated checks)", () => {
   test("the static page has no violations", async ({ page }) => {
-    await page.goto("/?flight=static");
-    // Let the opening's entrance settle (its words start blurred and faint);
-    // the scroll cue's short loop is decoration and is not waited for.
-    await page.waitForFunction(() =>
-      document
-        .getAnimations()
-        .filter((animation) => {
-          const target = (animation.effect as KeyframeEffect | null)?.target;
-          return target instanceof Element && target.closest("#takeoff") && !target.closest(".hero-hint");
-        })
-        .every((animation) => animation.playState !== "running"),
-    );
-    // Reveal the portrait so it is audited as a visitor sees it.
-    await page.locator("#about").scrollIntoViewIfNeeded();
-    await expect(page.locator(".portrait")).toHaveAttribute("data-reveal", "shown");
-    // ...and the technology table, once its cascade has finished.
-    await page.locator("#expertise").scrollIntoViewIfNeeded();
-    await expect(page.locator(".tech-table")).toHaveAttribute("data-reveal", "shown");
-    // (Only the table's own animations: the portrait's orbit turns forever.)
-    await page.waitForFunction(() =>
-      document
-        .getAnimations()
-        .filter((animation) => {
-          const target = (animation.effect as KeyframeEffect | null)?.target;
-          return target instanceof Element && target.closest(".tech-table");
-        })
-        .every((animation) => animation.playState !== "running"),
-    );
-    // ...and the personal projects, once their cards have risen into place
-    // (the "Live" dot pulses for ever and is not waited for).
-    await page.locator("#open-source").scrollIntoViewIfNeeded();
-    await expect(page.locator(".oss-grid")).toHaveAttribute("data-reveal", "shown");
-    await page.waitForFunction(() =>
-      document
-        .getAnimations()
-        .filter((animation) => {
-          const target = (animation.effect as KeyframeEffect | null)?.target;
-          return target instanceof Element && target.closest(".oss-grid") && !target.matches(".oss-live");
-        })
-        .every((animation) => animation.playState !== "running"),
-    );
+    await page.emulateMedia({ colorScheme: "light" });
+    await settledStaticPage(page);
+    await expect(page.locator("html")).toHaveAttribute("data-mode", "light");
+    expect(await audit(page)).toEqual([]);
+  });
+
+  test("the static page in dark mode has no violations", async ({ page }) => {
+    await page.emulateMedia({ colorScheme: "dark" });
+    await settledStaticPage(page);
+    await expect(page.locator("html")).toHaveAttribute("data-mode", "dark");
     expect(await audit(page)).toEqual([]);
   });
 
