@@ -513,6 +513,26 @@ Requested by Subash: present the technologies from his résumé creatively, usin
   Hydration before that is short. The static experience scores 92, so the gap is the 3D opening itself.
 - The remaining lever is to start the 3D on touch devices only after the first touch or scroll. Phones would then open on the painted dawn poster (runway, tower, sky; no jet) until the visitor interacts. That changes what phone visitors see first, so it is left for Subash to decide (outstanding question 9) rather than made silently.
 
+### Career timeline entrance (2026-11-23)
+
+- Requested by Subash: animate the Career timeline in Work experience in a creative way, GSAP allowed.
+- **Time sweep** (`src/components/portfolio/TimelineSweep.tsx`): when the timeline is a fifth of the way up the screen, a playhead runs from 2013 to "Present" in 2.6 s.
+  - Each bar grows behind it, its leading edge riding the playhead, so the motion follows the real dates.
+  - A tag on the playhead counts the years.
+  - A soft wake of light trails it.
+  - Each year on the axis appears as it is passed.
+  - Each role's label, then its chapter links, rise in as the role begins.
+  - At "Present" the playhead fades out.
+- **Phones:** the playhead is hidden; bars and roles still appear in date order.
+- **How it runs:**
+  - GSAP, loaded only when the timeline comes into view, runs the timeline. The playhead and bars move linearly with time.
+  - The labels and the playhead's exit are CSS transitions using the site's `--ease-settle` and `--ease-flight`.
+  - Only `transform` and `opacity` animate.
+  - Positions come from each bar's own `--left` and `--width`.
+- **Plays once.** It is skipped, with the timeline simply drawn, with reduced motion, without IntersectionObserver or JavaScript, or when the timeline is already on screen at load. Inline styles are cleared at the end.
+- **Accessibility:** waiting years are hidden outright rather than dimmed, because faint text failed the axe contrast check. The playhead is `aria-hidden`.
+- Tests: unit (drawn where the entrance cannot run; playhead starts at the first year) and end-to-end (pending, playing, shown; full-length bars and readable roles at the end; shown at once with reduced motion). Unit 170 of 170; end-to-end 104 passed, 7 skipped.
+
 **Not verified:** real phones and tablets (emulated in Chrome only), Safari and Firefox (tests run in Chrome), field Core Web Vitals (no deployment yet), and screen readers by ear (covered by axe audits and semantic markup checks, not a manual NVDA or VoiceOver session).
 
 ## Known issues

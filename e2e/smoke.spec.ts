@@ -151,6 +151,22 @@ test.describe("page foundation (static experience)", () => {
     await expect(education).toContainText("University of Kelaniya, Sri Lanka");
   });
 
+  test("plays the career timeline in when it scrolls into view", async ({ page }) => {
+    const timeline = page.locator(".timeline");
+    await expect(timeline).toHaveAttribute("data-reveal", "pending");
+    await timeline.scrollIntoViewIfNeeded();
+    await expect(timeline).toHaveAttribute("data-reveal", "playing");
+    await expect(timeline).toHaveAttribute("data-reveal", "shown", { timeout: 15_000 });
+
+    // It ends as the plain timeline: full-length bars, every role readable.
+    const bars = page.locator(".timeline-bar");
+    await expect(bars).toHaveCount(6);
+    for (const bar of await bars.all()) await expect(bar).toHaveCSS("transform", "none");
+    for (const label of await page.locator(".timeline-label").all()) {
+      await expect(label).toHaveCSS("opacity", "1");
+    }
+  });
+
   test("shows the technologies as a table, with icons and a family filter", async ({ page }) => {
     const table = page.locator(".tech-table");
     await expect(table).toHaveAttribute("data-reveal", "pending");
@@ -318,6 +334,7 @@ test.describe("reduced motion", () => {
     await expect(page.locator(".flight-canvas canvas")).toHaveCount(0);
     // The portrait is simply there, with no entrance to wait for.
     await expect(page.locator(".portrait")).toHaveAttribute("data-reveal", "shown");
+    await expect(page.locator(".timeline")).toHaveAttribute("data-reveal", "shown");
   });
 });
 

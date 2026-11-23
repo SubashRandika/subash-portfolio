@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import { pad2, formatDate } from "@/lib/utils";
 import type { ExperienceEntry } from "@/types/portfolio";
+import { TimelineSweep } from "./TimelineSweep";
 
 interface CareerTimelineProps {
   entries: readonly ExperienceEntry[];
@@ -60,6 +61,7 @@ export function layoutTimeline(entries: readonly ExperienceEntry[]): {
 export function CareerTimeline({ entries }: CareerTimelineProps) {
   const { rows, years } = layoutTimeline(entries);
   if (rows.length === 0) return null;
+  const startYear = new Date(rows[0]!.entry.start).getUTCFullYear();
 
   return (
     <figure className="timeline" aria-labelledby="career-timeline-title">
@@ -67,65 +69,69 @@ export function CareerTimeline({ entries }: CareerTimelineProps) {
         Career timeline
       </figcaption>
 
-      <ol className="timeline-rows">
-        {rows.map(({ entry, left, width, open }) => {
-          const style = { "--left": left, "--width": width } as CSSProperties;
-          const clients = entry.engagements.map((e) => e.client).join(", ");
-          // Where no employer is named, the clients lead the row.
-          const organisation = entry.employer ?? clients;
-          const others = entry.employer ? clients : "";
-          return (
-            <li key={entry.id} className="timeline-row">
-              <div className="timeline-label">
-                <span className="font-bold">{organisation}</span>
-                {others ? <span className="text-ink-muted"> · {others}</span> : null}
-                <span className="type-small block text-ink-muted">
-                  {entry.role}
-                  <span aria-hidden="true"> · </span>
-                  <span className="sr-only">, </span>
-                  <time dateTime={entry.start} className="whitespace-nowrap">
-                    {formatDate(entry.start)}
-                  </time>
-                  <span aria-hidden="true"> – </span>
-                  <span className="sr-only"> to </span>
-                  {entry.end ? (
-                    <time dateTime={entry.end} className="whitespace-nowrap">
-                      {formatDate(entry.end)}
+      <div className="timeline-body">
+        <ol className="timeline-rows">
+          {rows.map(({ entry, left, width, open }) => {
+            const style = { "--left": left, "--width": width } as CSSProperties;
+            const clients = entry.engagements.map((e) => e.client).join(", ");
+            // Where no employer is named, the clients lead the row.
+            const organisation = entry.employer ?? clients;
+            const others = entry.employer ? clients : "";
+            return (
+              <li key={entry.id} className="timeline-row">
+                <div className="timeline-label">
+                  <span className="font-bold">{organisation}</span>
+                  {others ? <span className="text-ink-muted"> · {others}</span> : null}
+                  <span className="type-small block text-ink-muted">
+                    {entry.role}
+                    <span aria-hidden="true"> · </span>
+                    <span className="sr-only">, </span>
+                    <time dateTime={entry.start} className="whitespace-nowrap">
+                      {formatDate(entry.start)}
                     </time>
-                  ) : (
-                    "Present"
-                  )}
-                </span>
-              </div>
-              <div className="timeline-track" aria-hidden="true">
-                <span className="timeline-bar" data-open={open || undefined} style={style} />
-              </div>
-              <div className="timeline-chapters">
-                {entry.chapters.map((n) => (
-                  <a key={n} href={`#chapter-${pad2(n)}`} className="tag">
-                    <span className="sr-only">Career journey chapter </span>
-                    <span aria-hidden="true">Ch. </span>
-                    {pad2(n)}
-                  </a>
-                ))}
-              </div>
-            </li>
-          );
-        })}
-      </ol>
+                    <span aria-hidden="true"> – </span>
+                    <span className="sr-only"> to </span>
+                    {entry.end ? (
+                      <time dateTime={entry.end} className="whitespace-nowrap">
+                        {formatDate(entry.end)}
+                      </time>
+                    ) : (
+                      "Present"
+                    )}
+                  </span>
+                </div>
+                <div className="timeline-track" aria-hidden="true">
+                  <span className="timeline-bar" data-open={open || undefined} style={style} />
+                </div>
+                <div className="timeline-chapters">
+                  {entry.chapters.map((n) => (
+                    <a key={n} href={`#chapter-${pad2(n)}`} className="tag">
+                      <span className="sr-only">Career journey chapter </span>
+                      <span aria-hidden="true">Ch. </span>
+                      {pad2(n)}
+                    </a>
+                  ))}
+                </div>
+              </li>
+            );
+          })}
+        </ol>
 
-      <div className="timeline-row timeline-axis-row" aria-hidden="true">
-        <span />
-        <div className="timeline-axis">
-          {years.map(({ year, at }, index) => (
-            // Narrow screens label every third year, clear of "Present".
-            <span key={year} style={{ "--at": at } as CSSProperties} data-sparse={index % 3 === 0 || undefined}>
-              {year}
-            </span>
-          ))}
-          <span className="timeline-present">Present</span>
+        <div className="timeline-row timeline-axis-row" aria-hidden="true">
+          <span />
+          <div className="timeline-axis">
+            {years.map(({ year, at }, index) => (
+              // Narrow screens label every third year, clear of "Present".
+              <span key={year} style={{ "--at": at } as CSSProperties} data-sparse={index % 3 === 0 || undefined}>
+                {year}
+              </span>
+            ))}
+            <span className="timeline-present">Present</span>
+          </div>
+          <span />
         </div>
-        <span />
+
+        <TimelineSweep startYear={startYear} presentFrom={1 - OPEN_TAIL} />
       </div>
     </figure>
   );
