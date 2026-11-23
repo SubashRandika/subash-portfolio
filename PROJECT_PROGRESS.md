@@ -533,6 +533,30 @@ Requested by Subash: present the technologies from his résumé creatively, usin
 - **Accessibility:** waiting years are hidden outright rather than dimmed, because faint text failed the axe contrast check. The playhead is `aria-hidden`.
 - Tests: unit (drawn where the entrance cannot run; playhead starts at the first year) and end-to-end (pending, playing, shown; full-length bars and readable roles at the end; shown at once with reduced motion). Unit 170 of 170; end-to-end 104 passed, 7 skipped.
 
+### Pre-release audit (2026-11-23)
+
+Production build made as a production deploy (`DEPLOY_ENV=production`) with a placeholder https domain (`www.example.com`, audit only), served with `next start`.
+
+| Check | Result |
+| --- | --- |
+| Lighthouse mobile, simulated (3 runs) | Performance 50; Accessibility, Best Practices, SEO 100; FCP 1.1 s, LCP 6.0–6.2 s (estimate), TBT 1.8–2.1 s, CLS 0–0.007 |
+| Lighthouse mobile, real throttling | Performance 65; LCP 2.4 s, TBT 2.9 s, CLS 0 |
+| Lighthouse desktop (2 runs) | Performance 86–88; Accessibility, Best Practices, SEO 100; LCP 1.2–1.3 s, TBT 240–280 ms, CLS 0 |
+| Page weight | 757 KB transferred; HTML gzip-compressed |
+
+SEO detail checks:
+
+- **Pass:**
+  - `lang`, canonical, `index, follow`, viewport, theme colour.
+  - One h1, and 70 headings with no skipped levels.
+  - All 67 images have alt text; no vague link text; all 18 new-tab links use `noopener`.
+  - 2,390 words in the initial HTML.
+  - Full Open Graph and X card tags; every referenced icon and image resolves.
+  - JSON-LD (WebSite, ProfilePage, Person) parses, with linked `@id`s.
+  - robots.txt and the sitemap; unknown URLs return 404; `/styleguide` and `/lab/` are `noindex` and disallowed.
+- **Fixed:** the sharing image was 313 KB, and some messaging apps (WhatsApp among them) skip previews over about 300 KB. It is now encoded with a reduced palette: 86 KB, visually identical (`scripts/build-brand-assets.mjs` does the same from now on).
+- **For Subash (outstanding question 10):** the brief's title (69 characters) and description (201 characters) are longer than search results show (about 60 and 155–160), so both are cut off there.
+
 **Not verified:** real phones and tablets (emulated in Chrome only), Safari and Firefox (tests run in Chrome), field Core Web Vitals (no deployment yet), and screen readers by ear (covered by axe audits and semantic markup checks, not a manual NVDA or VoiceOver session).
 
 ## Known issues
@@ -567,6 +591,8 @@ These block publishing the affected content, not the build. Until answered the f
 7. **Optional.** Biosero engagement start date, location or time zone to display, and whether to state availability for new work.
 8. **Production domain.** Needed to deploy: set `NEXT_PUBLIC_SITE_URL` (see docs/DEPLOYMENT.md). Until then builds are safe previews that ask not to be indexed.
 9. **Optional, mobile opening.** Should phones show the painted poster (no jet) until the first touch, so the 3D starts only then? This would raise mobile Lighthouse performance a lot, at the cost of the 3D opening on phones. Current behaviour: the 3D starts straight away on every device that can run it.
+
+10. **Optional, search snippet length.** Shorten the title to 60 characters or fewer (for example "Subash Rodrigo | Lead Software Engineer, React & Angular", 56) and the meta description to about 155? The brief's wording is used today and is cut off in search results; sharing cards can keep the longer description.
 
 ## Next planned activities
 
