@@ -4,6 +4,7 @@ import type { ResumeFile } from "@/lib/resume";
 import type { Chapter, Profile } from "@/types/portfolio";
 import { ChapterNavigation } from "./ChapterNavigation";
 import { ChapterSection } from "./ChapterSection";
+import { FilmStill } from "./FilmStill";
 import { FlightHUD } from "./FlightHUD";
 import { Opening } from "./Opening";
 
@@ -27,9 +28,9 @@ export function FlightSection({ profile, chapters, resume = null }: FlightSectio
   return (
     <section id="flight" data-theme="night" className="flight" aria-labelledby="flight-heading">
       <div className="flight-stage">
-        {/* Painted sky shown until the first 3D frame is ready. */}
-        <div className="flight-poster sky" data-sky="0" aria-hidden="true">
-          <div className="runway" />
+        {/* The film's first frame, shown until the first clip has loaded. */}
+        <div className="flight-poster" aria-hidden="true">
+          <FilmStill clip={0} priority />
         </div>
         <div className="absolute inset-0" aria-hidden="true">
           <FlightStage />

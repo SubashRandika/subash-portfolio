@@ -7,55 +7,73 @@ function choose(): string | undefined {
   return document.documentElement.dataset.flight;
 }
 
-const loseContext = vi.fn();
-const acceleratedContext = { getExtension: () => ({ loseContext }) };
+function stubConnection(connection: { saveData?: boolean; effectiveType?: string } | undefined) {
+  Object.defineProperty(navigator, "connection", {
+    value: connection,
+    configurable: true,
+  });
+}
+
+let canPlayType: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
-  vi.stubGlobal("WebGL2RenderingContext", function WebGL2RenderingContext() {});
-  vi.stubGlobal("matchMedia", (query: string) => ({ matches: false, media: query }));
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: false,
+    media: query,
+  }));
+  canPlayType = vi.spyOn(HTMLMediaElement.prototype, "canPlayType").mockReturnValue("probably");
+  stubConnection({ saveData: false, effectiveType: "4g" });
   window.history.replaceState(null, "", "/");
-  loseContext.mockClear();
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
+  stubConnection(undefined);
   delete document.documentElement.dataset.flight;
 });
 
 describe("flight mode, chosen before first paint", () => {
-  it("flies live with hardware-accelerated WebGL 2, and releases the probe context", () => {
-    const getContext = vi
-      .spyOn(HTMLCanvasElement.prototype, "getContext")
-      .mockReturnValue(acceleratedContext as unknown as RenderingContext);
+  it("plays the film live in a browser that plays H.264", () => {
     expect(choose()).toBe("live");
-    expect(getContext).toHaveBeenCalledWith("webgl2", { failIfMajorPerformanceCaveat: true });
-    expect(loseContext).toHaveBeenCalled();
+    expect(canPlayType).toHaveBeenCalledWith('video/mp4; codecs="avc1.640028"');
   });
 
-  it("stays static when WebGL would run on the CPU", () => {
-    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
-    expect(choose()).toBe("static");
+  it("flies live without the Network Information API", () => {
+    stubConnection(undefined);
+    expect(choose()).toBe("live");
   });
 
-  it("stays static without WebGL 2", () => {
-    vi.stubGlobal("WebGL2RenderingContext", undefined);
+  it("stays static when the browser cannot play the film", () => {
+    canPlayType.mockReturnValue("");
     expect(choose()).toBe("static");
   });
 
   it("stays static for visitors who ask for reduced motion", () => {
-    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(
-      acceleratedContext as unknown as RenderingContext,
-    );
     vi.stubGlobal("matchMedia", () => ({ matches: true }));
     expect(choose()).toBe("static");
   });
 
-  it("can be forced either way for testing, without probing", () => {
-    const getContext = vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(null);
+  it("stays static in data-saver mode", () => {
+    stubConnection({ saveData: true, effectiveType: "4g" });
+    expect(choose()).toBe("static");
+  });
+
+  it.each(["2g", "slow-2g"])("stays static on a %s connection", (effectiveType) => {
+    stubConnection({ saveData: false, effectiveType });
+    expect(choose()).toBe("static");
+  });
+
+  it("still flies on a 3G connection; the film loads clip by clip", () => {
+    stubConnection({ saveData: false, effectiveType: "3g" });
+    expect(choose()).toBe("live");
+  });
+
+  it("can be forced either way for testing", () => {
+    canPlayType.mockReturnValue("");
     window.history.replaceState(null, "", "/?flight=live");
     expect(choose()).toBe("live");
-    expect(getContext).not.toHaveBeenCalled();
+    canPlayType.mockReturnValue("probably");
     window.history.replaceState(null, "", "/?flight=static");
     expect(choose()).toBe("static");
   });

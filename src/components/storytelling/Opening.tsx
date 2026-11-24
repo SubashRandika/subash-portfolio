@@ -3,6 +3,7 @@ import { ButtonLink } from "@/components/ui/Button";
 import { spanOf } from "@/flight/timeline";
 import type { ResumeFile } from "@/lib/resume";
 import type { Profile } from "@/types/portfolio";
+import { FilmStill } from "./FilmStill";
 import { ResumeDownload } from "./ResumeDownload";
 
 interface OpeningProps {
@@ -45,7 +46,7 @@ function Follow({ text }: { text: string }) {
 /**
  * The opening of the page and of the flight: tagline first, then name and
  * title. This is server-rendered text, so it is the page's largest paint and
- * is readable before any 3D loads.
+ * is readable before any of the film loads.
  *
  * Entrance (CSS, skipped for reduced motion): the tagline's words come into
  * focus one after another and a band of dawn light passes across them; the
@@ -58,8 +59,9 @@ export function Opening({ profile, resume = null }: OpeningProps) {
 
   return (
     <header id="takeoff" className="opening" style={style}>
-      <div className="chapter-backdrop sky" data-sky="0" aria-hidden="true" />
-      <div className="runway" aria-hidden="true" />
+      <div className="chapter-backdrop sky" data-sky="0" aria-hidden="true">
+        <FilmStill clip={0} className="chapter-still" priority />
+      </div>
 
       <div className="opening-panel">
         <div

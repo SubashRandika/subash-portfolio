@@ -69,6 +69,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Headline decisions:
 28. The live flight is chosen in the head script only with hardware-accelerated WebGL 2 (`failIfMajorPerformanceCaveat`); without it the static experience is served, with no layout shift.
 29. Large shaders compile in the background (`KHR_parallel_shader_compile` through `compileAsync`), and the terrain and buildings are shown only once compiled; the painted poster stays up until the ground is ready. Every other program is precompiled at startup, so nothing compiles mid-flight.
 30. The terrain shader calls each costly helper (cars, car parks, tree crowns, street rows, the street itself) from one place: layout code records what lies under the pixel and main() draws it once. The Direct3D compiler copies a helper into the shader at every call site; this took the shader from 21 s to 8 s to compile on Windows.
+31. **The journey is a film, not a real-time scene (2026-11-25).** Seven AI-generated clips joined on shared keyframes, scrubbed by scroll through the same GSAP director. Scroll progress maps to film position through per-chapter cues on a monotone cubic; every landscape change happens inside cloud. Clips are fetched whole, nearest first, at 1440, 1080 or 720 lines depending on the screen's device pixels and the connection, all cut from 4K upscaled masters. See docs/FILM.md. Decisions 5, 13–15, 19–30 describe the retired 3D scene.
 10. Milestone summaries are optional: when the brief says nothing beyond a milestone's title, the card shows the title alone rather than padded copy.
 
 ## Phase summaries
@@ -533,7 +534,48 @@ Requested by Subash: present the technologies from his résumé creatively, usin
 - **Accessibility:** waiting years are hidden outright rather than dimmed, because faint text failed the axe contrast check. The playhead is `aria-hidden`.
 - Tests: unit (drawn where the entrance cannot run; playhead starts at the first year) and end-to-end (pending, playing, shown; full-length bars and readable roles at the end; shown at once with reduced motion). Unit 170 of 170; end-to-end 104 passed, 7 skipped.
 
+### Pre-release audit (2026-11-23)
+
+Production build made as a production deploy (`DEPLOY_ENV=production`) with a placeholder https domain (`www.example.com`, audit only), served with `next start`.
+
+| Check | Result |
+| --- | --- |
+| Lighthouse mobile, simulated (3 runs) | Performance 50; Accessibility, Best Practices, SEO 100; FCP 1.1 s, LCP 6.0–6.2 s (estimate), TBT 1.8–2.1 s, CLS 0–0.007 |
+| Lighthouse mobile, real throttling | Performance 65; LCP 2.4 s, TBT 2.9 s, CLS 0 |
+| Lighthouse desktop (2 runs) | Performance 86–88; Accessibility, Best Practices, SEO 100; LCP 1.2–1.3 s, TBT 240–280 ms, CLS 0 |
+| Page weight | 757 KB transferred; HTML gzip-compressed |
+
+SEO detail checks:
+
+- **Pass:**
+  - `lang`, canonical, `index, follow`, viewport, theme colour.
+  - One h1, and 70 headings with no skipped levels.
+  - All 67 images have alt text; no vague link text; all 18 new-tab links use `noopener`.
+  - 2,390 words in the initial HTML.
+  - Full Open Graph and X card tags; every referenced icon and image resolves.
+  - JSON-LD (WebSite, ProfilePage, Person) parses, with linked `@id`s.
+  - robots.txt and the sitemap; unknown URLs return 404; `/styleguide` and `/lab/` are `noindex` and disallowed.
+- **Fixed:** the sharing image was 313 KB, and some messaging apps (WhatsApp among them) skip previews over about 300 KB. It is now encoded with a reduced palette: 86 KB, visually identical (`scripts/build-brand-assets.mjs` does the same from now on).
+- **For Subash (outstanding question 10):** the brief's title (69 characters) and description (201 characters) are longer than search results show (about 60 and 155–160), so both are cut off there.
+
 **Not verified:** real phones and tablets (emulated in Chrome only), Safari and Firefox (tests run in Chrome), field Core Web Vitals (no deployment yet), and screen readers by ear (covered by axe audits and semantic markup checks, not a manual NVDA or VoiceOver session).
+
+### Filmed flight replaces the real-time 3D scene (2026-11-25)
+
+**Why:** Subash found the site slow to load: the live flight needed Three.js, React Three Fiber, the aircraft model and large shaders before the journey could start, and it was heavy on phones and slow networks. He asked for the same scroll-driven flight as AI-generated video from Higgsfield, realistic, within a 100-credit budget (later raised by another 100).
+
+**What was built:**
+- Eight keyframe stills (GPT Image 2.6) at the chapter boundaries, all referencing the first so the jet stays identical, and seven Kling 3.0 Pro clips between consecutive keyframes, so the clips join on shared frames. Provenance, credits and the rebuild procedure are in [docs/FILM.md](docs/FILM.md).
+- Subash reported two problems with the first cut, and both were fixed:
+  - **Blurry:** the first encode (1280×720, CRF 30) threw detail away. Clips are now encoded at the source's full 1904×1072 (phones: a native 1428×1072 crop) at CRF 23, which is visually lossless. 720-line versions are served only on 3G.
+  - **Rough terrain changes:** the model had morphed one landscape into the next in plain view. Clips 1–4 were regenerated so the aircraft flies through cloud or mist at every change. Chapter cues sit at the thickest cloud, and progress maps to film position on a monotone cubic, so speed never jumps at a chapter boundary.
+- `src/flight/film.ts` (mapping, tested), `src/components/flight/filmPlayer.ts` (imperative seek loop, nearest-first blob loading, crossfades at joins), and `FlightStage` now renders seven video layers instead of the canvas. The GSAP director is unchanged and still the only scroll clock.
+- Static mode (reduced motion, data saver, 2G, no H.264) now shows each chapter over its keyframe still instead of a painted sky. The painted runway is gone.
+- The head script no longer probes WebGL. It checks H.264 support, reduced motion, data saver and the connection type.
+
+- **Still not sharp enough on large screens** (Subash's third note): every clip was upscaled to 4K with Topaz Video (via Higgsfield), and all sizes are now cut from those masters. A third tier at 1440 lines goes to screens that would otherwise enlarge the 1080p film (1440p monitors, Retina laptops, 4K). The choice is made from the film box's size in device pixels.
+
+**Result:** the home page loads no 3D code. The first frame is a 26 KB still (13 KB on phones). Full-quality clips are fetched one at a time behind it. The rest of the page (HUD, chapters, milestones, navigation) is unchanged.
 
 ## Known issues
 
@@ -551,6 +593,8 @@ Requested by Subash: present the technologies from his résumé creatively, usin
 
 ## Technical debt
 
+- **The real-time 3D flight code is no longer used by the home page** (`src/components/flight/` scene modules, `src/components/environments/`, most of `src/flight/`). It is kept because `/lab/aircraft` still renders the aircraft and the 3D version may be wanted again. Removing it, and `three` with `@react-three/*`, would shorten installs and the test run without affecting the shipped page.
+
 - ~~`motion` installed but unused.~~ Removed in Phase 10: every UI transition is plain CSS.
 - Mobile Lighthouse performance is 49 simulated and 64–65 with real throttling, below the 90 target, because of the 3D startup on slow phones. See Phase 10 and outstanding question 9.
 
@@ -567,6 +611,8 @@ These block publishing the affected content, not the build. Until answered the f
 7. **Optional.** Biosero engagement start date, location or time zone to display, and whether to state availability for new work.
 8. **Production domain.** Needed to deploy: set `NEXT_PUBLIC_SITE_URL` (see docs/DEPLOYMENT.md). Until then builds are safe previews that ask not to be indexed.
 9. **Optional, mobile opening.** Should phones show the painted poster (no jet) until the first touch, so the 3D starts only then? This would raise mobile Lighthouse performance a lot, at the cost of the 3D opening on phones. Current behaviour: the 3D starts straight away on every device that can run it.
+
+10. **Optional, search snippet length.** Shorten the title to 60 characters or fewer (for example "Subash Rodrigo | Lead Software Engineer, React & Angular", 56) and the meta description to about 155? The brief's wording is used today and is cut off in search results; sharing cards can keep the longer description.
 
 ## Next planned activities
 

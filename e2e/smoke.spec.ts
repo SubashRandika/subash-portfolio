@@ -2,8 +2,8 @@ import { expect, test } from "@playwright/test";
 
 /**
  * The page foundation is tested in static mode, which is what crawlers,
- * reduced-motion visitors and browsers without WebGL receive. The live 3D
- * flight has its own spec.
+ * reduced-motion visitors and data-saver or 2G connections receive. The live
+ * filmed flight has its own spec.
  */
 test.describe("page foundation (static experience)", () => {
   test.beforeEach(async ({ page }) => {
@@ -50,9 +50,14 @@ test.describe("page foundation (static experience)", () => {
     await expect(page.getByRole("table", { name: /Work experience/ })).toBeAttached();
   });
 
-  test("does not start WebGL", async ({ page }) => {
+  test("does not load the film", async ({ page }) => {
     await expect(page.locator("html")).toHaveAttribute("data-flight", "static");
-    await expect(page.locator(".flight-canvas canvas")).toHaveCount(0);
+    await expect(page.locator("[data-film-clip] video[src]")).toHaveCount(0);
+    // Each chapter stands over a still of its landscape instead.
+    await expect(page.locator("#chapter-03 .chapter-still img")).toHaveAttribute(
+      "src",
+      "/film/wide/poster-3.webp",
+    );
     // Every milestone is readable without scrolling through a flight.
     await expect(
       page.locator("#chapter-01").getByText("Close to 200 WSO2 ESB cloud connectors."),
@@ -331,7 +336,7 @@ test.describe("reduced motion", () => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
     await expect(page.locator("html")).toHaveAttribute("data-flight", "static");
-    await expect(page.locator(".flight-canvas canvas")).toHaveCount(0);
+    await expect(page.locator("[data-film-clip] video[src]")).toHaveCount(0);
     // The portrait is simply there, with no entrance to wait for.
     await expect(page.locator(".portrait")).toHaveAttribute("data-reveal", "shown");
     await expect(page.locator(".timeline")).toHaveAttribute("data-reveal", "shown");

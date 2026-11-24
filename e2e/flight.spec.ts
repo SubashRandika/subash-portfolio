@@ -12,24 +12,55 @@ async function scrollToProgress(page: Page, progress: number) {
 }
 
 test.describe("live flight", () => {
-  // The 3D scene needs WebGL 2. Headless browsers without a GPU fall back to
-  // software rendering, which is slow but sufficient for these checks.
-  test.slow();
-
   test.beforeEach(async ({ page }) => {
     await page.goto("/?flight=live");
   });
 
-  test("chooses live mode before paint and draws the scene", async ({ page }) => {
+  test("chooses live mode before paint and loads the film nearest first", async ({ page }) => {
     await expect(page.locator("html")).toHaveAttribute("data-flight", "live");
-    // Software rendering loads and compiles the 3D scene on the CPU; with the
-    // other test workers sharing it, the first frame can take a while.
-    await expect(page.locator(".flight-canvas canvas")).toBeVisible({ timeout: 90_000 });
+    // The opening frame is on screen before any video arrives.
+    await expect(page.locator(".flight-poster img")).toBeVisible();
     await expect(page.locator("html")).toHaveAttribute("data-flight-ready", "true", {
-      timeout: 120_000,
+      timeout: 30_000,
     });
-    // A graphics profile is chosen from the device and recorded on the page.
-    await expect(page.locator("html")).toHaveAttribute("data-flight-quality", /^(high|medium|low)$/);
+    // Portrait screens get the 4:3 crop, landscape screens the 16:9 film.
+    const portrait = await page.evaluate(() => matchMedia("(max-aspect-ratio: 1/1)").matches);
+    await expect(page.locator(".flight-film")).toHaveAttribute(
+      "data-framing",
+      portrait ? "tall" : "wide",
+    );
+    await expect(page.locator("[data-film-clip='0']")).toHaveAttribute("data-ready", "true");
+    // No 3D engine is downloaded any more.
+    const resources = await page.evaluate(() =>
+      performance.getEntriesByType("resource").map((entry) => entry.name),
+    );
+    expect(resources.some((name) => /three|fiber/i.test(name))).toBe(false);
+  });
+
+  test("scrubs the film with scroll, forward and back", async ({ page }) => {
+    const layer = (clip: number) => page.locator(`[data-film-clip='${clip}']`);
+    const time = (clip: number) =>
+      page.evaluate(
+        (n) => document.querySelector<HTMLVideoElement>(`[data-film-clip='${n}'] video`)!.currentTime,
+        clip,
+      );
+    const shown = () =>
+      page.evaluate(() => {
+        const layers = Array.from(document.querySelectorAll<HTMLElement>("[data-film-clip]"));
+        const on = layers.find((element) => element.style.opacity === "1");
+        return on ? Number(on.dataset.filmClip) : -1;
+      });
+
+    await expect(layer(3)).toHaveAttribute("data-ready", "true", { timeout: 60_000 });
+    // Late in chapter 03 (0.38–0.51) the aircraft leaves the industrial
+    // region: film position about 3.4, well into clip 3.
+    await scrollToProgress(page, 0.49);
+    await expect.poll(shown, { timeout: 15_000 }).toBe(3);
+    await expect.poll(() => time(3), { timeout: 15_000 }).toBeGreaterThan(1);
+    // Back to the runway.
+    await scrollToProgress(page, 0);
+    await expect.poll(shown, { timeout: 15_000 }).toBe(0);
+    await expect.poll(() => time(0), { timeout: 20_000 }).toBeLessThan(0.1);
   });
 
   test("has no automated accessibility violations at the opening or in a chapter", async ({

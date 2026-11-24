@@ -174,7 +174,11 @@ async function buildSharingImage() {
     await page.goto(pathToFileURL(htmlPath).href);
     await page.evaluate(() => document.fonts.ready);
     const png = await page.screenshot({ type: "png" });
-    await sharp(png).png({ compressionLevel: 9, palette: false }).toFile(at("public/og-image.png"));
+    // A reduced palette keeps it near 90 KB with no visible change. Some
+    // messaging apps (WhatsApp among them) drop link previews over ~300 KB.
+    await sharp(png)
+      .png({ palette: true, quality: 90, effort: 10, compressionLevel: 9 })
+      .toFile(at("public/og-image.png"));
   } finally {
     await browser.close();
   }
