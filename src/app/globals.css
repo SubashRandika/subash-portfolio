@@ -715,11 +715,25 @@
   .opening .chapter-backdrop::after {
     background: linear-gradient(
       to bottom,
-      rgb(5 8 15 / 0.3) 0%,
-      transparent 30%,
-      transparent 60%,
-      rgb(5 8 15 / 0.45) 100%
+      rgb(5 8 15 / 0.45) 0%,
+      rgb(5 8 15 / 0.12) 30%,
+      rgb(5 8 15 / 0.35) 55%,
+      rgb(5 8 15 / 0.85) 100%
     );
+  }
+
+  /* A still of the chapter's landscape (the first frame of its clip) under
+     the darkening gradient. Static mode only: live mode hides backdrops. */
+  .chapter-still,
+  .chapter-still img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .chapter-still img {
+    object-fit: cover;
   }
 
   .chapter-panel {
@@ -739,29 +753,43 @@
     overflow: hidden;
   }
 
-  /* The painted sky stands in for the 3D scene until its first frames are
-     drawn, then cross-fades to the canvas. Both fill the stage. */
+  /* The filmed flight. The opening frame is a still (the poster) under the
+     clip layers; the film player fades each clip layer in and out and scrubs
+     it with scroll. All of them fill the stage. */
   .flight-poster,
-  .flight-canvas {
+  .flight-film,
+  .film-clip {
     position: absolute;
     inset: 0;
-    transition: opacity 1400ms var(--ease-flight);
   }
 
-  .flight-canvas {
+  .film-clip {
     opacity: 0;
+    visibility: hidden;
   }
 
-  .flight-canvas canvas {
+  .flight-poster img,
+  .film-clip video {
     display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
-  [data-flight-ready="true"] .flight-canvas {
-    opacity: 1;
-  }
+  /* Portrait screens: the film fills the upper part of the frame (the 4:3
+     crop keeps the whole aircraft in view) and melts into the night below,
+     where the chapter text sits. */
+  @media (max-aspect-ratio: 1/1) {
+    [data-flight="live"] .flight-stage {
+      background: var(--color-night-950);
+    }
 
-  [data-flight-ready="true"] .flight-poster {
-    opacity: 0;
+    .flight-poster,
+    .flight-film {
+      bottom: auto;
+      height: min(62svh, 118vw);
+      mask-image: linear-gradient(to bottom, #000 72%, transparent);
+    }
   }
 
   /* Sticky panels inside overlapping chapters move relative to the document
@@ -1022,48 +1050,6 @@
     display: none;
   }
 
-  /* Runway edge lights converging on the horizon: the static stand-in for
-     the 3D runway. Drawn to the right of the text column on wide screens. */
-  .runway {
-    position: absolute;
-    inset: var(--horizon) 0 0 0;
-    z-index: -1;
-    overflow: hidden;
-    background:
-      radial-gradient(ellipse 55% 70% at 50% 0%, rgb(244 162 97 / 0.16), transparent 70%),
-      linear-gradient(to bottom, #0a0e17, #05070c);
-  }
-
-  @media (min-width: 64rem) {
-    .runway::before,
-    .runway::after {
-      content: "";
-      position: absolute;
-      top: 0;
-      left: 74%;
-      width: 2px;
-      height: 46%;
-      transform-origin: top center;
-      background: repeating-linear-gradient(
-        to bottom,
-        rgb(255 244 214 / 0.95) 0 2px,
-        transparent 2px 20px
-      );
-      mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 55%, transparent);
-    }
-
-    .runway::before {
-      transform: rotate(40deg);
-    }
-
-    .runway::after {
-      transform: rotate(-40deg);
-    }
-  }
-
-  [data-flight="live"] .opening .runway {
-    display: none;
-  }
 }
 
 /* ==========================================================================

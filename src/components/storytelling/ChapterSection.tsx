@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { spanOf } from "@/flight/timeline";
 import { pad2 } from "@/lib/utils";
 import type { Chapter } from "@/types/portfolio";
+import { FilmStill } from "./FilmStill";
 import { MilestoneCard } from "./MilestoneCard";
 
 interface ChapterSectionProps {
@@ -14,7 +15,8 @@ interface ChapterSectionProps {
 /**
  * One career chapter of the flight.
  *
- * In static mode this is an ordinary block with a painted sky. In live mode
+ * In static mode this is an ordinary block over a still of the chapter's
+ * landscape (the first frame of its clip). In live mode
  * CSS makes it as tall as the chapter's share of the flight and pins its
  * panel, so the same markup serves both.
  */
@@ -30,7 +32,9 @@ export function ChapterSection({ chapter, totalChapters, children }: ChapterSect
       aria-labelledby={headingId}
       data-chapter={chapter.number}
     >
-      <div className="chapter-backdrop sky" data-sky={chapter.number} aria-hidden="true" />
+      <div className="chapter-backdrop sky" data-sky={chapter.number} aria-hidden="true">
+        <FilmStill clip={chapter.number} className="chapter-still" />
+      </div>
       <div className="chapter-panel">
         <div className="shell">
           <div data-flight-part="body">

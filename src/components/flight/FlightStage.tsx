@@ -1,32 +1,15 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { Component, type ReactNode, useCallback, useEffect, useRef, useState } from "react";
-import { fallBackToStatic, markFlightReady, useFlightMode } from "@/hooks/useFlightMode";
-
-const FlightExperience = dynamic(() => import("@/components/flight/FlightExperience"), {
-  ssr: false,
-});
-
-/** Catches render errors from the 3D scene and reports them once. */
-class SceneBoundary extends Component<
-  { onError: (reason: string) => void; children: ReactNode },
-  { failed: boolean }
-> {
-  state = { failed: false };
-
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-
-  componentDidCatch(error: unknown) {
-    this.props.onError(error instanceof Error ? error.message : "3D scene failed");
-  }
-
-  render() {
-    return this.state.failed ? null : this.props.children;
-  }
-}
+import { type RefObject, useEffect, useRef } from "react";
+import {
+  CLIP_INDICES,
+  type FilmFraming,
+  TALL_QUERY,
+  filmQualityFor,
+  linesNeeded,
+} from "@/flight/film";
+import { markFlightReady, useFlightMode } from "@/hooks/useFlightMode";
+import type { FilmPlayer } from "./filmPlayer";
 
 /**
  * Starts the flight director (the GSAP master timeline) while the page is in
@@ -54,44 +37,82 @@ function useFlightDirector(enabled: boolean) {
 }
 
 /**
- * The stage's 3D layer. It renders nothing until the page is in live mode,
- * then loads the WebGL scene on demand. If WebGL cannot start, or the context
- * is lost, the whole page drops back to the static experience.
+ * Runs the film player while in live mode, in the framing that suits the
+ * screen and the quality that suits the connection, and pauses it while the stage is scrolled out of view.
+ */
+function useFilmPlayer(enabled: boolean, host: RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    const element = host.current;
+    if (!enabled || !element) return;
+
+    const tall = window.matchMedia(TALL_QUERY);
+    let cancelled = false;
+    let player: FilmPlayer | null = null;
+    let onScreen = true;
+
+    const start = async () => {
+      const { createFilmPlayer } = await import("./filmPlayer");
+      if (cancelled) return;
+      player?.destroy();
+      const framing: FilmFraming = tall.matches ? "tall" : "wide";
+      const connection = (navigator as Navigator & { connection?: { effectiveType?: string } })
+        .connection;
+      const box = element.getBoundingClientRect();
+      const lines = linesNeeded(box, framing, window.devicePixelRatio || 1);
+      const quality = filmQualityFor(connection?.effectiveType, lines);
+      player = createFilmPlayer(element, {
+        framing,
+        quality,
+        onReady: markFlightReady,
+      });
+      player.setActive(onScreen);
+    };
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry) return;
+        onScreen = entry.isIntersecting;
+        player?.setActive(onScreen);
+      },
+      { rootMargin: "120px" },
+    );
+    observer.observe(element);
+
+    // Turning a tablet round switches framing.
+    const onChange = () => void start();
+    tall.addEventListener("change", onChange);
+    void start();
+
+    return () => {
+      cancelled = true;
+      tall.removeEventListener("change", onChange);
+      observer.disconnect();
+      player?.destroy();
+      player = null;
+    };
+  }, [enabled, host]);
+}
+
+/**
+ * The stage's film layer: one muted, never-autoplaying video per clip of the
+ * film, stacked in order. Nothing is fetched until the page is in live
+ * mode; the film player then loads the clips and scrubs them with scroll.
  */
 export function FlightStage() {
   const mode = useFlightMode();
   const live = mode === "live";
   const hostRef = useRef<HTMLDivElement>(null);
-  const [onScreen, setOnScreen] = useState(true);
 
   useFlightDirector(live);
-
-  // Stop rendering frames while the stage is scrolled out of view.
-  useEffect(() => {
-    const host = hostRef.current;
-    if (!live || !host) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry) setOnScreen(entry.isIntersecting);
-      },
-      { rootMargin: "120px" },
-    );
-    observer.observe(host);
-    return () => observer.disconnect();
-  }, [live]);
-
-  const handleFail = useCallback((reason: string) => {
-    console.warn(`[flight] Falling back to the static experience: ${reason}`);
-    fallBackToStatic();
-  }, []);
+  useFilmPlayer(live, hostRef);
 
   return (
-    <div ref={hostRef} className="flight-canvas">
-      {live ? (
-        <SceneBoundary onError={handleFail}>
-          <FlightExperience active={onScreen} onReady={markFlightReady} onFail={handleFail} />
-        </SceneBoundary>
-      ) : null}
+    <div ref={hostRef} className="flight-film">
+      {CLIP_INDICES.map((index) => (
+        <div key={index} className="film-clip" data-film-clip={index}>
+          <video muted playsInline preload="none" disablePictureInPicture tabIndex={-1} />
+        </div>
+      ))}
     </div>
   );
 }
